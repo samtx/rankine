@@ -1,11 +1,11 @@
 # Sam Rankine Cycle
 
-import numpy as np
-import pandas as pd
-import math
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+import numpy as np  # for some numerical methods
+import pandas as pd # for data analysis tools like dataframes
+import math         # duh
+import matplotlib   # for pretty pictures
+matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of using X windows
+import matplotlib.pyplot as plt 
 
 # Given properties
 
@@ -55,8 +55,10 @@ xx = np.zeros(step*4)
 # assume that this isn't a superheated rankine cycle, so state 2 is saturated vapor at pressure p_hi
 s_o = h2o_sat[h2o_sat['P']==p_hi]['sg'].values[0] # this is the original entropy value
 print s_o
+
 #now interpolate down the saturation table and save the values for h, u, P, T, v
 #for idx, row in h2o_sat.iterrows():
 #    h2o_sat.ix[idx, grop] = 0
+
 # save figure to directory
-fig.savefig("graph.png")
+# fig.savefig("graph.png")
