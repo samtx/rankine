@@ -60,7 +60,21 @@ h3 =  h2o_sat[h2o_sat['P']==p_lo]['hf'].values[0]
 s4 = s3 # ideal rankine cycle
 # assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
 v3 = h2o_sat[h2o_sat['P']==p_lo]['vf'].values[0]
-h4 = h3 + v3*(p_hi - p_lo)*(10**3) # convert MPa to kPa 
+wp = v3*(p_hi - p_lo)*(10**3) # convert MPa to kPa
+h4 = h3 + wp
+
+# Find work and heat for each process
+wt = h1 - h2
+qb = h1 - h4
+wnet = wt - wp
+qnet = wnet
+qc = qnet - qb
+
+# Find thermal efficiency for cycle
+eta = wnet / qb
+
+# Find back work ratio
+bwr = wp / wt
 
 # print values to screen
 print 'h1 = ',h1
@@ -68,9 +82,16 @@ print 'h2 = ',h2
 print 'h3 = ',h3
 print 'v3 = ',v3
 print 'h4 = ',h4
+print 'wt = ',wt
+print 'wp = ',wp
+print 'qb = ',qb
+print 'qc = ',qc
+print 'eta = ',eta
+print 'bwr = ',bwr
 # print 'h1 = ',h1
 # print 'h1 = ',h1
 # print 'h1 = ',h1
+
 
 # save figure to directory
 # fig.savefig("graph.png")
