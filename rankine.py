@@ -77,21 +77,17 @@ eta = wnet / qb
 bwr = wp / wt
 
 # print values to screen
-print 'h1 = ',h1
-print 'h2 = ',h2
-print 'h3 = ',h3
-print 'v3 = ',v3
-print 'h4 = ',h4
-print 'wt = ',wt
-print 'wp = ',wp
-print 'qb = ',qb
-print 'qc = ',qc
-print 'eta = ',eta
-print 'bwr = ',bwr
-# print 'h1 = ',h1
-# print 'h1 = ',h1
-# print 'h1 = ',h1
-
+print('h1 = {:.2f}'.format(h1))
+print('h2 = {:.2f}'.format(h2))
+print('h3 = {:.2f}'.format(h3))
+print('v3 = {:.2f}'.format(v3))
+print('h4 = {:.2f}'.format(h4))
+print('wt = {:.2f}'.format(wt))
+print('wp = {:.2f}'.format(wp))
+print('qb = {:.2f}'.format(qb))
+print('qc = {:.2f}'.format(qc))
+print('eta = {:.2f}'.format(eta))
+print('bwr = {:.2f}'.format(bwr))
 
 # save figure to directory
 # fig.savefig("graph.png")
