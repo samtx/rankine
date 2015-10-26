@@ -32,10 +32,7 @@ h2o_comp = h2o_comp.dropna(axis=1) #remove last NaN column
 #print h2o_comp
 
 # begin computing processess for rankine cycle
-fig = plt.figure(1)
-plt.figure(1).suptitle("Rankine Cycle T-s Diagram \n Blue = adiabatic \n Green = isentropic")
-plt.xlabel("Entropy (kJ/kg.K)")
-plt.ylabel("Temperature (deg C)")
+
 
 # State 1, saturated vapor at high pressure
 # assume that this isn't a superheated rankine cycle, so state 2 is saturated vapor at pressure p_hi
@@ -63,6 +60,9 @@ v3 = h2o_sat[h2o_sat['P']==p_lo]['vf'].values[0]
 wp = v3*(p_hi - p_lo)*(10**3) # convert MPa to kPa
 h4 = h3 + wp
 
+# find State 4b, high pressure saturated liquid
+s4b = h2o_sat[h2o_sat['P']==p_hi]['sf'].values[0]
+
 # Find work and heat for each process
 wt = h1 - h2
 qb = h1 - h4
@@ -89,5 +89,33 @@ print('qc = {:.2f}'.format(qc))
 print('eta = {:.2f}'.format(eta))
 print('bwr = {:.2f}'.format(bwr))
 
-# save figure to directory
-# fig.savefig("graph.png")
+# get temperature values for T-s plot
+T1 =  h2o_sat[h2o_sat['P']==p_hi]['T'].values[0]
+T2 =  h2o_sat[h2o_sat['P']==p_lo]['T'].values[0]
+T3 = T2
+T4 = T3 + 5 # temporary until I can interpolate to find real T3
+# note: use h4, s4 to fix the state to find T4
+T_pts = [T1, T2, T3, T4, T1, T1]
+s_pts = [s1, s2, s3, s4, s4b, s1]
+# for i in s_pts: #round to two decimal places
+#   s_pts(i) = float('{:.2f}'.format(i))
+print T_pts
+print s_pts
+
+# draw saturated dome. Get values from sat table
+Tsat_pts = h2o_sat['T'].tolist()
+ssat_pts = h2o_sat['sf'].tolist()
+Tsat_pts.extend(Tsat_pts) # double the temp list to get the sg values also
+ssat_pts.extend(h2o_sat['sg'].tolist())
+# sort the lists
+#Tsat_pts =
+s3 =  h2o_sat[h2o_sat['P']==p_lo]['T'].values[0]
+s3 =  h2o_sat[h2o_sat['P']==p_lo]['T'].values[0]
+
+# Draw T-s plot
+plt.clf()
+plt.plot(s_pts,T_pts,'b',ssat_pts,Tsat_pts,'g')
+plt.suptitle("Rankine Cycle T-s Diagram")
+plt.xlabel("Entropy (kJ/kg.K)")
+plt.ylabel("Temperature (deg C)")
+plt.savefig("graph.png") # save figure to directory
