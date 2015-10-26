@@ -5,19 +5,17 @@ import pandas as pd # for data analysis tools like dataframes
 import math         # duh
 import matplotlib   # for pretty pictures
 matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of using X windows
-import matplotlib.pyplot as plt 
+import matplotlib.pyplot as plt
 
 # Given properties
-
-# number of time steps desired per process
-step = 25
 
 # these pressures must exist in the saturation table
 # ... later add function to create new record of interpolated data in between
 # pressure points if the user selects a pressure that isn't in the saturation table
-p_low = 0.1 # low pressure, in MPa (condenser pressure)
-p_hi = 10 # high pressure, in MPa (boiler pressure)
+p_lo = 0.008 # low pressure, in MPa (condenser pressure)
+p_hi = 8.0 # high pressure, in MPa (boiler pressure)
 
+# read in table values
 h2o_psat = pd.read_csv('H2O_PresSat.csv')
 h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
 #print h2o_psat
@@ -27,11 +25,8 @@ h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
 # merge the psat and tsat tables into one saturated table
 h2o_sat = pd.concat([h2o_psat,h2o_tsat], axis=0, join='outer', join_axes=None, ignore_index=True,
                     keys=None, levels=None, names=None, verify_integrity=False)
-#print h2o_sat
-#sort by pressure
+
 h2o_sat = h2o_sat.sort('P')
-#print 'sorted...'
-#print h2o_sat
 h2o_comp = pd.read_csv('H2O_Compressed.csv')
 h2o_comp = h2o_comp.dropna(axis=1) #remove last NaN column
 #print h2o_comp
@@ -42,23 +37,61 @@ plt.figure(1).suptitle("Rankine Cycle T-s Diagram \n Blue = adiabatic \n Green =
 plt.xlabel("Entropy (kJ/kg.K)")
 plt.ylabel("Temperature (deg C)")
 
-# create numpy arrays to save data from modeling
-TT = np.zeros(step*4)
-PP = np.zeros(step*4)
-vv = np.zeros(step*4)
-uu = np.zeros(step*4)
-hh = np.zeros(step*4)
-ss = np.zeros(step*4)
-xx = np.zeros(step*4)
-
-# process 2-3, isentropic turbine expansion with work output
+# State 1, saturated vapor at high pressure
 # assume that this isn't a superheated rankine cycle, so state 2 is saturated vapor at pressure p_hi
-s_o = h2o_sat[h2o_sat['P']==p_hi]['sg'].values[0] # this is the original entropy value
-print s_o
+s1 = h2o_sat[h2o_sat['P']==p_hi]['sg'].values[0]
+h1 = h2o_sat[h2o_sat['P']==p_hi]['hg'].values[0]
 
-#now interpolate down the saturation table and save the values for h, u, P, T, v
-#for idx, row in h2o_sat.iterrows():
-#    h2o_sat.ix[idx, grop] = 0
+# State 2, two-phase at low pressure
+s2 = s1  # ideal rankine cycle
+# find h_3 from s_2 and p_lo. first get the quality x_3
+sf =  h2o_sat[h2o_sat['P']==p_lo]['sf'].values[0]
+sg =  h2o_sat[h2o_sat['P']==p_lo]['sg'].values[0]
+x2 = (s2 - sf)/(sg - sf) # quality at state 3
+hf =  h2o_sat[h2o_sat['P']==p_lo]['hf'].values[0]
+hg =  h2o_sat[h2o_sat['P']==p_lo]['hg'].values[0]
+h2 = x2 * (hg - hf) + hf
+
+# State 3, saturated liquid at low pressure
+s3 =  h2o_sat[h2o_sat['P']==p_lo]['sf'].values[0]
+h3 =  h2o_sat[h2o_sat['P']==p_lo]['hf'].values[0]
+
+# State 4, sub-cooled liquid at high pressure
+s4 = s3 # ideal rankine cycle
+# assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
+v3 = h2o_sat[h2o_sat['P']==p_lo]['vf'].values[0]
+wp = v3*(p_hi - p_lo)*(10**3) # convert MPa to kPa
+h4 = h3 + wp
+
+# Find work and heat for each process
+wt = h1 - h2
+qb = h1 - h4
+wnet = wt - wp
+qnet = wnet
+qc = qnet - qb
+
+# Find thermal efficiency for cycle
+eta = wnet / qb
+
+# Find back work ratio
+bwr = wp / wt
+
+# print values to screen
+print 'h1 = ',h1
+print 'h2 = ',h2
+print 'h3 = ',h3
+print 'v3 = ',v3
+print 'h4 = ',h4
+print 'wt = ',wt
+print 'wp = ',wp
+print 'qb = ',qb
+print 'qc = ',qc
+print 'eta = ',eta
+print 'bwr = ',bwr
+# print 'h1 = ',h1
+# print 'h1 = ',h1
+# print 'h1 = ',h1
+
 
 # save figure to directory
 # fig.savefig("graph.png")
