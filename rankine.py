@@ -99,22 +99,20 @@ T_pts = [T1, T2, T3, T4, T1, T1]
 s_pts = [s1, s2, s3, s4, s4b, s1]
 # for i in s_pts: #round to two decimal places
 #   s_pts(i) = float('{:.2f}'.format(i))
-print T_pts
-print s_pts
+#print T_pts
+#print s_pts
 
 # draw saturated dome. Get values from sat table
 Tsat_pts = h2o_sat['T'].tolist()
-ssat_pts = h2o_sat['sf'].tolist()
-Tsat_pts.extend(Tsat_pts) # double the temp list to get the sg values also
-ssat_pts.extend(h2o_sat['sg'].tolist())
+sfsat_pts = h2o_sat['sf'].tolist()
+sgsat_pts = h2o_sat['sg'].tolist()
 # sort the lists
 #Tsat_pts =
-s3 =  h2o_sat[h2o_sat['P']==p_lo]['T'].values[0]
-s3 =  h2o_sat[h2o_sat['P']==p_lo]['T'].values[0]
 
 # Draw T-s plot
 plt.clf()
-plt.plot(s_pts,T_pts,'b',ssat_pts,Tsat_pts,'g')
+plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
+#plt.plot(s_pts,T_pts,'b',ssat_pts,Tsat_pts,'g--')
 plt.suptitle("Rankine Cycle T-s Diagram")
 plt.xlabel("Entropy (kJ/kg.K)")
 plt.ylabel("Temperature (deg C)")
