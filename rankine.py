@@ -90,7 +90,7 @@ qnet = wnet
 qc = qnet - qb
 
 # Find thermal efficiency for cycle
-eta = wnet / qb
+thermal_eff = wnet / qb
 
 # Find back work ratio
 bwr = wp / wt
@@ -112,7 +112,7 @@ print('wt = {:.2f}'.format(wt))
 print('wp = {:.2f}'.format(wp))
 print('qb = {:.2f}'.format(qb))
 print('qc = {:.2f}'.format(qc))
-print('eta = {:.3f}'.format(eta))
+print('thermal_eff = {:.3f}'.format(thermal_eff))
 print('bwr = {:.3f}'.format(bwr))
 
 # get temperature values for T-s plot
