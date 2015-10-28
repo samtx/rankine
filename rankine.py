@@ -10,11 +10,12 @@ matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of u
 import matplotlib.pyplot as plt
 ######################################
 #Obtaining user input
-print "Select a working fluid from the following options: "
-print "1. H20" "\n" "2. Ethane" "\n" "3. Propane" "\n" "4. R22" "\n" "5. R134a" "\n" "6. R236ea" "\n" "7 CO2" "\n" "8. Pentane" "\n" "9. Isobutene"
-userinput = input("...I'm waiting: ")
 done = 0
 while not done:
+  print "Select a working fluid from the following options: "
+  print "1. H20" "\n" "2. Ethane" "\n" "3. Propane" "\n" "4. R22" "\n" "5. R134a" "\n" "6. R236ea" "\n" "7. CO2" "\n" "8. Pentane" "\n" "9. Isobutene"
+  userinput = int(input(": "))
+
   if userinput == 1:
     # read in table values
     h2o_psat = pd.read_csv('H2O_PresSat.csv')
@@ -22,52 +23,52 @@ while not done:
     h2o_tsat = pd.read_csv('H2O_TempSat.csv')
     h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
     done = 1
-  if userinput == 2:
+  elif userinput == 2:
     h2o_psat = pd.read_csv('Ethane_PresSat.csv')
     h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
     h2o_tsat = pd.read_csv('Ethane_TempSat.csv')
     h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
     done = 1
-  if userinput == 3:
+  elif userinput == 3:
     # read in table values
     h2o_psat = pd.read_csv('H20_PressSat.csv')
     h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
     h2o_tsat = pd.read_csv('H2O_TempSat.csv')
     h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
     done = 1
-  if userinput == 4:
+  elif userinput == 4:
     h2o_psat = pd.read_csv('Ethane_PresSat.csv')
     h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
     h2o_tsat = pd.read_csv('Ethane_TempSat.csv')
     h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
     done = 1
-  if userinput == 5:
+  elif userinput == 5:
     # read in table values
     h2o_psat = pd.read_csv('R22_PresSat.csv')
     h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
     h2o_tsat = pd.read_csv('R22_TempSat.csv')
     h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
     done = 1
-  if userinput == 6:
+  elif userinput == 6:
     h2o_psat = pd.read_csv('R134a_PresSat.csv')
     h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
     h2o_tsat = pd.read_csv('R134a_TempSat.csv')
     h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
     done = 1
-  if userinput == 7:
+  elif userinput == 7:
     # read in table values
     h2o_psat = pd.read_csv('CO2_PresSat.csv')
     h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
     h2o_tsat = pd.read_csv('CO2_TempSat.csv')
     h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
     done = 1
-  if userinput == 8:
+  elif userinput == 8:
     h2o_psat = pd.read_csv('Pentane_PresSat.csv')
     h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
     h2o_tsat = pd.read_csv('Pentane_TempSat.csv')
     h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
     done = 1
-  if userinput == 9:
+  elif userinput == 9:
     # read in table values
     h2o_psat = pd.read_csv('Isobutane_PresSat.csv')
     h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
@@ -76,7 +77,6 @@ while not done:
     done = 1
   else:
     print "Invalid input: Please Select Again"
-    userinput = input(":")
 
 # Given properties
 
@@ -87,8 +87,10 @@ p_lo = input("Enter the desired low pressure(condenser pressure) in MPa: ") #0.0
 p_hi = input("Enter the desired high pressure(boiler pressure) in MPa: ")   #8.0 # high pressure, in MPa (boiler pressure)
 
 # Isentropic efficiencies of pump and turbine in decimal notation. Default is 1.0 for 100% efficiency
-turb_eff = .70  # turbine efficency
-pump_eff = .70  # pump efficiency
+print "Enter the turbine efficiency in decimal--Default to 1.0"
+turb_eff = input(":") #.70  # turbine efficency
+print "Enter the pump efficiency in decimal--Default to 1.0"
+pump_eff = input(":") #.70  # pump efficiency
 
 # read in table values
 ##h2o_psat = pd.read_csv('H2O_PresSat.csv')
@@ -208,7 +210,7 @@ sgsat_pts = h2o_sat['sg'].tolist()
 
 # Draw T-s plot
 plt.clf()
-plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
+plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'r--',sgsat_pts,Tsat_pts,'g--')
 #plt.plot(s_pts,T_pts,'b',ssat_pts,Tsat_pts,'g--')
 plt.suptitle("Rankine Cycle T-s Diagram")
 plt.xlabel("Entropy (kJ/kg.K)")
