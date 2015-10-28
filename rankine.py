@@ -86,6 +86,10 @@ while not done:
 p_lo = input("Enter the desired low pressure(condenser pressure) in MPa: ") #0.008 # low pressure, in MPa (condenser pressure)
 p_hi = input("Enter the desired high pressure(boiler pressure) in MPa: ")   #8.0 # high pressure, in MPa (boiler pressure)
 
+# Isentropic efficiencies of pump and turbine in decimal notation. Default is 1.0 for 100% efficiency
+turb_eff = .70  # turbine efficency
+pump_eff = .70  # pump efficiency
+
 # read in table values
 ##h2o_psat = pd.read_csv('H2O_PresSat.csv')
 ##h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
@@ -113,25 +117,38 @@ s1 = h2o_sat[h2o_sat['P']==p_hi]['sg'].values[0]
 h1 = h2o_sat[h2o_sat['P']==p_hi]['hg'].values[0]
 
 # State 2, two-phase at low pressure
-s2 = s1  # ideal rankine cycle
-# find h_3 from s_2 and p_lo. first get the quality x_3
 sf =  h2o_sat[h2o_sat['P']==p_lo]['sf'].values[0]
 sg =  h2o_sat[h2o_sat['P']==p_lo]['sg'].values[0]
-x2 = (s2 - sf)/(sg - sf) # quality at state 3
 hf =  h2o_sat[h2o_sat['P']==p_lo]['hf'].values[0]
 hg =  h2o_sat[h2o_sat['P']==p_lo]['hg'].values[0]
-h2 = x2 * (hg - hf) + hf
+# find values for isentropic turbine operation
+# find h_2s from s_1 and p_lo. first get the quality x_2s
+s2s = s1
+x2s = (s2s - sf)/(sg - sf) # quality at state 2s
+h2s = x2s * (hg - hf) + hf  # using an internally reversible turbine
+# !!! put check here to make sure state isn't superheated !!!
+# find values for irreversible turbine operation
+h2 = turb_eff * (h2s - h1) + h1  # with an irreversible turbine
+x2 = (h2 - hf)/(hg - hf) # quality at state 2
+s2 = x2 * (sg - sf) + sf # entropy at state 2
 
 # State 3, saturated liquid at low pressure
 s3 =  h2o_sat[h2o_sat['P']==p_lo]['sf'].values[0]
 h3 =  h2o_sat[h2o_sat['P']==p_lo]['hf'].values[0]
 
 # State 4, sub-cooled liquid at high pressure
-s4 = s3 # ideal rankine cycle
 # assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
 v3 = h2o_sat[h2o_sat['P']==p_lo]['vf'].values[0]
-wp = v3*(p_hi - p_lo)*(10**3) # convert MPa to kPa
+# find values for isentropic pump operation
+s4s = s3 # ideal rankine cycle
+wps = v3*(p_hi - p_lo)*(10**3) # convert MPa to kPa
+h4s = h3 + wps
+# find values for irreversible pump operation
+wp = 1/pump_eff * (h4s - h3)
 h4 = h3 + wp
+# !!! find entropy s4 somehow !!!
+s4 = s4s + 0.01  # temporary until I figure this out
+
 
 # find State 4b, high pressure saturated liquid
 s4b = h2o_sat[h2o_sat['P']==p_hi]['sf'].values[0]
@@ -150,17 +167,24 @@ eta = wnet / qb
 bwr = wp / wt
 
 # print values to screen
-print('h1 = {:.2f}'.format(h1))
-print('h2 = {:.2f}'.format(h2))
-print('h3 = {:.2f}'.format(h3))
+print(' h1 = {:.2f}    s1 = {:.4f}'.format(h1,s1))
+print('h2s = {:.2f}   s2s = {:.4f}'.format(h2s,s2s))
+print(' h2 = {:.2f}    s2 = {:.4f}'.format(h2,s2))
+print(' h3 = {:.2f}    s3 = {:.4f}'.format(h3,s3))
+print('h4s = {:.2f}   s4s = {:.4f}'.format(h4s,s4s))
+print(' h4 = {:.2f}    s4 = {:.4f}'.format(h4,s4))
+
+print('x2s = {:.2f}'.format(x2s))
+print(' x2 = {:.2f}'.format(x2))
+
 print('v3 = {:.2f}'.format(v3))
-print('h4 = {:.2f}'.format(h4))
+
 print('wt = {:.2f}'.format(wt))
 print('wp = {:.2f}'.format(wp))
 print('qb = {:.2f}'.format(qb))
 print('qc = {:.2f}'.format(qc))
-print('eta = {:.2f}'.format(eta))
-print('bwr = {:.2f}'.format(bwr))
+print('eta = {:.3f}'.format(eta))
+print('bwr = {:.3f}'.format(bwr))
 
 # get temperature values for T-s plot
 T1 =  h2o_sat[h2o_sat['P']==p_hi]['T'].values[0]
