@@ -8,15 +8,30 @@ import math         # duh
 import matplotlib   # for pretty pictures
 matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of using X windows
 import matplotlib.pyplot as plt
+import os           # for file system utilities
 ######################################
 #Obtaining user input
 done = 0
+eg_mode = False
 while not done:
   print "Select a working fluid from the following options: "
   print "1. H20" "\n" "2. Ethane" "\n" "3. Propane" "\n" "4. R22" "\n" "5. R134a" "\n" "6. R236ea" "\n" "7. CO2" "\n" "8. Pentane" "\n" "9. Isobutene"
   userinput = int(input(": "))
-
-  if userinput == 1:
+  # add a "quicktest" command
+  if userinput == 0:
+    # Example problem
+    eg_mode = True
+    # read in table values
+    h2o_psat = pd.read_csv('H2O_PresSat.csv')
+    h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
+    h2o_tsat = pd.read_csv('H2O_TempSat.csv')
+    h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
+    done = 1
+    p_lo = 0.008
+    p_hi = 8.0
+    turb_eff = .80
+    pump_eff = .75
+  elif userinput == 1:
     # read in table values
     h2o_psat = pd.read_csv('H2O_PresSat.csv')
     h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
@@ -83,14 +98,16 @@ while not done:
 # these pressures must exist in the saturation table
 # ... later add function to create new record of interpolated data in between
 # pressure points if the user selects a pressure that isn't in the saturation table
-p_lo = input("Enter the desired low pressure(condenser pressure) in MPa: ") #0.008 # low pressure, in MPa (condenser pressure)
-p_hi = input("Enter the desired high pressure(boiler pressure) in MPa: ")   #8.0 # high pressure, in MPa (boiler pressure)
+if not eg_mode:
+  p_lo = input("Enter the desired low pressure(condenser pressure) in MPa: ") #0.008 # low pressure, in MPa (condenser pressure)
+  p_hi = input("Enter the desired high pressure(boiler pressure) in MPa: ")   #8.0 # high pressure, in MPa (boiler pressure)
 
 # Isentropic efficiencies of pump and turbine in decimal notation. Default is 1.0 for 100% efficiency
-print "Enter the turbine efficiency in decimal--Default to 1.0"
-turb_eff = input(":") #.70  # turbine efficency
-print "Enter the pump efficiency in decimal--Default to 1.0"
-pump_eff = input(":") #.70  # pump efficiency
+if not eg_mode:
+  print "Enter the turbine efficiency in decimal--Default to 1.0"
+  turb_eff = input(":") #.70  # turbine efficency
+  print "Enter the pump efficiency in decimal--Default to 1.0"
+  pump_eff = input(":") #.70  # pump efficiency
 
 # read in table values
 ##h2o_psat = pd.read_csv('H2O_PresSat.csv')
@@ -190,12 +207,22 @@ print('bwr = {:.3f}'.format(bwr))
 
 # get temperature values for T-s plot
 T1 =  h2o_sat[h2o_sat['P']==p_hi]['T'].values[0]
-T2 =  h2o_sat[h2o_sat['P']==p_lo]['T'].values[0]
-T3 = T2
-T4 = T3 + 5 # temporary until I can interpolate to find real T3
+T2 =  h2o_sat[h2o_sat['P']==p_lo]['T'].values[0] # come back to this
+T2s = T2  # come back to this
+T3 = T2s
+T4s = T3 + 5 # temporary until I can interpolate to find real T4
+T4b = T1
+T4 = T4b * (s4 - s4s)/(s4b - s4s) + T4s
+
 # note: use h4, s4 to fix the state to find T4
-T_pts = [T1, T2, T3, T4, T1, T1]
-s_pts = [s1, s2, s3, s4, s4b, s1]
+T_pts = [T1, T2s, T2, T2s, T3, T4s, T4b, T1] # solid lines
+s_pts = [s1, s2s, s2, s2s, s3, s4s, s4b, s1]
+
+s_dash_12 = [s1, s2]
+T_dash_12 = [T1, T2]
+s_dash_34 = [s3, s4]
+T_dash_34 = [T3, T4]
+
 # for i in s_pts: #round to two decimal places
 #   s_pts(i) = float('{:.2f}'.format(i))
 #print T_pts
@@ -210,9 +237,14 @@ sgsat_pts = h2o_sat['sg'].tolist()
 
 # Draw T-s plot
 plt.clf()
-plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'r--',sgsat_pts,Tsat_pts,'g--')
-#plt.plot(s_pts,T_pts,'b',ssat_pts,Tsat_pts,'g--')
+plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
+plt.plot(s_dash_12,T_dash_12,'b--',s_dash_34,T_dash_34,'b--')
 plt.suptitle("Rankine Cycle T-s Diagram")
 plt.xlabel("Entropy (kJ/kg.K)")
 plt.ylabel("Temperature (deg C)")
-plt.savefig("graph.png") # save figure to directory
+# Save plot
+filename = 'ts_plot.png'
+# if os.access(filename,os.F_OK):  # check if a ts_plot.png already exists
+#   if not os.access(filename,os.W_OK): # check to see if it is not writable
+#     os.fchmod(filename,stat.S_IWOTH) # if not writable, then make it writable
+plt.savefig(filename) # save figure to directory
