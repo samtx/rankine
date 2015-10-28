@@ -9,6 +9,7 @@ import matplotlib   # for pretty pictures
 matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of using X windows
 import matplotlib.pyplot as plt
 import os           # for file system utilities
+import sys
 ######################################
 #Obtaining user input
 done = 0
@@ -16,8 +17,13 @@ eg_mode = False
 while not done:
   print "Select a working fluid from the following options: "
   print "1. H20" "\n" "2. Ethane" "\n" "3. Propane" "\n" "4. R22" "\n" "5. R134a" "\n" "6. R236ea" "\n" "7. CO2" "\n" "8. Pentane" "\n" "9. Isobutene"
-  userinput = int(input(": "))
-  # add a "quicktest" command
+  userinput = raw_input(": ")
+  # gracefully exit
+  exit_cmds = ['quit','exit','q','x','e','stop']
+  if userinput.lower() in exit_cmds:
+    sys.exit() # exit
+  else:
+    userinput = int(userinput)
   if userinput == 0:
     # Example problem
     eg_mode = True
