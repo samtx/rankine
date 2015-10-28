@@ -8,27 +8,98 @@ import math         # duh
 import matplotlib   # for pretty pictures
 matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of using X windows
 import matplotlib.pyplot as plt
+######################################
+#Obtaining user input
+print "Select a working fluid from the following options: "
+print "1. H20" "\n" "2. Ethane" "\n" "3. Propane" "\n" "4. R22" "\n" "5. R134a" "\n" "6. R236ea" "\n" "7 CO2" "\n" "8. Pentane" "\n" "9. Isobutene"
+userinput = input("...I'm waiting: ")
+done = 0
+while not done:
+  if userinput == 1:
+    # read in table values
+    h2o_psat = pd.read_csv('H2O_PresSat.csv')
+    h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
+    h2o_tsat = pd.read_csv('H2O_TempSat.csv')
+    h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
+    done = 1
+  if userinput == 2:
+    h2o_psat = pd.read_csv('Ethane_PresSat.csv')
+    h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
+    h2o_tsat = pd.read_csv('Ethane_TempSat.csv')
+    h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
+    done = 1
+  if userinput == 3:
+    # read in table values
+    h2o_psat = pd.read_csv('H20_PressSat.csv')
+    h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
+    h2o_tsat = pd.read_csv('H2O_TempSat.csv')
+    h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
+    done = 1
+  if userinput == 4:
+    h2o_psat = pd.read_csv('Ethane_PresSat.csv')
+    h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
+    h2o_tsat = pd.read_csv('Ethane_TempSat.csv')
+    h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
+    done = 1
+  if userinput == 5:
+    # read in table values
+    h2o_psat = pd.read_csv('R22_PresSat.csv')
+    h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
+    h2o_tsat = pd.read_csv('R22_TempSat.csv')
+    h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
+    done = 1
+  if userinput == 6:
+    h2o_psat = pd.read_csv('R134a_PresSat.csv')
+    h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
+    h2o_tsat = pd.read_csv('R134a_TempSat.csv')
+    h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
+    done = 1
+  if userinput == 7:
+    # read in table values
+    h2o_psat = pd.read_csv('CO2_PresSat.csv')
+    h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
+    h2o_tsat = pd.read_csv('CO2_TempSat.csv')
+    h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
+    done = 1
+  if userinput == 8:
+    h2o_psat = pd.read_csv('Pentane_PresSat.csv')
+    h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
+    h2o_tsat = pd.read_csv('Pentane_TempSat.csv')
+    h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
+    done = 1
+  if userinput == 9:
+    # read in table values
+    h2o_psat = pd.read_csv('Isobutane_PresSat.csv')
+    h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
+    h2o_tsat = pd.read_csv('Isobutane_TempSat.csv')
+    h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
+    done = 1
+  else:
+    print "Invalid input: Please Select Again"
+    userinput = input(":")
 
 # Given properties
 
 # these pressures must exist in the saturation table
 # ... later add function to create new record of interpolated data in between
 # pressure points if the user selects a pressure that isn't in the saturation table
-p_lo = 0.008 # low pressure, in MPa (condenser pressure)
-p_hi = 8.0 # high pressure, in MPa (boiler pressure)
+p_lo = input("Enter the desired low pressure(condenser pressure) in MPa: ") #0.008 # low pressure, in MPa (condenser pressure)
+p_hi = input("Enter the desired high pressure(boiler pressure) in MPa: ")   #8.0 # high pressure, in MPa (boiler pressure)
 
 # read in table values
-h2o_psat = pd.read_csv('H2O_PresSat.csv')
-h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
+##h2o_psat = pd.read_csv('H2O_PresSat.csv')
+##h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
 #print h2o_psat
-h2o_tsat = pd.read_csv('H2O_TempSat.csv')
-h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
+##h2o_tsat = pd.read_csv('H2O_TempSat.csv')
+##h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
 #print h2o_tsat
 # merge the psat and tsat tables into one saturated table
 h2o_sat = pd.concat([h2o_psat,h2o_tsat], axis=0, join='outer', join_axes=None, ignore_index=True,
                     keys=None, levels=None, names=None, verify_integrity=False)
 
 h2o_sat = h2o_sat.sort('P')
+
+## Will we have compressed tables for everthing?? We will have to address this based upon what Colton finds
 h2o_comp = pd.read_csv('H2O_Compressed.csv')
 h2o_comp = h2o_comp.dropna(axis=1) #remove last NaN column
 #print h2o_comp
