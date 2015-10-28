@@ -210,8 +210,13 @@ sgsat_pts = h2o_sat['sg'].tolist()
 
 # Draw T-s plot
 plt.clf()
-plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'r--',sgsat_pts,Tsat_pts,'g--')
+plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'r--')
 #plt.plot(s_pts,T_pts,'b',ssat_pts,Tsat_pts,'g--')
+plt.annotate("1.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
+plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
+plt.annotate("3.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+25 ), arrowprops=dict(facecolor = 'red', shrink=0.05),)
+plt.annotate("4.", xy = (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
+
 plt.suptitle("Rankine Cycle T-s Diagram")
 plt.xlabel("Entropy (kJ/kg.K)")
 plt.ylabel("Temperature (deg C)")
