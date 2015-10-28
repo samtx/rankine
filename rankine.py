@@ -16,13 +16,13 @@ done = 0
 eg_mode = False
 while not done:
   print "Select a working fluid from the following options: "
-  print "1. H20" "\n" "2. Ethane" "\n" "3. Propane" "\n" "4. R22" "\n" "5. R134a" "\n" "6. R236ea" "\n" "7. CO2" "\n" "8. Pentane" "\n" "9. Isobutene"
+  print " 1. H20\n 2. Ethane\n 3. Propane\n 4. R22\n 5. R134a\n 6. R236ea\n 7. CO2\n 8. Pentane\n 9. Isobutene"
   userinput = raw_input(": ")
   # gracefully exit
   exit_cmds = ['quit','exit','q','x','e','stop']
-  if userinput.lower() in exit_cmds:
+  if (userinput.lower() in exit_cmds):
     sys.exit() # exit
-  else:
+  elif userinput.isdigit():
     userinput = int(userinput)
   if userinput == 0:
     # Example problem
@@ -97,7 +97,7 @@ while not done:
     h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
     done = 1
   else:
-    print "Invalid input: Please Select Again"
+    print "Invalid input: Please Select Again. Enter q to quit.\n"
 
 # Given properties
 
