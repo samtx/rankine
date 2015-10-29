@@ -110,10 +110,8 @@ if not eg_mode:
 
 # Isentropic efficiencies of pump and turbine in decimal notation. Default is 1.0 for 100% efficiency
 if not eg_mode:
-  print "Enter the turbine efficiency in decimal--Default to 1.0"
-  turb_eff = input(":") #.70  # turbine efficency
-  print "Enter the pump efficiency in decimal--Default to 1.0"
-  pump_eff = input(":") #.70  # pump efficiency
+  turb_eff = input("Enter the turbine efficiency in decimal--Default to 1.0: ")
+  pump_eff = input("Enter the pump efficiency in decimal--Default to 1.0: ")
 
 # read in table values
 ##h2o_psat = pd.read_csv('H2O_PresSat.csv')
