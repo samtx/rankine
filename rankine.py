@@ -115,9 +115,33 @@ if not eg_mode:
 
 # Isentropic efficiencies of pump and turbine in decimal notation. Default is 1.0 for 100% efficiency
 if not eg_mode:
-  turb_eff = input("Enter the turbine efficiency in decimal--Default to 1.0: ")
-
-  pump_eff = input("Enter the pump efficiency in decimal--Default to 1.0: ")
+  while True:
+    turb_eff = raw_input("Enter the turbine efficiency in %. Default is 100%: ").strip('%')
+    if (turb_eff.lower() in exit_cmds):
+      sys.exit() # exit
+    if turb_eff == "":
+      turb_eff = 1.0  # default if nothing is entered
+      break
+    try:
+      turb_eff = float(turb_eff)
+    except ValueError:
+      print('Please enter a number or Q to quit')
+      continue
+    if turb_eff == 0:
+      print("Can't have 0% turbine efficiency")
+      continue
+    elif turb_eff > 100:
+      print("Can't have over 100% turbine efficiency")
+      continue
+    elif turb_eff > 1.0:
+      turb_eff = turb_eff/100 # convert to decimal if entered in percent
+    break
+  # pump efficiency
+  tries = 0
+  while tries < 10:
+    pump_eff = float(raw_input("Enter the pump efficiency in %. Default is 100%: ").strip('%'))
+    if pump_eff > 1.0:
+      pump_eff = pump_eff/100 # convert to decimal if entered in percent
 
 # read in table values
 ##h2o_psat = pd.read_csv('H2O_PresSat.csv')
