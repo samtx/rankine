@@ -102,7 +102,7 @@ while not done:
     h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
     done = 1
   else:
-    print "Invalid input: Please Select Again. Enter q to quit.\n"
+    print "Invalid input: Please Select Again. Enter Q to quit.\n"
 
 # Given properties
 
@@ -110,8 +110,28 @@ while not done:
 # ... later add function to create new record of interpolated data in between
 # pressure points if the user selects a pressure that isn't in the saturation table
 if not eg_mode:
-  p_lo = input("Enter the desired low pressure(condenser pressure) in MPa: ") #0.008 # low pressure, in MPa (condenser pressure)
-  p_hi = input("Enter the desired high pressure(boiler pressure) in MPa: ")   #8.0 # high pressure, in MPa (boiler pressure)
+  while True:
+    # low pressure
+    p_lo = raw_input("Enter the desired low pressure (condenser pressure) in MPa: ") #0.008 # low pressure, in MPa (condenser pressure)
+    if p_lo in exit_cmds:
+      sys.exit() #exit
+    try:
+      p_lo = float(p_lo)
+    except:
+      print("Please enter a number or Q to quit.")
+      continue
+    break
+  while True:
+    # high pressure
+    p_hi = raw_input("Enter the desired high pressure (boiler pressure) in MPa: ")   #8.0 # high pressure, in MPa (boiler pressure)
+    if p_hi in exit_cmds:
+      sys.exit() #exit
+    try:
+      p_hi = float(p_hi)
+    except:
+      print("Please enter a number or Q to quit.")
+      continue
+    break
 
 # Isentropic efficiencies of pump and turbine in decimal notation. Default is 1.0 for 100% efficiency
 if not eg_mode:
@@ -156,9 +176,9 @@ if not eg_mode:
       print("Can't have over 100% pump efficiency")
       continue
     elif pump_eff > 1.0:
-      pump_eff = pump_eff/100 # convert to decimal if entered in percent
+      pump_eff = pump_eff/100 # assume entered in percent, convert to decimal
     break
-    
+
 # read in table values
 ##h2o_psat = pd.read_csv('H2O_PresSat.csv')
 ##h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
