@@ -10,6 +10,7 @@ matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of u
 import matplotlib.pyplot as plt
 import os           # for file system utilities
 import sys
+from prettytable import PrettyTable #for output formatting
 ######################################
 #Obtaining user input
 done = 0
@@ -115,6 +116,7 @@ if not eg_mode:
 # Isentropic efficiencies of pump and turbine in decimal notation. Default is 1.0 for 100% efficiency
 if not eg_mode:
   turb_eff = input("Enter the turbine efficiency in decimal--Default to 1.0: ")
+
   pump_eff = input("Enter the pump efficiency in decimal--Default to 1.0: ")
 
 # read in table values
@@ -194,24 +196,37 @@ thermal_eff = wnet / qb
 bwr = wp / wt
 
 # print values to screen
-print(' h1 = {:.2f}    s1 = {:.4f}'.format(h1,s1))
-print('h2s = {:.2f}   s2s = {:.4f}'.format(h2s,s2s))
-print(' h2 = {:.2f}    s2 = {:.4f}'.format(h2,s2))
-print(' h3 = {:.2f}    s3 = {:.4f}'.format(h3,s3))
-print('h4s = {:.2f}   s4s = {:.4f}'.format(h4s,s4s))
-print(' h4 = {:.2f}    s4 = {:.4f}'.format(h4,s4))
+t = PrettyTable(['State','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Quality'])
+t.align['Enthalpy (kJ/kg)'] = 'r'
+t.align['Entropy (kJ/kg.K)']= 'r'
+t.float_format['Enthalpy (kJ/kg)'] = '4.2'
+t.float_format['Entropy (kJ/kg.K)'] = '6.5'
+t.float_format['Quality'] = '0.2'
+t.padding_width = 1
+t.add_row(['1',h1,s1,'Sat Vapor'])
+t.add_row(['2s',h2s,s2s,x2s])
+t.add_row(['2',h2,s2,x2])
+t.add_row(['3',h3,s3,'Sat Liquid'])
+t.add_row(['4s',h4s,s4s,'Sub-Cooled Liq'])
+t.add_row(['4',h4,s4,'Sub-Cooled Liq'])
+print t,'\n'
 
-print('x2s = {:.2f}'.format(x2s))
-print(' x2 = {:.2f}'.format(x2))
+t = PrettyTable(['Process','Heat (kJ/kg)','Work (kJ/kg)'])
+t.align['Heat (kJ/kg)'] = 'r'
+t.align['Work (kJ/kg)'] = 'r'
+t.float_format['Heat (kJ/kg)'] = '5.1'
+t.float_format['Work (kJ/kg)'] = '5.1'
+t.add_row(['1 - 2',0,wt])
+t.add_row(['2 - 3',qc,0])
+t.add_row(['3 - 4',0,wp])
+t.add_row(['4 - 1',qb,0])
+t.add_row(['Net',qb-qc,wt-wp])
+print t
 
-print('v3 = {:.2f}'.format(v3))
-
-print('wt = {:.2f}'.format(wt))
-print('wp = {:.2f}'.format(wp))
-print('qb = {:.2f}'.format(qb))
-print('qc = {:.2f}'.format(qc))
-print('thermal_eff = {:.3f}'.format(thermal_eff))
-print('bwr = {:.3f}'.format(bwr))
+print('\nOther Values \n------------ ')
+print('v3 = {:.6f}'.format(v3))
+print('thermal efficiency = {:.3f}'.format(thermal_eff))
+print('back work ratio = {:.3f}'.format(bwr))
 
 # get temperature values for T-s plot
 T1 =  h2o_sat[h2o_sat['P']==p_hi]['T'].values[0]
