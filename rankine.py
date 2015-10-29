@@ -173,8 +173,8 @@ s4s = s3 # ideal rankine cycle
 wps = -v3*(p_hi - p_lo)*(10**3) # convert MPa to kPa
 h4s = h3 - wps
 # find values for irreversible pump operation
-wp = 1/pump_eff * (h4s - h3)
-h4 = h3 + wp
+wp = 1/pump_eff * (h3 - h4s)
+h4 = h3 - wp
 # !!! find entropy s4 somehow !!!
 s4 = s4s + 0.01  # temporary until I figure this out
 
@@ -185,15 +185,15 @@ s4b = h2o_sat[h2o_sat['P']==p_hi]['sf'].values[0]
 # Find work and heat for each process
 wt = h1 - h2
 qb = h1 - h4
-wnet = wt - wp
-qnet = wnet
-qc = qnet - qb
+qc = h3 - h2
+wnet = wt + wp
+qnet = qb + qc
 
 # Find thermal efficiency for cycle
 thermal_eff = wnet / qb
 
 # Find back work ratio
-bwr = wp / wt
+bwr = -wp / wt
 
 # print values to screen
 t = PrettyTable(['State','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Quality'])
@@ -220,11 +220,11 @@ t.add_row(['1 - 2',0,wt])
 t.add_row(['2 - 3',qc,0])
 t.add_row(['3 - 4',0,wp])
 t.add_row(['4 - 1',qb,0])
-t.add_row(['Net',qb-qc,wt-wp])
+t.add_row(['Net',qb+qc,wt+wp])
 print t
 
 print('\nOther Values \n------------ ')
-print('v3 = {:.6f}'.format(v3))
+print('v3 = {:.4e}'.format(v3))
 print('thermal efficiency = {:.3f}'.format(thermal_eff))
 print('back work ratio = {:.3f}'.format(bwr))
 
