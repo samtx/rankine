@@ -38,12 +38,14 @@ while not done:
     p_hi = 8.0
     turb_eff = .80
     pump_eff = .75
+    fluid = 'H2O'
   elif userinput == 1:
     # read in table values
     h2o_psat = pd.read_csv('H2O_PresSat.csv')
     h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
     h2o_tsat = pd.read_csv('H2O_TempSat.csv')
     h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
+    fluid = 'H2O'
     done = 1
   # until we get csv tables loaded for the other organic fluids, don't crash the program if they are selected
   elif userinput in range(2,10):
@@ -256,6 +258,14 @@ thermal_eff = wnet / qb
 bwr = -wp / wt
 
 # print values to screen
+
+print('\nUser entered values\n-------------------')
+print('Working Fluid: '+fluid)
+print('Low Pressure:  {:>3.3f} MPa'.format(p_lo))
+print('High Pressure: {:>3.3f} MPa'.format(p_hi))
+print('Isentropic Turbine Efficiency: {:>2.1f}%'.format(turb_eff*100))
+print('Isentropic Pump Efficiency:    {:>2.1f}%\n'.format(pump_eff*100))
+
 t = PrettyTable(['State','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Quality'])
 t.align['Enthalpy (kJ/kg)'] = 'r'
 t.align['Entropy (kJ/kg.K)']= 'r'
@@ -285,7 +295,7 @@ print t
 
 print('\nOther Values \n------------ ')
 print('v3 = {:.4e}'.format(v3))
-print('thermal efficiency = {:.3f}'.format(thermal_eff))
+print('thermal efficiency = {:2.1f}%'.format(thermal_eff*100))
 print('back work ratio = {:.3f}'.format(bwr))
 
 # get temperature values for T-s plot
