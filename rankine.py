@@ -137,12 +137,28 @@ if not eg_mode:
       turb_eff = turb_eff/100 # convert to decimal if entered in percent
     break
   # pump efficiency
-  tries = 0
-  while tries < 10:
-    pump_eff = float(raw_input("Enter the pump efficiency in %. Default is 100%: ").strip('%'))
-    if pump_eff > 1.0:
+  while True:
+    pump_eff = raw_input("Enter the pump efficiency in %. Default is 100%: ").strip('%')
+    if (pump_eff.lower() in exit_cmds):
+      sys.exit() # exit
+    if pump_eff == "":
+      pump_eff = 1.0  # default if nothing is entered
+      break
+    try:
+      pump_eff = float(pump_eff)
+    except ValueError:
+      print('Please enter a number or Q to quit')
+      continue
+    if pump_eff == 0:
+      print("Can't have 0% pump efficiency")
+      continue
+    elif pump_eff > 100:
+      print("Can't have over 100% pump efficiency")
+      continue
+    elif pump_eff > 1.0:
       pump_eff = pump_eff/100 # convert to decimal if entered in percent
-
+    break
+    
 # read in table values
 ##h2o_psat = pd.read_csv('H2O_PresSat.csv')
 ##h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
