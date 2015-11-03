@@ -52,6 +52,7 @@ while not done:
     h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
     h2o_tsat = pd.read_csv('Ethane_TempSat.csv')
     h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
+    fluid = 'Ethane'
     done = 1
   elif userinput == 3:
     # read in table values
