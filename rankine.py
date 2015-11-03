@@ -118,6 +118,9 @@ if not eg_mode:
     except:
       print("Please enter a number or Q to quit.")
       continue
+    if p_lo < 0:
+      print("Can't have a negative pressure.")
+      continue
     break
   while True:
     # high pressure
@@ -128,6 +131,9 @@ if not eg_mode:
       p_hi = float(p_hi)
     except:
       print("Please enter a number or Q to quit.")
+      continue
+    if p_hi < 0:
+      print("Can't have a negative pressure.")
       continue
     break
 
