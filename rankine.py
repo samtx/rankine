@@ -51,8 +51,8 @@ while not done:
     h2o_psat = pd.read_csv('Ethane_PresSat.csv')
     h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
     h2o_tsat = pd.read_csv('Ethane_TempSat.csv')
-    h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column 
-    fluid = 'ethane'
+    h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
+    fluid = 'Ethane'
     done = 1
   elif userinput == 3:
     # read in table values
@@ -120,6 +120,9 @@ if not eg_mode:
     except:
       print("Please enter a number or Q to quit.")
       continue
+    if p_lo < 0:
+      print("Can't have a negative pressure.")
+      continue
     break
   while True:
     # high pressure
@@ -130,6 +133,9 @@ if not eg_mode:
       p_hi = float(p_hi)
     except:
       print("Please enter a number or Q to quit.")
+      continue
+    if p_hi < 0:
+      print("Can't have a negative pressure.")
       continue
     break
 
@@ -146,6 +152,9 @@ if not eg_mode:
       turb_eff = float(turb_eff)
     except ValueError:
       print('Please enter a number or Q to quit')
+      continue
+    if turb_eff < 0:
+      print("Can't have negative turbine efficiency")
       continue
     if turb_eff == 0:
       print("Can't have 0% turbine efficiency")
@@ -168,6 +177,9 @@ if not eg_mode:
       pump_eff = float(pump_eff)
     except ValueError:
       print('Please enter a number or Q to quit')
+      continue
+    if pump_eff < 0:
+      print("Can't have negative turbine efficiency")
       continue
     if pump_eff == 0:
       print("Can't have 0% pump efficiency")
@@ -219,6 +231,10 @@ h2s = x2s * (hg - hf) + hf  # using an internally reversible turbine
 # find values for irreversible turbine operation
 h2 = turb_eff * (h2s - h1) + h1  # with an irreversible turbine
 x2 = (h2 - hf)/(hg - hf) # quality at state 2
+# check to see if state 2 is superheated
+if x2 > 1:
+  print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
+  return
 s2 = x2 * (sg - sf) + sf # entropy at state 2
 
 # State 3, saturated liquid at low pressure
@@ -292,7 +308,7 @@ t.add_row(['Net',qb+qc,wt+wp])
 print t
 
 print('\nOther Values \n------------ ')
-print('v3 = {:.4e}'.format(v3))
+print('v3 = {:.4e} m^3/kg'.format(v3))
 print('thermal efficiency = {:2.1f}%'.format(thermal_eff*100))
 print('back work ratio = {:.3f}'.format(bwr))
 
