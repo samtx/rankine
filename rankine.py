@@ -229,6 +229,10 @@ h2s = x2s * (hg - hf) + hf  # using an internally reversible turbine
 # find values for irreversible turbine operation
 h2 = turb_eff * (h2s - h1) + h1  # with an irreversible turbine
 x2 = (h2 - hf)/(hg - hf) # quality at state 2
+# check to see if state 2 is superheated
+if x2 > 1:
+  print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
+  return
 s2 = x2 * (sg - sf) + sf # entropy at state 2
 
 # State 3, saturated liquid at low pressure
@@ -302,7 +306,7 @@ t.add_row(['Net',qb+qc,wt+wp])
 print t
 
 print('\nOther Values \n------------ ')
-print('v3 = {:.4e} m^3/kg'.format(v3S))
+print('v3 = {:.4e} m^3/kg'.format(v3))
 print('thermal efficiency = {:2.1f}%'.format(thermal_eff*100))
 print('back work ratio = {:.3f}'.format(bwr))
 
