@@ -302,7 +302,7 @@ t.add_row(['Net',qb+qc,wt+wp])
 print t
 
 print('\nOther Values \n------------ ')
-print('v3 = {:.4e}'.format(v3))
+print('v3 = {:.4e} m^3/kg'.format(v3S))
 print('thermal efficiency = {:2.1f}%'.format(thermal_eff*100))
 print('back work ratio = {:.3f}'.format(bwr))
 
