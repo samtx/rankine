@@ -151,6 +151,9 @@ if not eg_mode:
     except ValueError:
       print('Please enter a number or Q to quit')
       continue
+    if turb_eff < 0:
+      print("Can't have negative turbine efficiency")
+      continue
     if turb_eff == 0:
       print("Can't have 0% turbine efficiency")
       continue
@@ -172,6 +175,9 @@ if not eg_mode:
       pump_eff = float(pump_eff)
     except ValueError:
       print('Please enter a number or Q to quit')
+      continue
+    if pump_eff < 0:
+      print("Can't have negative turbine efficiency")
       continue
     if pump_eff == 0:
       print("Can't have 0% pump efficiency")
