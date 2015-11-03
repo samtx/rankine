@@ -47,10 +47,6 @@ while not done:
     h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
     fluid = 'H2O'
     done = 1
-  # until we get csv tables loaded for the other organic fluids, don't crash the program if they are selected
-  elif userinput in range(2,10):
-    print("Sorry, we don't have that data loaded yet. Please enter 1 for H2O\n'")
-    continue
   elif userinput == 2:
     h2o_psat = pd.read_csv('Ethane_PresSat.csv')
     h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
