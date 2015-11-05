@@ -1,10 +1,6 @@
-# Sam Rankine Cycle
+# Model the Rankine Cycle
 
-# Here is another comment!!!
-
-import numpy as np  # for some numerical methods
 import pandas as pd # for data analysis tools like dataframes
-import math         # duh
 import matplotlib   # for pretty pictures
 matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of using X windows
 import matplotlib.pyplot as plt
@@ -148,7 +144,8 @@ if not eg_mode:
     if turb_eff == "":
       turb_eff = 1.0  # default if nothing is entered
       break
-    try:
+    try:ls
+      
       turb_eff = float(turb_eff)
     except ValueError:
       print('Please enter a number or Q to quit')
@@ -234,7 +231,7 @@ x2 = (h2 - hf)/(hg - hf) # quality at state 2
 # check to see if state 2 is superheated
 if x2 > 1:
   print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
-  sys.exit()  #quit
+  return
 s2 = x2 * (sg - sf) + sf # entropy at state 2
 
 # State 3, saturated liquid at low pressure
