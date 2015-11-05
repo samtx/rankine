@@ -12,6 +12,9 @@ from prettytable import PrettyTable #for output formatting
 
 def main():
     #Obtaining user input
+    (fluid,p_hi,p_lo,turb_eff,pump_eff) = define_inputs()
+    
+def define_inputs():
     done = 0
     eg_mode = False
     while not done:
@@ -190,6 +193,8 @@ def main():
         elif pump_eff > 1.0:
           pump_eff = pump_eff/100 # assume entered in percent, convert to decimal
         break
+    return (fluid,p_hi,p_lo,turb_eff,pump_eff)
+
 
     # read in table values
     ##h2o_psat = pd.read_csv('H2O_PresSat.csv')
