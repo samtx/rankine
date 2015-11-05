@@ -20,6 +20,8 @@ class State(object):
         h = enthalpy (kJ/kg)
         s = entropy (kJ/kg.K)
         x, Q = quality (real number between 0 and 1 inclusive)
+        velocity = velocity (m/s) for kinetic energy
+        z = relative height (m) for potential energy
     '''
     def __init__(self,fluid,**kwargs):
         self.fluid = fluid
@@ -29,10 +31,23 @@ class State(object):
         for key, value in kwargs.items():
             key.upper() #convert to uppercase
             if key in state_vars:
-                if key == 'X': key = 'Q'  # for CoolProp
-                if key == 'V': key = 'D', value = 1/value  # use denisty for CoolProp
-                if key1 != '': key1 = key, value1 = value, continue
-                if key2 != '': key2 = key, value2 = value, continue
+                if key == 'X':
+                    key = 'Q'  # for CoolProp
+                if key == 'V':
+                    key = 'D'
+                    value = 1/value  # use denisty for CoolProp
+                if key1 != '':
+                    key1 = key
+                    value1 = value
+                    continue
+                if key2 != '':
+                    key2 = key
+                    value2 = value
+                    continue
+        if 'velocity' not in kwargs.keys():
+            velocity = 0
+        if 'z' not in kwargs.keys():
+            z = 0
         # set state properties
         self.__T = CP.PropSI('T',key1,value1,key2,value2,fluid)
         self.__p = CP.PropSI('P',key1,value1,key2,value2,fluid)
@@ -42,38 +57,68 @@ class State(object):
         self.__h = CP.PropSI('H',key1,value1,key2,value2,fluid)
         self.__s = CP.PropSI('S',key1,value1,key2,value2,fluid)
         self.__x = CP.PropSI('Q',key1,value1,key2,value2,fluid)
-        
+        self.__vel = velocity
+        self.__height = z     #height
+
     def temp(self):
         return self.__T
-    
+
     def temperature(self):
         return self.__T
-    
+
     def pressure(self):
         return self.__p
-    
+
     def volume(self):
         return self.__v
-    
+
     def density(self):
         return self.__d
-    
+
     def energy(self):
-        return self.__u  
-    
+        return self.__u
+
     def enthalpy(self):
         return self.__h
-    
+
     def entropy(self):
         return self.__s
-    
+
     def quality(self):
         return self.__x
-    
+
+    def velocity(self):
+        return self.__vel
+
+    def z(self):
+        return self.__height
+
     def __name__():
         return 'State'
 
 class Process(State):
-    ''' A class that defines values for a process: w, q, delta u, etc.
-    It should inherit the methods for class state '''
-    def __init__(self,st_a,st_b):
+    '''A class that defines values for a process based on a
+    state in and a state out. It should inherit the methods for class state.'''
+
+#     ''' A class that defines values for a process: w, q, delta u, etc.
+#     It should inherit the methods for class state.
+#     Units are by default on a per mass flow rate basis.
+#     Assumes process is steady state with one inlet and one outlet
+#         heat (kW/kg)
+#         work (kW/kg)
+#     '''
+    def __init__(self,heat=0,work=0,state_in,state_out):
+        self.heat = heat
+        self.work = work
+        self.in = state_in  # these are of child class State
+        self.out = state_out
+
+    def __name__():
+        return 'Process'
+
+#   work = 0
+#  heat = 0
+
+        #     def __init__(self,state_in,state_out,**kwargs):
+
+#         self.__heat =
