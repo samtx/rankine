@@ -13,8 +13,11 @@ from prettytable import PrettyTable #for output formatting
 def main():
     #Obtaining user input
     (fluid,p_hi,p_lo,turb_eff,pump_eff) = define_inputs()
-    
+
 def define_inputs():
+    fluid = select_fluid()
+
+def select_fluid():
     done = 0
     eg_mode = False
     while not done:
@@ -108,38 +111,30 @@ def define_inputs():
 
     # Given properties
 
+def select_pressures():
     # these pressures must exist in the saturation table
     # ... later add function to create new record of interpolated data in between
     # pressure points if the user selects a pressure that isn't in the saturation table
-    if not eg_mode:
-      while True:
-        # low pressure
-        p_lo = raw_input("Enter the desired low pressure (condenser pressure) in MPa: ") #0.008 # low pressure, in MPa (condenser pressure)
-        if p_lo in exit_cmds:
-          sys.exit() #exit
+    p_hi = enter_pressure('high')
+    p_lo = enter_pressure('low')
+
+def enter_pressure(which_p):
+    if which_p == 'high': machine = 'boiler'
+    if which_p == 'low': machine = 'condenser'
+    while True:
+        p = raw_input("Enter the desired" + which_p + "pressure (" + machine + " pressure) in MPa: ")
+        if p in exit_cmds:
+            sys.exit() #exit
         try:
-          p_lo = float(p_lo)
+            p = float(p)
         except:
-          print("Please enter a number or Q to quit.")
-          continue
-        if p_lo < 0:
-          print("Can't have a negative pressure.")
-          continue
-        break
-      while True:
-        # high pressure
-        p_hi = raw_input("Enter the desired high pressure (boiler pressure) in MPa: ")   #8.0 # high pressure, in MPa (boiler pressure)
-        if p_hi in exit_cmds:
-          sys.exit() #exit
-        try:
-          p_hi = float(p_hi)
-        except:
-          print("Please enter a number or Q to quit.")
-          continue
-        if p_hi < 0:
-          print("Can't have a negative pressure.")
-          continue
-        break
+            print("Please enter a number or Q to quit.")
+            continue
+        if p < 0:
+            print("Can't have a negative pressure.")
+            continue
+        return p
+
 
     # Isentropic efficiencies of pump and turbine in decimal notation. Default is 1.0 for 100% efficiency
     if not eg_mode:
