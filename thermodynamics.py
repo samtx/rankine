@@ -42,4 +42,8 @@ class state(fluid,**kwargs):
         self.h = CP.PropSI('H',key1,value1,key2,value2,fluid)
         self.s = CP.PropSI('S',key1,value1,key2,value2,fluid)
         self.x = CP.PropSI('Q',key1,value1,key2,value2,fluid)
+        
+class process(st_a,st_b):
+    # create another class that defines values for a process: w, q, delta u, etc.
+    # it should inherit the methods for class state
 
