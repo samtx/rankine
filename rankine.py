@@ -14,8 +14,34 @@ def main():
     #Obtaining user input
     (fluid,p_hi,p_lo,turb_eff,pump_eff) = define_inputs()
 
+def should_quit(string):
+    exit_cmds = ['quit','exit','q','x','e','stop']
+    if (string.lower() in exit_cmds):
+        sys.exit() # gracefully exit program
+
+def try_float(string):
+    loop_again = False
+    try:
+        number = float(string)
+    except ValueError:
+        print('Please enter a number or Q to quit')
+        number = ""
+        loop_again = True
+    return number,loop_again
+
 def define_inputs():
     fluid = select_fluid()
+    if fluid = 'eg_mode':
+        # use example mode
+        fluid = 'Water'
+        p_hi = 8.0
+        p_lo = 0.008
+        turb_eff = 0.80
+        pump_eff = 0.75
+    else:
+        (p_hi,p_lo) = select_pressures()
+        (turb_eff,pump_eff) = select_efficiencies()
+    return fluid,p_hi,p_lo,turb_eff,pump_eff
 
 def select_fluid():
     done = 0
@@ -24,10 +50,7 @@ def select_fluid():
       print "Select a working fluid from the following options: "
       print " 1. Water\n 2. Ethane\n 3. Propane\n 4. R22\n 5. R134a\n 6. R236ea\n 7. CO2\n 8. Pentane\n 9. Isobutene"
       userinput = raw_input(": ")
-      # gracefully exit
-      exit_cmds = ['quit','exit','q','x','e','stop']
-      if (userinput.lower() in exit_cmds):
-        sys.exit() # exit
+
       elif userinput.isdigit():
         userinput = int(userinput)
       if userinput == 0:
@@ -117,78 +140,48 @@ def select_pressures():
     # pressure points if the user selects a pressure that isn't in the saturation table
     p_hi = enter_pressure('high')
     p_lo = enter_pressure('low')
+    return p_hi,p_lo
 
 def enter_pressure(which_p):
     if which_p == 'high': machine = 'boiler'
     if which_p == 'low': machine = 'condenser'
     while True:
-        p = raw_input("Enter the desired" + which_p + "pressure (" + machine + " pressure) in MPa: ")
-        if p in exit_cmds:
-            sys.exit() #exit
-        try:
-            p = float(p)
-        except:
-            print("Please enter a number or Q to quit.")
-            continue
+        p = raw_input("Enter the desired " + which_p + " pressure (" + machine + " pressure) in MPa: ")
+        should_quit(p)
+        p,loop_again = try_float(p)
+        if loop_again: continue  # must be a positive real number
         if p < 0:
             print("Can't have a negative pressure.")
             continue
         return p
 
+def select_efficiencies():
+    turb_eff = enter_efficiencies('turbine'):
+    pump_eff = enter_efficiencies('pump')
+    return turb_eff,pump_eff
 
-    # Isentropic efficiencies of pump and turbine in decimal notation. Default is 1.0 for 100% efficiency
-    if not eg_mode:
-      while True:
-        turb_eff = raw_input("Enter the turbine efficiency in %. Default is 100%: ").strip('%')
-        if (turb_eff.lower() in exit_cmds):
-          sys.exit() # exit
-        if turb_eff == "":
-          turb_eff = 1.0  # default if nothing is entered
-          break
-        try:ls
-
-          turb_eff = float(turb_eff)
-        except ValueError:
-          print('Please enter a number or Q to quit')
-          continue
-        if turb_eff < 0:
-          print("Can't have negative turbine efficiency")
-          continue
-        if turb_eff == 0:
-          print("Can't have 0% turbine efficiency")
-          continue
-        elif turb_eff > 100:
-          print("Can't have over 100% turbine efficiency")
-          continue
-        elif turb_eff > 1.0:
-          turb_eff = turb_eff/100 # convert to decimal if entered in percent
+def enter_efficiencies(which_eff):
+    while True:
+        eff = raw_input("Enter the " + which_eff + " efficiency in %. Default is 100%: ").strip('%')
+        should_quit(eff)
+        if eff == "":
+            eff = 1.0  # default if nothing is entered
+            break
+        (eff,loop_again) = try_float(eff)
+        if loop_again: continue
+        if eff == 0:
+            print("Can't have 0% " + which_eff + " efficiency")
+            continue
+        if eff < 0:
+            print("Can't have negative " + which_eff + " efficiency")
+            continue
+        elif eff > 100:
+            print("Can't have over 100% " + which_eff + " efficiency")
+            continue
+        elif eff > 1.0:
+            eff = eff/100 # convert to decimal if entered in percent
         break
-      # pump efficiency
-      while True:
-        pump_eff = raw_input("Enter the pump efficiency in %. Default is 100%: ").strip('%')
-        if (pump_eff.lower() in exit_cmds):
-          sys.exit() # exit
-        if pump_eff == "":
-          pump_eff = 1.0  # default if nothing is entered
-          break
-        try:
-          pump_eff = float(pump_eff)
-        except ValueError:
-          print('Please enter a number or Q to quit')
-          continue
-        if pump_eff < 0:
-          print("Can't have negative turbine efficiency")
-          continue
-        if pump_eff == 0:
-          print("Can't have 0% pump efficiency")
-          continue
-        elif pump_eff > 100:
-          print("Can't have over 100% pump efficiency")
-          continue
-        elif pump_eff > 1.0:
-          pump_eff = pump_eff/100 # assume entered in percent, convert to decimal
-        break
-    return (fluid,p_hi,p_lo,turb_eff,pump_eff)
+    return eff
 
 
     # read in table values
