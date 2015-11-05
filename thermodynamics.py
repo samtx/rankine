@@ -97,7 +97,7 @@ class State(object):
 
     def name(self):
         return self.__name
-    
+
     def __str__():
         return self.__name
 
@@ -112,14 +112,13 @@ class Process(State):
 #         heat (kW/kg)
 #         work (kW/kg)
 #     '''
-    def __init__(self,heat=0,work=0,state_in,state_out):
+    def __init__(self,heat=0,work=0,state_in,state_out,*name=""):
         self.heat = heat
         self.work = work
         self.in = state_in  # these are of child class State
         self.out = state_out
+        self.name = name
 
-    def __name__():
-        return 'Process'
 
 #   work = 0
 #  heat = 0

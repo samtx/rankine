@@ -12,8 +12,12 @@ from __future__ import print_function
 ######################################
 
 def main():
-    #Obtaining user input
-    (fluid,p_hi,p_lo,turb_eff,pump_eff) = define_inputs()
+    #Obtaining user-defined properties of Rankine cycle
+    props = define_inputs()
+
+    # begin computing processess for rankine cycle
+    compute_cycle(props)
+
 
 def should_quit(string):
     exit_cmds = ['quit','exit','q','x','e','stop']
@@ -42,7 +46,14 @@ def define_inputs():
     else:
         (p_hi,p_lo) = select_pressures()
         (turb_eff,pump_eff) = select_efficiencies()
-    return fluid,p_hi,p_lo,turb_eff,pump_eff
+    #create dictionary of properties
+    props = {}
+    props["fluid"] = fluid
+    props["p_hi"] = p_hi
+    props["p_lo"] = p_lo
+    props["turb_eff"] = turb_eff
+    props["pump_eff"] = pump_eff
+    return props
 
 def select_fluid():
     while True:
@@ -56,88 +67,8 @@ def select_fluid():
         if userinput == 0: fluid = 'eg_mode',break #example problem
         else: print "Invalid input: Please Select Again. Enter Q to quit.\n"
     return fluid
-        
-#         # read in table values
-#         h2o_psat = pd.read_csv('H2O_PresSat.csv')
-#         h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
-#         h2o_tsat = pd.read_csv('H2O_TempSat.csv')
-#         h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
-#         done = 1
-#         p_lo = 0.008
-#         p_hi = 8.0
-#         turb_eff = .80
-#         pump_eff = .75
-#         fluid = 'H2O'
-#       elif userinput == 1:
-#         # read in table values
-#         h2o_psat = pd.read_csv('H2O_PresSat.csv')
-#         h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
-#         h2o_tsat = pd.read_csv('H2O_TempSat.csv')
-#         h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
-#         fluid = 'Water'
-#         done = 1
-#       elif userinput == 2:
-#         h2o_psat = pd.read_csv('Ethane_PresSat.csv')
-#         h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
-#         h2o_tsat = pd.read_csv('Ethane_TempSat.csv')
-#         h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
-#         fluid = 'Ethane'
-#         done = 1
-#       elif userinput == 3:
-#         # read in table values
-#         h2o_psat = pd.read_csv('H20_PressSat.csv')
-#         h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
-#         h2o_tsat = pd.read_csv('H2O_TempSat.csv')
-#         h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
-#         done = 1
-#       elif userinput == 4:
-#         fluid = 'ethane'
-#         h2o_psat = pd.read_csv('Ethane_PresSat.csv')
-#         h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
-#         h2o_tsat = pd.read_csv('Ethane_TempSat.csv')
-#         h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
-#         done = 1
-#       elif userinput == 5:
-#         # read in table values
-#         h2o_psat = pd.read_csv('R22_PresSat.csv')
-#         h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
-#         h2o_tsat = pd.read_csv('R22_TempSat.csv')
-#         h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
-#         done = 1
-#       elif userinput == 6:
-#         h2o_psat = pd.read_csv('R134a_PresSat.csv')
-#         h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
-#         h2o_tsat = pd.read_csv('R134a_TempSat.csv')
-#         h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
-#         done = 1
-#       elif userinput == 7:
-#         # read in table values
-#         h2o_psat = pd.read_csv('CO2_PresSat.csv')
-#         h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
-#         h2o_tsat = pd.read_csv('CO2_TempSat.csv')
-#         h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
-#         done = 1
-#       elif userinput == 8:
-#         h2o_psat = pd.read_csv('Pentane_PresSat.csv')
-#         h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
-#         h2o_tsat = pd.read_csv('Pentane_TempSat.csv')
-#         h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
-#         done = 1
-#       elif userinput == 9:
-#         # read in table values
-#         h2o_psat = pd.read_csv('Isobutane_PresSat.csv')
-#         h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
-#         h2o_tsat = pd.read_csv('Isobutane_TempSat.csv')
-#         h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
-#         done = 1
-
-
-    # Given properties
 
 def select_pressures():
-    # these pressures must exist in the saturation table
-    # ... later add function to create new record of interpolated data in between
-    # pressure points if the user selects a pressure that isn't in the saturation table
     p_hi = enter_pressure('high')
     p_lo = enter_pressure('low')
     return p_hi,p_lo
@@ -184,79 +115,60 @@ def enter_efficiencies(which_eff):
     return eff
 
 
-    # read in table values
-    ##h2o_psat = pd.read_csv('H2O_PresSat.csv')
-    ##h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
-    #print h2o_psat
-    ##h2o_tsat = pd.read_csv('H2O_TempSat.csv')
-    ##h2o_tsat = h2o_tsat.dropna(axis=1) #remove last NaN column
-    #print h2o_tsat
-    # merge the psat and tsat tables into one saturated table
-    h2o_sat = pd.concat([h2o_psat,h2o_tsat], axis=0, join='outer', join_axes=None, ignore_index=True,
-                        keys=None, levels=None, names=None, verify_integrity=False)
+def compute_cycle(props):
 
-    h2o_sat = h2o_sat.sort('P')
-
-    ## Will we have compressed tables for everthing?? We will have to address this based upon what Colton finds
-    h2o_comp = pd.read_csv('H2O_Compressed.csv')
-    h2o_comp = h2o_comp.dropna(axis=1) #remove last NaN column
-    #print h2o_comp
-
-    # begin computing processess for rankine cycle
-
+    fluid = props['fluid']
+    p_hi = props['p_hi']
+    p_lo = props['p_lo']
+    turb_eff = props['turb_eff']
+    pump_eff = props['pump_eff']
 
     # State 1, saturated vapor at high pressure
     # assume that this isn't a superheated rankine cycle, so state 2 is saturated vapor at pressure p_hi
-    s1 = h2o_sat[h2o_sat['P']==p_hi]['sg'].values[0]
-    h1 = h2o_sat[h2o_sat['P']==p_hi]['hg'].values[0]
+    st_1 = thermo.State(fluid,p=p_hi,x=1,name='1')
 
-    # State 2, two-phase at low pressure
-    sf =  h2o_sat[h2o_sat['P']==p_lo]['sf'].values[0]
-    sg =  h2o_sat[h2o_sat['P']==p_lo]['sg'].values[0]
-    hf =  h2o_sat[h2o_sat['P']==p_lo]['hf'].values[0]
-    hg =  h2o_sat[h2o_sat['P']==p_lo]['hg'].values[0]
-    # find values for isentropic turbine operation
-    # find h_2s from s_1 and p_lo. first get the quality x_2s
-    s2s = s1
-    x2s = (s2s - sf)/(sg - sf) # quality at state 2s
-    h2s = x2s * (hg - hf) + hf  # using an internally reversible turbine
-    # !!! put check here to make sure state isn't superheated !!!
-    # find values for irreversible turbine operation
-    h2 = turb_eff * (h2s - h1) + h1  # with an irreversible turbine
-    x2 = (h2 - hf)/(hg - hf) # quality at state 2
-    # check to see if state 2 is superheated
-    if x2 > 1:
-      print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
-      return
-    s2 = x2 * (sg - sf) + sf # entropy at state 2
+    # State 2s, two-phase at low pressure with same entropy as state 1
+    st_2s = thermo.State(fluid,p=p_lo,s=st_1.entropy(),name='2s')
+
+    # State 2, two-phase at low pressure determined by turbine efficiency
+    h2 = turb_eff * (st_2s.enthalpy() - st_1.enthalpy()) + st_1.enthalpy()  # with an irreversible turbine
+    st_2 = thermo.State(fluid,p=p_lo,h=h2,name='2')
+    if st_2.quality() > 1:
+        print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
+        sys.exit()
 
     # State 3, saturated liquid at low pressure
-    s3 =  h2o_sat[h2o_sat['P']==p_lo]['sf'].values[0]
-    h3 =  h2o_sat[h2o_sat['P']==p_lo]['hf'].values[0]
+    st_3 = thermo.State(fluid,p=p_lo,x=0,name='3')
 
-    # State 4, sub-cooled liquid at high pressure
+    # States 4 and 4s, sub-cooled liquid at high pressure
     # assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
-    v3 = h2o_sat[h2o_sat['P']==p_lo]['vf'].values[0]
     # find values for isentropic pump operation
-    s4s = s3 # ideal rankine cycle
-    wps = -v3*(p_hi - p_lo)*(10**3) # convert MPa to kPa
+
+    wps = -st_3.volume()*(p_hi - p_lo)*(10**3) # convert MPa to kPa
     h4s = h3 - wps
     # find values for irreversible pump operation
     wp = 1/pump_eff * (h3 - h4s)
     h4 = h3 - wp
-    # !!! find entropy s4 somehow !!!
-    s4 = s4s + 0.01  # temporary until I figure this out
-
-
+    st_4s = thermo.State(fluid,p=p_hi,s=st_3.entropy(),name='4s')
+    st_4 = thermo.State(fluid,p=p_hi,h=h4,name='4')
     # find State 4b, high pressure saturated liquid
-    s4b = h2o_sat[h2o_sat['P']==p_hi]['sf'].values[0]
+    st_4b = thermo.State(fluid,p=p_hi,x=0,name='4b')
 
     # Find work and heat for each process
     wt = h1 - h2
     qb = h1 - h4
     qc = h3 - h2
+
+    # Define processes
+    turb = thermo.Process(heat=0,work=wt,st_1,st_2,name="Turbine")
+    cond = thermo.Process(heat=qc,work=0,st_2,st_3,name="Condenser")
+    pump = thermo.Process(heat=0,work=wp,st_3,st_4,name="Pump")
+    boil = thermo.Process(heat=qb,work=0,st_4,st_1,name="Boiler")
+
+    # Define cycle 
     wnet = wt + wp
     qnet = qb + qc
+
 
     # Find thermal efficiency for cycle
     thermal_eff = wnet / qb
@@ -265,6 +177,8 @@ def enter_efficiencies(which_eff):
     bwr = -wp / wt
 
     # print values to screen
+
+def print_output(state_list,props):
 
     print('\nUser entered values\n-------------------')
     print('Working Fluid: '+fluid)
