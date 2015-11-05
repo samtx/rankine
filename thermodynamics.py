@@ -29,6 +29,8 @@ class State(object):
         # note that 'x' and 'Q' both represent two-phase quality
         key1 = '', value1 = '', key2 = '', value2 = ''
         for key, value in kwargs.items():
+            if key = 'name':
+                self.__name = value # 1, 2, 2s, 3, 4, 4s, 4b, etc.
             key.upper() #convert to uppercase
             if key in state_vars:
                 if key == 'X':
@@ -93,8 +95,11 @@ class State(object):
     def z(self):
         return self.__height
 
-    def __name__():
-        return 'State'
+    def name(self):
+        return self.__name
+    
+    def __str__():
+        return self.__name
 
 class Process(State):
     '''A class that defines values for a process based on a
