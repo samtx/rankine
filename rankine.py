@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import os           # for file system utilities
 import sys
 from prettytable import PrettyTable #for output formatting
+from __future__ import print_function
 ######################################
 
 def main():
@@ -44,18 +45,16 @@ def define_inputs():
     return fluid,p_hi,p_lo,turb_eff,pump_eff
 
 def select_fluid():
-    done = 0
-    eg_mode = False
-    while not done:
-      print "Select a working fluid from the following options: "
-      print " 1. Water\n 2. Ethane\n 3. Propane\n 4. R22\n 5. R134a\n 6. R236ea\n 7. CO2\n 8. Pentane\n 9. Isobutene"
-      userinput = raw_input(": ")
+    while True:
+        print "Select a working fluid from the following options: "
+        fluid_list = ["Water","Ethane","Propane","R22","R134a","R236ea","Carbon Dioxide","Pentane","Isobutene"]
+        for i in range(1,10):
+            print(" {}. {}".format([i,fluid_list(i-1)]))
+        fluid = raw_input(": ")
+        should_quit(fluid)
+        if userinput.isdigit(): userinput = int(userinput) #convert to integer if possible
+        if userinput == 0: fluid = 'eg_mode',break #example problem
 
-      elif userinput.isdigit():
-        userinput = int(userinput)
-      if userinput == 0:
-        # Example problem
-        eg_mode = True
         # read in table values
         h2o_psat = pd.read_csv('H2O_PresSat.csv')
         h2o_psat = h2o_psat.dropna(axis=1) #remove last NaN column
