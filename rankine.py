@@ -234,7 +234,7 @@ x2 = (h2 - hf)/(hg - hf) # quality at state 2
 # check to see if state 2 is superheated
 if x2 > 1:
   print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
-  return
+  sys.exit()  #quit
 s2 = x2 * (sg - sf) + sf # entropy at state 2
 
 # State 3, saturated liquid at low pressure
