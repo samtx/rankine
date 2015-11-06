@@ -23,38 +23,10 @@ class State(object):
         velocity = velocity (m/s) for kinetic energy
         z = relative height (m) for potential energy
     '''
-    def __init__(self,fluid,prop1,value1,prop2,value2,name=""):
-        self._fluid = fluid
-        # note that 'x' and 'Q' both represent two-phase quality
-        # set property name if specified
-        self._name = name # 1, 2, 2s, 3, 4, 4s, 4b, etc.
-        # make necessary conversions for CoolProp functions
-        prop1, value1 = CP_convert(prop1,value1)
-        prop2, value2 = CP_convert(prop2,value2)
-
-        # set state properties
-        # note that pairs h, T aren't yet supported by CoolProp
-        #print(key1 + str(value1) + key2 + str(value2) + fluid)
-#         try:
-#             self._T = CP.PropsSI('T',key1,value1,key2,value2,fluid)
-#         except:
-#             print('Oops. Something happened when calling CoolProp for state ' + self.name)
-        self._T = CP.PropsSI('T',key1,value1,key2,value2,fluid)
-        self._p = CP.PropsSI('P',key1,value1,key2,value2,fluid)
-        rho = CP.PropsSI('D',key1,value1,key2,value2,fluid)
-        self._d = rho
-        self._v = 1 / rho
-        self._u = CP.PropsSI('U',key1,value1,key2,value2,fluid)
-        self._h = CP.PropsSI('H',key1,value1,key2,value2,fluid)
-        self._s = CP.PropsSI('S',key1,value1,key2,value2,fluid)
-        self._x = CP.PropsSI('Q',key1,value1,key2,value2,fluid)
-        self._vel = velocity
-        self._z = z     #height
-
-    def CP_convert(prop,value):
+    def CP_convert(self,prop,value):
         ''' make necessary conversions for CoolProp functions '''
         #convert to uppercase
-        prop.upper()
+        prop = prop.upper()
         # use Q for quality but will accept x
         if prop == 'X':
             prop = 'Q'
@@ -66,6 +38,34 @@ class State(object):
         elif prop == 'P':
             value = value * 10**6
         return prop,value
+
+    def __init__(self,fluid,prop1,value1,prop2,value2,name=""):
+        self._fluid = fluid
+        # note that 'x' and 'Q' both represent two-phase quality
+        # set property name if specified
+        self._name = name # 1, 2, 2s, 3, 4, 4s, 4b, etc.
+        # make necessary conversions for CoolProp functions
+        (prop1, value1) = self.CP_convert(prop1,value1)
+        (prop2, value2) = self.CP_convert(prop2,value2)
+
+        # set state properties
+        # note that pairs h, T aren't yet supported by CoolProp
+        #print(key1 + str(value1) + key2 + str(value2) + fluid)
+#         try:
+#             self._T = CP.PropsSI('T',key1,value1,key2,value2,fluid)
+#         except:
+#             print('Oops. Something happened when calling CoolProp for state ' + self.name)
+        self._T = CP.PropsSI('T',prop1,value1,prop2,value2,fluid)
+        self._p = CP.PropsSI('P',prop1,value1,prop2,value2,fluid)
+        rho = CP.PropsSI('D',prop1,value1,prop2,value2,fluid)
+        self._d = rho
+        self._v = 1 / rho
+        self._u = CP.PropsSI('U',prop1,value1,prop2,value2,fluid)
+        self._h = CP.PropsSI('H',prop1,value1,prop2,value2,fluid)
+        self._s = CP.PropsSI('S',prop1,value1,prop2,value2,fluid)
+        self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
+        #self._vel = velocity
+        #self._z = z     #height
 
     @property
     def T(self):
@@ -99,13 +99,13 @@ class State(object):
     def x(self):
         return self._x
 
-    @property
-    def vel(self):
-        return self._vel
+#     @property
+#     def vel(self):
+#         return self._vel
 
-    @property
-    def z(self):
-        return self._z
+#     @property
+#     def z(self):
+#         return self._z
 
     @property
     def name(self):

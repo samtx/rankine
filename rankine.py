@@ -158,10 +158,9 @@ def compute_cycle(props):
     h4s = st_3.h - wps
     # find values for irreversible pump operation
     wp = 1/pump_eff * (st_3.h - h4s)
-    h4 = h3 - wp
     st_4s = thermo.State(fluid,'p',p_hi,'s',st_3.s,'4s')
     state_list.append(st_4s)
-    st_4 = thermo.State(fluid,'p',p_hi,'h',h4,'4')
+    st_4 = thermo.State(fluid,'p',p_hi,'h',st_3.h-wp,'4')
     state_list.append(st_4)
     # find State 4b, high pressure saturated liquid
     st_4b = thermo.State(fluid,'p',p_hi,'x',0.0,'4b')
