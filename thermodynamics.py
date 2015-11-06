@@ -33,9 +33,12 @@ class State(object):
         elif prop == 'V':
             prop = 'D'
             value = 1/value
-        # convert MPa to Pa for CoolProp
-        elif prop == 'P':
-            value = value * 10**6
+#         # convert MPa to Pa for CoolProp
+#         elif prop == 'P':
+#             value = value * 10**6
+        # convert kJ to J for CoopProp
+#         elif prop in ['H','U','S']:
+#             value = value * 10
         return prop,value
 
     @property
@@ -78,6 +81,10 @@ class State(object):
     def z(self):
         return self._z
 
+#     @property
+#     def phase(self):
+#         return self._phase
+
     @property
     def name(self):
         return self._name
@@ -113,6 +120,19 @@ class State(object):
         self._vel = velocity
         self._z = z     #height
 
+#         # determine phase of fluid and add description
+#         if self.x == 1:
+#             phase = 'Sat Vapor'
+#         elif self.x == 0:
+#             phase = 'Sat Liquid'
+#         elif self.p < CP.PropsSI('P','P',self.p,'Q',0,fluid):
+#             phase = 'Sub-Cooled Liq'
+#         elif self.p > CP.PropsSI('P','P',self.p,'Q',1,fluid):
+#             phase = 'Superheated'
+#         else:
+#             phase = ""
+#         self._phase = phase
+
 
 
 class Process(object):
@@ -128,18 +148,18 @@ class Process(object):
         return self._work
 
     @property
-    def in(self):
-        return self._in
+    def state_in(self):
+        return self._state_in
 
     @property
-    def out(self):
-        return self._out
+    def state_out(self):
+        return self._state_out
 
     def __init__(self,state_in,state_out,heat=0,work=0,name=""):
         self._heat = heat
         self._work = work
-        self._in = state_in  # these are of class State
-        self._out = state_out
+        self._state_in = state_in  # these are of class State
+        self._state_out = state_out
         self.name = name
 # class Cycle(Process):
 #     '''A class that defines values for a thermodynamic power cycle'''
