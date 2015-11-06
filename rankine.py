@@ -17,6 +17,8 @@ def main():
     #print(props)
     # begin computing processess for rankine cycle
     (cyc_props,p_list,s_list) = compute_cycle(props)
+    print('Done!')
+    return
 
 
 def should_quit(string):
