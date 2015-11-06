@@ -1,5 +1,6 @@
 # Model the Rankine Cycle
 
+from __future__ import print_function
 import thermodynamics as thermo  # custom thermo state class in thermodynamics.py
 import matplotlib   # for pretty pictures
 matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of using X windows
@@ -7,7 +8,7 @@ import matplotlib.pyplot as plt
 import os           # for file system utilities
 import sys
 from prettytable import PrettyTable #for output formatting
-from __future__ import print_function
+
 ######################################
 
 def main():
@@ -34,7 +35,7 @@ def try_float(string):
 
 def define_inputs():
     fluid = select_fluid()
-    if fluid = 'eg_mode':
+    if fluid == 'eg_mode':
         # use example mode
         fluid = 'Water'
         p_hi = 8.0
@@ -55,7 +56,7 @@ def define_inputs():
 
 def select_fluid():
     while True:
-        print "Select a working fluid from the following options: "
+        print("Select a working fluid from the following options: ")
         fluid_list = ["Water","Ethane","Propane","R22","R134a","R236ea","Carbon Dioxide","Pentane","Isobutene"]
         for i in range(9):
             print(" {}. {}".format(i+1,fluid_list[i]) )
@@ -68,7 +69,7 @@ def select_fluid():
             fluid = fluid_list[int(fluid)-1] #use number to pick correct fluid string
         elif fluid in fluid_list: # if they just typed it exactly, case-sensitive
             break
-        else: print "Invalid input: Please Select Again. Enter Q to quit.\n"
+        else: print("Invalid input: Please Select Again. Enter Q to quit.\n")
     return fluid
 
 def select_pressures():
@@ -90,7 +91,7 @@ def enter_pressure(which_p):
         return p
 
 def select_efficiencies():
-    turb_eff = enter_efficiencies('turbine'):
+    turb_eff = enter_efficiencies('turbine')
     pump_eff = enter_efficiencies('pump')
     return turb_eff,pump_eff
 
@@ -167,10 +168,10 @@ def compute_cycle(props):
     wt = st_1.h - st_2.h
     qb = st_1.h - st_4.h
     qc = st_3.h - st_2.h
-    turb = thermo.Process(heat=0,work=wp,st_1,st_2,name="Turbine")
-    cond = thermo.Process(heat=qc,work=0,st_2,st_3,name="Condenser")
-    pump = thermo.Process(heat=0,work=wp,st_3,st_4,name="Pump")
-    boil = thermo.Process(heat=qb,work=0,st_4,st_1,name="Boiler")
+    turb = thermo.Process(st_1,st_2,heat=0,work=wp,name="Turbine")
+    cond = thermo.Process(st_2,st_3,heat=qc,work=0,name="Condenser")
+    pump = thermo.Process(st_3,st_4,heat=0,work=wp,name="Pump")
+    boil = thermo.Process(st_4,st_1,heat=qb,work=0,name="Boiler")
     process_list = [turb,cond,pump,boil]
 
     # Define cycle properties
@@ -210,7 +211,7 @@ def print_output(state_list,props):
     t.add_row(['3',h3,s3,'Sat Liquid'])
     t.add_row(['4s',h4s,s4s,'Sub-Cooled Liq'])
     t.add_row(['4',h4,s4,'Sub-Cooled Liq'])
-    print t,'\n'
+    print(t,'\n')
 
     t = PrettyTable(['Process','Heat (kJ/kg)','Work (kJ/kg)'])
     t.align['Heat (kJ/kg)'] = 'r'
@@ -222,7 +223,7 @@ def print_output(state_list,props):
     t.add_row(['3 - 4',0,wp])
     t.add_row(['4 - 1',qb,0])
     t.add_row(['Net',qb+qc,wt+wp])
-    print t
+    print(t)
 
     print('\nOther Values \n------------ ')
     print('v3 = {:.4e} m^3/kg'.format(v3))

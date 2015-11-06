@@ -27,11 +27,15 @@ class State(object):
         self._fluid = fluid
         state_vars = ['T','P','D','V','U','H','S','X','Q']
         # note that 'x' and 'Q' both represent two-phase quality
-        key1="",value1="",key2="",value2="",name=""
+        key1=""
+        value1=""
+        key2=""
+        value2=""
+        name=""
         for key, value in kwargs.items():
 
             # set property name if specified
-            if key = 'name':
+            if key == 'name':
                 self._name = value # 1, 2, 2s, 3, 4, 4s, 4b, etc.
                 continue
 
@@ -78,7 +82,7 @@ class State(object):
         self._vel = velocity
         self._z = z     #height
 
-    @property   
+    @property
     def T(self):
         return self._T
 
@@ -129,11 +133,11 @@ class Process(State):
     '''A class that defines values for a process based on a
     state in and a state out. It should inherit the methods for class state.'''
 
-    def __init__(self,heat=0,work=0,state_in,state_out,name=""):
+    def __init__(self,state_in,state_out,heat=0,work=0,name=""):
         self.heat = heat
         self.work = work
-        self.in = state_in  # these are of child class State
-        self.out = state_out
+        self._in = state_in  # these are of child class State
+        self._out = state_out
         self.name = name
 
 # class Cycle(Process):
