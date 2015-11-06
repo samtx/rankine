@@ -13,9 +13,8 @@ from __future__ import print_function
 def main():
     #Obtaining user-defined properties of Rankine cycle
     props = define_inputs()
-
     # begin computing processess for rankine cycle
-    compute_cycle(props)
+    (cyc_props,p_list,s_list) = compute_cycle(props)
 
 
 def should_quit(string):
@@ -64,12 +63,12 @@ def select_fluid():
         should_quit(fluid)
         if fluid == 0:  #example problem
             fluid = 'eg_mode'
-            break 
+            break
         elif fluid.isdigit():
             fluid = fluid_list[int(fluid)-1] #use number to pick correct fluid string
         elif fluid in fluid_list: # if they just typed it exactly, case-sensitive
             break
-        else: print "Invalid input: Please Select Again. Enter Q to quit.\n"     
+        else: print "Invalid input: Please Select Again. Enter Q to quit.\n"
     return fluid
 
 def select_pressures():
@@ -118,72 +117,79 @@ def enter_efficiencies(which_eff):
         break
     return eff
 
-
 def compute_cycle(props):
-
     fluid = props['fluid']
     p_hi = props['p_hi']
     p_lo = props['p_lo']
     turb_eff = props['turb_eff']
     pump_eff = props['pump_eff']
 
+    # Define States
+    state_list = []
     # State 1, saturated vapor at high pressure
-    # assume that this isn't a superheated rankine cycle, so state 2 is saturated vapor at pressure p_hi
     st_1 = thermo.State(fluid,p=p_hi,x=1,name='1')
+    state_list.append(st_1)
 
     # State 2s, two-phase at low pressure with same entropy as state 1
-    st_2s = thermo.State(fluid,p=p_lo,s=st_1.entropy(),name='2s')
+    st_2s = thermo.State(fluid,p=p_lo,s=st_1.s,name='2s')
+    state_list.append(st_2s)
 
     # State 2, two-phase at low pressure determined by turbine efficiency
-    h2 = turb_eff * (st_2s.enthalpy() - st_1.enthalpy()) + st_1.enthalpy()  # with an irreversible turbine
+    h2 = turb_eff * (st_2s.h - st_1.h) + st_1.h  # with an irreversible turbine
     st_2 = thermo.State(fluid,p=p_lo,h=h2,name='2')
-    if st_2.quality() > 1:
+    if st_2.x > 1:
         print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
         sys.exit()
+    state_list.append(st_2)
 
     # State 3, saturated liquid at low pressure
     st_3 = thermo.State(fluid,p=p_lo,x=0,name='3')
+    state_list.append(st_3)
 
     # States 4 and 4s, sub-cooled liquid at high pressure
     # assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
     # find values for isentropic pump operation
-
-    wps = -st_3.volume()*(p_hi - p_lo)*(10**3) # convert MPa to kPa
-    h4s = h3 - wps
+    wps = -st_3.v*(p_hi - p_lo)*(10**3) # convert MPa to kPa
+    h4s = st_3.h - wps
     # find values for irreversible pump operation
-    wp = 1/pump_eff * (h3 - h4s)
+    wp = 1/pump_eff * (st_3.h - h4s)
     h4 = h3 - wp
-    st_4s = thermo.State(fluid,p=p_hi,s=st_3.entropy(),name='4s')
+    st_4s = thermo.State(fluid,p=p_hi,s=st_3.s,name='4s')
+    state_list.append(st_4s)
     st_4 = thermo.State(fluid,p=p_hi,h=h4,name='4')
+    state_list.append(st_4)
     # find State 4b, high pressure saturated liquid
     st_4b = thermo.State(fluid,p=p_hi,x=0,name='4b')
-
-    # Find work and heat for each process
-    wt = h1 - h2
-    qb = h1 - h4
-    qc = h3 - h2
+    state_list.append(st_4b)
 
     # Define processes
-    turb = thermo.Process(heat=0,work=wt,st_1,st_2,name="Turbine")
+    # Find work and heat for each process
+    wt = st_1.h - st_2.h
+    qb = st_1.h - st_4.h
+    qc = st_3.h - st_2.h
+    turb = thermo.Process(heat=0,work=wp,st_1,st_2,name="Turbine")
     cond = thermo.Process(heat=qc,work=0,st_2,st_3,name="Condenser")
     pump = thermo.Process(heat=0,work=wp,st_3,st_4,name="Pump")
     boil = thermo.Process(heat=qb,work=0,st_4,st_1,name="Boiler")
+    process_list = [turb,cond,pump,boil]
 
-    # Define cycle
-    wnet = wt + wp
-    qnet = qb + qc
-
-
+    # Define cycle properties
+    wnet = turb.work + pump.work
+    qnet = boil.heat + cond.heat
     # Find thermal efficiency for cycle
-    thermal_eff = wnet / qb
-
+    thermal_eff = wnet / boil.heat
     # Find back work ratio
-    bwr = -wp / wt
+    bwr = -pump.work / turb.work
+    cyc_props = {}
+    cyc_props['wnet'] = wnet
+    cyc_props['qnet'] = qnet
+    cyc_props['thermal_eff'] = thermal_eff
+    cyc_props['bwr'] = bwr
 
-    # print values to screen
+    return (cyc_props, process_list, state_list)
 
 def print_output(state_list,props):
-
+    # print values to screen
     print('\nUser entered values\n-------------------')
     print('Working Fluid: '+fluid)
     print('Low Pressure:  {:>3.3f} MPa'.format(p_lo))
