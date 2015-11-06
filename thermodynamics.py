@@ -39,7 +39,7 @@ class State(object):
             value = value * 10**6
         return prop,value
 
-    def __init__(self,fluid,prop1,value1,prop2,value2,name=""):
+    def __init__(self,fluid,prop1,value1,prop2,value2,name="",velocity=0,z=0):
         self._fluid = fluid
         # note that 'x' and 'Q' both represent two-phase quality
         # set property name if specified
@@ -64,8 +64,8 @@ class State(object):
         self._h = CP.PropsSI('H',prop1,value1,prop2,value2,fluid)
         self._s = CP.PropsSI('S',prop1,value1,prop2,value2,fluid)
         self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
-        #self._vel = velocity
-        #self._z = z     #height
+        self._vel = velocity
+        self._z = z     #height
 
     @property
     def T(self):
@@ -99,13 +99,13 @@ class State(object):
     def x(self):
         return self._x
 
-#     @property
-#     def vel(self):
-#         return self._vel
+    @property
+    def vel(self):
+        return self._vel
 
-#     @property
-#     def z(self):
-#         return self._z
+    @property
+    def z(self):
+        return self._z
 
     @property
     def name(self):
