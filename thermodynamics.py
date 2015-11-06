@@ -9,7 +9,6 @@ import CoolProp.CoolProp as CP  #must have CoolProp library installed
     # idea: use MultiIndex to index the subcooled and superheated data frames by both pressure and temperature
 
 
-
 class State(object):
     ''' This is a class that can be used to define a thermodynamic state for a given fluid. The user must enter the fluid string to select in CoolProp and then 2 independent named variables for the state to be properly defined. All variables are specific, in that they are valued per unit mass. Optional variables and their default units are:
         T = temperature, (deg C)
@@ -38,34 +37,6 @@ class State(object):
         elif prop == 'P':
             value = value * 10**6
         return prop,value
-
-    def __init__(self,fluid,prop1,value1,prop2,value2,name="",velocity=0,z=0):
-        self._fluid = fluid
-        # note that 'x' and 'Q' both represent two-phase quality
-        # set property name if specified
-        self._name = name # 1, 2, 2s, 3, 4, 4s, 4b, etc.
-        # make necessary conversions for CoolProp functions
-        (prop1, value1) = self.CP_convert(prop1,value1)
-        (prop2, value2) = self.CP_convert(prop2,value2)
-
-        # set state properties
-        # note that pairs h, T aren't yet supported by CoolProp
-        #print(key1 + str(value1) + key2 + str(value2) + fluid)
-#         try:
-#             self._T = CP.PropsSI('T',key1,value1,key2,value2,fluid)
-#         except:
-#             print('Oops. Something happened when calling CoolProp for state ' + self.name)
-        self._T = CP.PropsSI('T',prop1,value1,prop2,value2,fluid)
-        self._p = CP.PropsSI('P',prop1,value1,prop2,value2,fluid)
-        rho = CP.PropsSI('D',prop1,value1,prop2,value2,fluid)
-        self._d = rho
-        self._v = 1 / rho
-        self._u = CP.PropsSI('U',prop1,value1,prop2,value2,fluid)
-        self._h = CP.PropsSI('H',prop1,value1,prop2,value2,fluid)
-        self._s = CP.PropsSI('S',prop1,value1,prop2,value2,fluid)
-        self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
-        self._vel = velocity
-        self._z = z     #height
 
     @property
     def T(self):
@@ -114,17 +85,62 @@ class State(object):
     def __str__():
         return self._name
 
+    def __init__(self,fluid,prop1,value1,prop2,value2,name="",velocity=0,z=0):
+        self._fluid = fluid
+        # note that 'x' and 'Q' both represent two-phase quality
+        # set property name if specified
+        self._name = name # 1, 2, 2s, 3, 4, 4s, 4b, etc.
+        # make necessary conversions for CoolProp functions
+        (prop1, value1) = self.CP_convert(prop1,value1)
+        (prop2, value2) = self.CP_convert(prop2,value2)
+
+        # set state properties
+        # note that pairs h, T aren't yet supported by CoolProp
+        #print(key1 + str(value1) + key2 + str(value2) + fluid)
+#         try:
+#             self._T = CP.PropsSI('T',key1,value1,key2,value2,fluid)
+#         except:
+#             print('Oops. Something happened when calling CoolProp for state ' + self.name)
+        self._T = CP.PropsSI('T',prop1,value1,prop2,value2,fluid)
+        self._p = CP.PropsSI('P',prop1,value1,prop2,value2,fluid)
+        rho = CP.PropsSI('D',prop1,value1,prop2,value2,fluid)
+        self._d = rho
+        self._v = 1 / rho
+        self._u = CP.PropsSI('U',prop1,value1,prop2,value2,fluid)
+        self._h = CP.PropsSI('H',prop1,value1,prop2,value2,fluid)
+        self._s = CP.PropsSI('S',prop1,value1,prop2,value2,fluid)
+        self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
+        self._vel = velocity
+        self._z = z     #height
+
+
+
 class Process(object):
     '''A class that defines values for a process based on a
     state in and a state out. '''
 
+    @property
+    def heat(self):
+        return self._heat
+
+    @property
+    def work(self):
+        return self._work
+
+    @property
+    def in(self):
+        return self._in
+
+    @property
+    def out(self):
+        return self._out
+
     def __init__(self,state_in,state_out,heat=0,work=0,name=""):
-        self.heat = heat
-        self.work = work
+        self._heat = heat
+        self._work = work
         self._in = state_in  # these are of class State
         self._out = state_out
         self.name = name
-
 # class Cycle(Process):
 #     '''A class that defines values for a thermodynamic power cycle'''
 
