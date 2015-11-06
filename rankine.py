@@ -14,6 +14,7 @@ from prettytable import PrettyTable #for output formatting
 def main():
     #Obtaining user-defined properties of Rankine cycle
     props = define_inputs()
+    #print(props)
     # begin computing processess for rankine cycle
     (cyc_props,p_list,s_list) = compute_cycle(props)
 
@@ -62,11 +63,12 @@ def select_fluid():
             print(" {}. {}".format(i+1,fluid_list[i]) )
         fluid = raw_input(": ")
         should_quit(fluid)
-        if fluid == 0:  #example problem
+        if fluid == '0':  #example problem
             fluid = 'eg_mode'
             break
-        elif fluid.isdigit():
-            fluid = fluid_list[int(fluid)-1] #use number to pick correct fluid string
+        elif fluid.isdigit() and fluid not in range(0,len(fluid_list)):
+            fluid = fluid_list[int(fluid)-1] #use num to pick fluid string
+            break
         elif fluid in fluid_list: # if they just typed it exactly, case-sensitive
             break
         else: print("Invalid input: Please Select Again. Enter Q to quit.\n")
@@ -128,23 +130,23 @@ def compute_cycle(props):
     # Define States
     state_list = []
     # State 1, saturated vapor at high pressure
-    st_1 = thermo.State(fluid,p=p_hi,x=1,name='1')
+    st_1 = thermo.State(fluid,'p',p_hi,'x',1.0,'1')
     state_list.append(st_1)
 
     # State 2s, two-phase at low pressure with same entropy as state 1
-    st_2s = thermo.State(fluid,p=p_lo,s=st_1.s,name='2s')
+    st_2s = thermo.State(fluid,'p',p_lo,'s',st_1.s,'2s')
     state_list.append(st_2s)
 
     # State 2, two-phase at low pressure determined by turbine efficiency
     h2 = turb_eff * (st_2s.h - st_1.h) + st_1.h  # with an irreversible turbine
-    st_2 = thermo.State(fluid,p=p_lo,h=h2,name='2')
+    st_2 = thermo.State(fluid,'p',p_lo,'h',h2,'2')
     if st_2.x > 1:
         print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
         sys.exit()
     state_list.append(st_2)
 
     # State 3, saturated liquid at low pressure
-    st_3 = thermo.State(fluid,p=p_lo,x=0,name='3')
+    st_3 = thermo.State(fluid,'p',p_lo,'x',0.0,'3')
     state_list.append(st_3)
 
     # States 4 and 4s, sub-cooled liquid at high pressure
@@ -155,12 +157,12 @@ def compute_cycle(props):
     # find values for irreversible pump operation
     wp = 1/pump_eff * (st_3.h - h4s)
     h4 = h3 - wp
-    st_4s = thermo.State(fluid,p=p_hi,s=st_3.s,name='4s')
+    st_4s = thermo.State(fluid,'p',p_hi,'s',st_3.s,'4s')
     state_list.append(st_4s)
-    st_4 = thermo.State(fluid,p=p_hi,h=h4,name='4')
+    st_4 = thermo.State(fluid,'p',p_hi,'h',h4,'4')
     state_list.append(st_4)
     # find State 4b, high pressure saturated liquid
-    st_4b = thermo.State(fluid,p=p_hi,x=0,name='4b')
+    st_4b = thermo.State(fluid,'p',p_hi,'x',0.0,'4b')
     state_list.append(st_4b)
 
     # Define processes
@@ -168,10 +170,10 @@ def compute_cycle(props):
     wt = st_1.h - st_2.h
     qb = st_1.h - st_4.h
     qc = st_3.h - st_2.h
-    turb = thermo.Process(st_1,st_2,heat=0,work=wp,name="Turbine")
-    cond = thermo.Process(st_2,st_3,heat=qc,work=0,name="Condenser")
-    pump = thermo.Process(st_3,st_4,heat=0,work=wp,name="Pump")
-    boil = thermo.Process(st_4,st_1,heat=qb,work=0,name="Boiler")
+    turb = thermo.Process(st_1,st_2,0,wp,"Turbine")
+    cond = thermo.Process(st_2,st_3,qc,0,"Condenser")
+    pump = thermo.Process(st_3,st_4,0,wp,"Pump")
+    boil = thermo.Process(st_4,st_1,qb,0,"Boiler")
     process_list = [turb,cond,pump,boil]
 
     # Define cycle properties
