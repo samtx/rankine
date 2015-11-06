@@ -186,8 +186,8 @@ def select_fluid():
     return fluid
 
 def select_pressures():
-    p_hi = enter_pressure('high')
     p_lo = enter_pressure('low')
+    p_hi = enter_pressure('high')
     return p_hi,p_lo
 
 def enter_pressure(which_p):
