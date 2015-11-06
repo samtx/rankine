@@ -62,9 +62,14 @@ def select_fluid():
             print(" {}. {}".format(i+1,fluid_list[i]) )
         fluid = raw_input(": ")
         should_quit(fluid)
-        if userinput.isdigit(): userinput = int(userinput) #convert to integer if possible
-        if userinput == 0: fluid = 'eg_mode',break #example problem
-        else: print "Invalid input: Please Select Again. Enter Q to quit.\n"
+        if fluid == 0:  #example problem
+            fluid = 'eg_mode'
+            break 
+        elif fluid.isdigit():
+            fluid = fluid_list[int(fluid)-1] #use number to pick correct fluid string
+        elif fluid in fluid_list: # if they just typed it exactly, case-sensitive
+            break
+        else: print "Invalid input: Please Select Again. Enter Q to quit.\n"     
     return fluid
 
 def select_pressures():
@@ -164,7 +169,7 @@ def compute_cycle(props):
     pump = thermo.Process(heat=0,work=wp,st_3,st_4,name="Pump")
     boil = thermo.Process(heat=qb,work=0,st_4,st_1,name="Boiler")
 
-    # Define cycle 
+    # Define cycle
     wnet = wt + wp
     qnet = qb + qc
 
