@@ -23,54 +23,23 @@ class State(object):
         velocity = velocity (m/s) for kinetic energy
         z = relative height (m) for potential energy
     '''
-    def __init__(self,fluid,**kwargs):
+    def __init__(self,fluid,prop1,value1,prop2,value2,name=""):
         self._fluid = fluid
-        state_vars = ['T','P','D','V','U','H','S','X','Q']
         # note that 'x' and 'Q' both represent two-phase quality
-        key1=""
-        value1=""
-        key2=""
-        value2=""
-        name=""
-        for key, value in kwargs.items():
-
-            # set property name if specified
-            if key == 'name':
-                self._name = value # 1, 2, 2s, 3, 4, 4s, 4b, etc.
-                continue
-
-            key.upper() #convert to uppercase
-
-            # for two state independent variables
-            if key in state_vars:
-                # use Q for quality but will accept x
-                if key == 'X':
-                    key = 'Q'
-                # use denisty for CoolProp
-                elif key == 'V':
-                    key = 'D'
-                    value = 1/value
-                # convert MPa to Pa for CoolProp
-                elif key == 'P':
-                    value = value * 10**6
-                # if keys/values are empty then fill them
-                if key1 != '':
-                    key1 = key
-                    value1 = value
-                    continue
-                if key2 != '':
-                    key2 = key
-                    value2 = value
-                    continue
+        # set property name if specified
+        self._name = name # 1, 2, 2s, 3, 4, 4s, 4b, etc.
+        # make necessary conversions for CoolProp functions
+        prop1, value1 = CP_convert(prop1,value1)
+        prop2, value2 = CP_convert(prop2,value2)
 
         # set state properties
         # note that pairs h, T aren't yet supported by CoolProp
-
-        try:
-            self._T = CP.PropsSI('T',key1,value1,key2,value2,fluid)
-        except:
-            print('Oops. Something happened when calling CoolProp for state ' + self.name)
-
+        #print(key1 + str(value1) + key2 + str(value2) + fluid)
+#         try:
+#             self._T = CP.PropsSI('T',key1,value1,key2,value2,fluid)
+#         except:
+#             print('Oops. Something happened when calling CoolProp for state ' + self.name)
+        self._T = CP.PropsSI('T',key1,value1,key2,value2,fluid)
         self._p = CP.PropsSI('P',key1,value1,key2,value2,fluid)
         rho = CP.PropsSI('D',key1,value1,key2,value2,fluid)
         self._d = rho
@@ -81,6 +50,22 @@ class State(object):
         self._x = CP.PropsSI('Q',key1,value1,key2,value2,fluid)
         self._vel = velocity
         self._z = z     #height
+
+    def CP_convert(prop,value):
+        ''' make necessary conversions for CoolProp functions '''
+        #convert to uppercase
+        prop.upper()
+        # use Q for quality but will accept x
+        if prop == 'X':
+            prop = 'Q'
+        # use denisty for CoolProp
+        elif prop == 'V':
+            prop = 'D'
+            value = 1/value
+        # convert MPa to Pa for CoolProp
+        elif prop == 'P':
+            value = value * 10**6
+        return prop,value
 
     @property
     def T(self):
@@ -129,14 +114,14 @@ class State(object):
     def __str__():
         return self._name
 
-class Process(State):
+class Process(object):
     '''A class that defines values for a process based on a
-    state in and a state out. It should inherit the methods for class state.'''
+    state in and a state out. '''
 
     def __init__(self,state_in,state_out,heat=0,work=0,name=""):
         self.heat = heat
         self.work = work
-        self._in = state_in  # these are of child class State
+        self._in = state_in  # these are of class State
         self._out = state_out
         self.name = name
 
