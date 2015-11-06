@@ -1,7 +1,6 @@
 # Model the Rankine Cycle
 
 import thermodynamics as thermo  # custom thermo state class in thermodynamics.py
-import pandas as pd # for data analysis tools like dataframes
 import matplotlib   # for pretty pictures
 matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of using X windows
 import matplotlib.pyplot as plt
