@@ -51,12 +51,12 @@ def main():
     t.float_format['Entropy (kJ/kg.K)'] = '6.5'
     t.float_format['Quality'] = '0.2'
     t.padding_width = 1
-    t.add_row(['1',st_1.h/1000,st_1.s/1000,'Sat Vapor'])
-    t.add_row(['2s',st_2s.h/1000,st_2s.s/1000,st_2s.x])
-    t.add_row(['2',st_2.h/1000,st_2.s/1000,st_2.x])
-    t.add_row(['3',st_3.h/1000,st_3.s/1000,'Sat Liquid'])
-    t.add_row(['4s',st_4s.h/1000,st_4s.s/1000,'Sub-Cooled Liq'])
-    t.add_row(['4',st_4.h/1000,st_4.s/1000,'Sub-Cooled Liq'])
+    t.add_row([st_1.name,st_1.h/1000,st_1.s/1000,'Sat Vapor'])
+    t.add_row([st_2s.name,st_2s.h/1000,st_2s.s/1000,st_2s.x])
+    t.add_row([st_2.name,st_2.h/1000,st_2.s/1000,st_2.x])
+    t.add_row([st_3.name,st_3.h/1000,st_3.s/1000,'Sat Liquid'])
+    t.add_row([st_4s.name,st_4s.h/1000,st_4s.s/1000,'Sub-Cooled Liq'])
+    t.add_row([st_4.name,st_4.h/1000,st_4.s/1000,'Sub-Cooled Liq'])
     print(t,'\n')
 
     t = PrettyTable(['Process','Heat (kJ/kg)','Work (kJ/kg)'])
@@ -64,10 +64,10 @@ def main():
     t.align['Work (kJ/kg)'] = 'r'
     t.float_format['Heat (kJ/kg)'] = '5.1'
     t.float_format['Work (kJ/kg)'] = '5.1'
-    t.add_row(['1 - 2',0,turb.work/1000])
-    t.add_row(['2 - 3',cond.heat/1000,0])
-    t.add_row(['3 - 4',0,pump.work/1000])
-    t.add_row(['4 - 1',boil.heat/1000,0])
+    t.add_row([turb.name,0,turb.work/1000])
+    t.add_row([cond.name,cond.heat/1000,0])
+    t.add_row([pump.name,0,pump.work/1000])
+    t.add_row([boil.name,boil.heat/1000,0])
     t.add_row(['Net',cyc_props["qnet"]/1000,cyc_props["wnet"]/1000])
     print(t)
 
