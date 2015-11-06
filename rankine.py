@@ -14,21 +14,35 @@ from prettytable import PrettyTable #for output formatting
 def main():
     #Obtaining user-defined properties of Rankine cycle
     props = define_inputs()
-    #print(props)
+    print(props)
     # begin computing processess for rankine cycle
     (cyc_props,p_list,s_list) = compute_cycle(props)
     print('Done!')
-    
-    
+
+    # unpack states
+    st_1 = s_list[0]
+    st_2s = s_list[1]
+    st_2 = s_list[2]
+    st_3 = s_list[3]
+    st_4s = s_list[4]
+    st_4 = s_list[5]
+    st_4b = s_list[6]
+
+    # unpack processes
+    turb = p_list[0]
+    cond = p_list[1]
+    pump = p_list[2]
+    boil = p_list[3]
+
     # ----- PUT THIS INTO A SEPARATE FUNCTION LATER -----
-    
+
     # print values to screen
     print('\nUser entered values\n-------------------')
-    print('Working Fluid: '+fluid)
-    print('Low Pressure:  {:>3.3f} MPa'.format(p_lo))
-    print('High Pressure: {:>3.3f} MPa'.format(p_hi))
-    print('Isentropic Turbine Efficiency: {:>2.1f}%'.format(turb_eff*100))
-    print('Isentropic Pump Efficiency:    {:>2.1f}%\n'.format(pump_eff*100))
+    print('Working Fluid: '+props["fluid"])
+    print('Low Pressure:  {:>3.3f} MPa'.format(props["p_lo"]))
+    print('High Pressure: {:>3.3f} MPa'.format(props["p_hi"]))
+    print('Isentropic Turbine Efficiency: {:>2.1f}%'.format(props["turb_eff"]*100))
+    print('Isentropic Pump Efficiency:    {:>2.1f}%\n'.format(props["pump_eff"]*100))
 
     t = PrettyTable(['State','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Quality'])
     t.align['Enthalpy (kJ/kg)'] = 'r'
@@ -37,12 +51,12 @@ def main():
     t.float_format['Entropy (kJ/kg.K)'] = '6.5'
     t.float_format['Quality'] = '0.2'
     t.padding_width = 1
-    t.add_row(['1',h1,s1,'Sat Vapor'])
-    t.add_row(['2s',h2s,s2s,x2s])
-    t.add_row(['2',h2,s2,x2])
-    t.add_row(['3',h3,s3,'Sat Liquid'])
-    t.add_row(['4s',h4s,s4s,'Sub-Cooled Liq'])
-    t.add_row(['4',h4,s4,'Sub-Cooled Liq'])
+    t.add_row(['1',st_1.h/1000,st_1.s/1000,'Sat Vapor'])
+    t.add_row(['2s',st_2s.h/1000,st_2s.s/1000,st_2s.x])
+    t.add_row(['2',st_2.h/1000,st_2.s/1000,st_2.x])
+    t.add_row(['3',st_3.h/1000,st_3.s/1000,'Sat Liquid'])
+    t.add_row(['4s',st_4s.h/1000,st_4s.s/1000,'Sub-Cooled Liq'])
+    t.add_row(['4',st_4.h/1000,st_4.s/1000,'Sub-Cooled Liq'])
     print(t,'\n')
 
     t = PrettyTable(['Process','Heat (kJ/kg)','Work (kJ/kg)'])
@@ -50,51 +64,55 @@ def main():
     t.align['Work (kJ/kg)'] = 'r'
     t.float_format['Heat (kJ/kg)'] = '5.1'
     t.float_format['Work (kJ/kg)'] = '5.1'
-    t.add_row(['1 - 2',0,wt])
-    t.add_row(['2 - 3',qc,0])
-    t.add_row(['3 - 4',0,wp])
-    t.add_row(['4 - 1',qb,0])
-    t.add_row(['Net',qb+qc,wt+wp])
+    t.add_row(['1 - 2',0,turb.work/1000])
+    t.add_row(['2 - 3',cond.heat/1000,0])
+    t.add_row(['3 - 4',0,pump.work/1000])
+    t.add_row(['4 - 1',boil.heat/1000,0])
+    t.add_row(['Net',cyc_props["qnet"]/1000,cyc_props["wnet"]/1000])
     print(t)
 
     print('\nOther Values \n------------ ')
-    print('v3 = {:.4e} m^3/kg'.format(v3))
-    print('thermal efficiency = {:2.1f}%'.format(thermal_eff*100))
-    print('back work ratio = {:.3f}'.format(bwr))
+    print('v3 = {:.4e} m^3/kg'.format(st_3.v))
+    print('thermal efficiency = {:2.1f}%'.format(cyc_props["thermal_eff"]*100))
+    print('back work ratio = {:.3f}'.format(cyc_props["bwr"]))
 
     # get temperature values for T-s plot
-    T1 =  h2o_sat[h2o_sat['P']==p_hi]['T'].values[0]
-    T2 =  h2o_sat[h2o_sat['P']==p_lo]['T'].values[0] # come back to this
-    T2s = T2  # come back to this
-    T3 = T2s
-    T4s = T3 + 5 # temporary until I can interpolate to find real T4
-    T4b = T1
-    T4 = T4b * (s4 - s4s)/(s4b - s4s) + T4s
+#     T1 =  h2o_sat[h2o_sat['P']==p_hi]['T'].values[0]
+#     T2 =  h2o_sat[h2o_sat['P']==p_lo]['T'].values[0] # come back to this
+#     T2s = T2  # come back to this
+#     T3 = T2s
+#     T4s = T3 + 5 # temporary until I can interpolate to find real T4
+#     T4b = T1
+#     T4 = T4b * (s4 - s4s)/(s4b - s4s) + T4s
 
     # note: use h4, s4 to fix the state to find T4
-    T_pts = [T1, T2s, T2, T2s, T3, T4s, T4b, T1] # solid lines
-    s_pts = [s1, s2s, s2, s2s, s3, s4s, s4b, s1]
+    T_pts = [st_1.T, st_2s.T, st_2.T, st_2s.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
+    s_pts = [st_1.s, st_2s.s, st_2.s, st_2s.s, st_3.s, st_4s.s, st_4b.s, st_1.s]
 
-    s_dash_12 = [s1, s2]
-    T_dash_12 = [T1, T2]
-    s_dash_34 = [s3, s4]
-    T_dash_34 = [T3, T4]
+    s_dash_12 = [st_1.s, st_2.s]
+    T_dash_12 = [st_1.T, st_2.T]
+    s_dash_34 = [st_3.s, st_4.s]
+    T_dash_34 = [st_3.T, st_4.T]
 
     # for i in s_pts: #round to two decimal places
     #   s_pts(i) = float('{:.2f}'.format(i))
     #print T_pts
     #print s_pts
 
-    # draw saturated dome. Get values from sat table
-    Tsat_pts = h2o_sat['T'].tolist()
-    sfsat_pts = h2o_sat['sf'].tolist()
-    sgsat_pts = h2o_sat['sg'].tolist()
-    # sort the lists
+#     # draw saturated dome. Get values from sat table
+#     step = 5
+#     for step
+
+
+#     Tsat_pts = h2o_sat['T'].tolist()
+#     sfsat_pts = h2o_sat['sf'].tolist()
+#     sgsat_pts = h2o_sat['sg'].tolist()
+#     # sort the lists
     #Tsat_pts =
 
     # Draw T-s plot
     plt.clf()
-    plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
+#     plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
     plt.plot(s_dash_12,T_dash_12,'b--',s_dash_34,T_dash_34,'b--')
     plt.annotate("1.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
     plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
@@ -151,7 +169,7 @@ def define_inputs():
 def select_fluid():
     while True:
         print("Select a working fluid from the following options: ")
-        fluid_list = ["Water","Ethane","Propane","R22","R134a","R236ea","Carbon Dioxide","Pentane","Isobutene"]
+        fluid_list = ["Water","Ethane","n-Propane","R22","R134a","R236EA","CarbonDioxide","n-Pentane","IsoButene"]
         for i in range(9):
             print(" {}. {}".format(i+1,fluid_list[i]) )
         fluid = raw_input(": ")
@@ -215,8 +233,8 @@ def enter_efficiencies(which_eff):
 
 def compute_cycle(props):
     fluid = props['fluid']
-    p_hi = props['p_hi']
-    p_lo = props['p_lo']
+    p_hi = props['p_hi']*10**6
+    p_lo = props['p_lo']*10**6
     turb_eff = props['turb_eff']
     pump_eff = props['pump_eff']
 
@@ -225,6 +243,7 @@ def compute_cycle(props):
     # State 1, saturated vapor at high pressure
     st_1 = thermo.State(fluid,'p',p_hi,'x',1.0,'1')
     state_list.append(st_1)
+    print(st_1.s)
 
     # State 2s, two-phase at low pressure with same entropy as state 1
     st_2s = thermo.State(fluid,'p',p_lo,'s',st_1.s,'2s')
@@ -245,7 +264,7 @@ def compute_cycle(props):
     # States 4 and 4s, sub-cooled liquid at high pressure
     # assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
     # find values for isentropic pump operation
-    wps = -st_3.v*(p_hi - p_lo)*(10**3) # convert MPa to kPa
+    wps = -st_3.v*(p_hi - p_lo)
     h4s = st_3.h - wps
     # find values for irreversible pump operation
     wp = 1/pump_eff * wps
@@ -262,7 +281,7 @@ def compute_cycle(props):
     wt = st_1.h - st_2.h
     qb = st_1.h - st_4.h
     qc = st_3.h - st_2.h
-    turb = thermo.Process(st_1,st_2,0,wp,"Turbine")
+    turb = thermo.Process(st_1,st_2,0,wt,"Turbine")
     cond = thermo.Process(st_2,st_3,qc,0,"Condenser")
     pump = thermo.Process(st_3,st_4,0,wp,"Pump")
     boil = thermo.Process(st_4,st_1,qb,0,"Boiler")
