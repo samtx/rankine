@@ -157,7 +157,7 @@ def compute_cycle(props):
     wps = -st_3.v*(p_hi - p_lo)*(10**3) # convert MPa to kPa
     h4s = st_3.h - wps
     # find values for irreversible pump operation
-    wp = 1/pump_eff * (st_3.h - h4s)
+    wp = 1/pump_eff * wps
     st_4s = thermo.State(fluid,'p',p_hi,'s',st_3.s,'4s')
     state_list.append(st_4s)
     st_4 = thermo.State(fluid,'p',p_hi,'h',st_3.h-wp,'4')
