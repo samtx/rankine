@@ -303,4 +303,4 @@ def compute_cycle(props):
     return (cyc_props, process_list, state_list)
 
 if __name__ == '__main__':
-  main()
+    main()
