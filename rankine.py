@@ -263,11 +263,8 @@ def compute_cycle(props):
 
     # States 4 and 4s, sub-cooled liquid at high pressure
     # assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
-    # find values for isentropic pump operation
-    wps = -st_3.v*(p_hi - p_lo)
-    h4s = st_3.h - wps
     # find values for irreversible pump operation
-    wp = 1/pump_eff * wps
+    wp = 1/pump_eff * (-st_3.v)*(p_hi - p_lo)
     st_4s = thermo.State(fluid,'p',p_hi,'s',st_3.s,'4s')
     state_list.append(st_4s)
     st_4 = thermo.State(fluid,'p',p_hi,'h',st_3.h-wp,'4')
@@ -278,27 +275,18 @@ def compute_cycle(props):
 
     # Define processes
     # Find work and heat for each process
-    wt = st_1.h - st_2.h
-    qb = st_1.h - st_4.h
-    qc = st_3.h - st_2.h
-    turb = thermo.Process(st_1,st_2,0,wt,"Turbine")
-    cond = thermo.Process(st_2,st_3,qc,0,"Condenser")
-    pump = thermo.Process(st_3,st_4,0,wp,"Pump")
-    boil = thermo.Process(st_4,st_1,qb,0,"Boiler")
+    turb = thermo.Process(st_1, st_2, 0, st_1.h-st_2.h, "Turbine")
+    cond = thermo.Process(st_2, st_3, st_3.h-st_2.h, 0, "Condenser")
+    pump = thermo.Process(st_3, st_4, 0, wp, "Pump")
+    boil = thermo.Process(st_4, st_1, st_1.h-st_4.h, 0, "Boiler")
     process_list = [turb,cond,pump,boil]
 
     # Define cycle properties
-    wnet = turb.work + pump.work
-    qnet = boil.heat + cond.heat
-    # Find thermal efficiency for cycle
-    thermal_eff = wnet / boil.heat
-    # Find back work ratio
-    bwr = -pump.work / turb.work
     cyc_props = {}
-    cyc_props['wnet'] = wnet
-    cyc_props['qnet'] = qnet
-    cyc_props['thermal_eff'] = thermal_eff
-    cyc_props['bwr'] = bwr
+    cyc_props['wnet'] = turb.work + pump.work
+    cyc_props['qnet'] = boil.heat + cond.heat
+    cyc_props['thermal_eff'] = wnet / boil.heat
+    cyc_props['bwr'] = -pump.work / turb.work
 
     return (cyc_props, process_list, state_list)
 
