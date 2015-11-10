@@ -285,7 +285,7 @@ def compute_cycle(props):
     cyc_props = {}
     cyc_props['wnet'] = turb.work + pump.work
     cyc_props['qnet'] = boil.heat + cond.heat
-    cyc_props['thermal_eff'] = wnet / boil.heat
+    cyc_props['thermal_eff'] = cyc_props['wnet'] / boil.heat
     cyc_props['bwr'] = -pump.work / turb.work
 
     return (cyc_props, process_list, state_list)
