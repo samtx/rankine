@@ -218,12 +218,12 @@ class Cycle(object):
      note: the user must enter at least one "high" value and one "low" value for either temperature, pressure, or mixed.
      Entering the dead state is optional but will default to T = 15 degC, P = 0.101325 MPa (1 atm) for the given fluid'''
 
-    @propety
+    @property
     def prop_hi(self):
         # return the dictionary
         return self._cyc_prop_hi
 
-    @propety
+    @property
     def prop_lo(self):
         # return the dictionary
         return self._cyc_prop_lo
@@ -245,13 +245,13 @@ class Cycle(object):
 
     def get_procs(self):
         return self._proc_list
-    
+
     def add_state(self,state):
         self._state_list.append(state)
 
     def get_states(self):
         return self._state_list
-        
+
     @property
     def mdot(self):
         return self._mdot
