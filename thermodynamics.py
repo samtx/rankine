@@ -96,7 +96,11 @@ class State(object):
     def __str__():
         return self._name
 
-    def __init__(self,process,fluid,prop1,value1,prop2,value2,name="",dead_state="",velocity=0,z=0):
+    def __init__(
+        self,
+        process,fluid,
+        prop1,value1,prop2,value2,
+        name="",dead_state="",velocity=0,z=0):
 
         self._process = process  # this should be an object of class Process
 
@@ -198,9 +202,20 @@ class Cycle(Process):
          T_hi = high temperature of cycle in Celcius
          T_lo = low temperature of cycle in Celcius
          dead_state = object of class State that represents the dead state pressure and temperature
-         
+
      note: the user must enter at least one "high" value and one "low" value for either temperature, pressure, or mixed.
      Entering the dead state is optional but will default to T = 15 degC, P = 0.101325 MPa (1 atm) for the given fluid'''
+
+    @propety
+    def prop_hi:
+        # return the dictionary
+        return _cyc_prop_hi
+    
+    @propety
+    def prop_lo:
+        # return the dictionary
+        return _cyc_prop_lo
+        
     def __init__(self,fluid,**kwargs):
         # unpack keyword arguments
         p_hi = None
@@ -222,8 +237,22 @@ class Cycle(Process):
         # check to see if at least one high and one low value are entered
         if not((p_hi or T_hi) and (p_lo or T_lo)):
             raise ValueError('Must enter one of each group (p_hi or T_h) and (p_lo and T_lo)')
+        # set low and high cycle properties
+        # high property
+        if T_hi:
+            cyc_prop_hi = {'T':T_hi + 273.15} # temperature must be saved in K
+        elif p_hi:
+            cyc_prop_hi = {'P':p_hi*10**6}  # pressure must be saved in Pa
+        # low property
+        if T_lo:
+            cyc_prop_lo = {'T':T_lo + 273.15} # temperature must be saved in K
+        elif p_lo:
+            cyc_prop_lo = {'P':p_lo*10**6}  # pressure must be saved in Pa
+        self._cyc_prop_hi = cyc_prop_hi
+        self._cyc_prop_lo = cyc_prop_lo 
         
-            
+
+
 
 
 
