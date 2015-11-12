@@ -194,14 +194,14 @@ class Process(object):
         self._ex_out = state_out.ef     # exergy out
         self._ex_d = dead_state.T*(self.state_out.s-self.state_in.s) # exergy destroyed
 
-class Cycle(Process):
+class Cycle(object):
      '''A class that defines values for a thermodynamic power cycle
      keyword arguments:
          p_hi = high pressure of cycle in MPa
          p_lo = low pressure of cycle in MPa
          T_hi = high temperature of cycle in Celcius
          T_lo = low temperature of cycle in Celcius
-         dead_state = object of class State that represents the dead state pressure and temperature
+         dead = object of class State that represents the dead state pressure and temperature
 
      note: the user must enter at least one "high" value and one "low" value for either temperature, pressure, or mixed.
      Entering the dead state is optional but will default to T = 15 degC, P = 0.101325 MPa (1 atm) for the given fluid'''
@@ -209,12 +209,21 @@ class Cycle(Process):
     @propety
     def prop_hi(self):
         # return the dictionary
-        return _cyc_prop_hi
+        return self._cyc_prop_hi
 
     @propety
     def prop_lo(self):
         # return the dictionary
-        return _cyc_prop_lo
+        return self._cyc_prop_lo
+
+    @property
+    def fluid(self):
+        return self._fluid
+
+    @property
+    def dead(self):
+        #return dead state
+        return self._dead
 
     def __init__(self,fluid,**kwargs):
         # unpack keyword arguments
@@ -232,7 +241,7 @@ class Cycle(Process):
                 T_hi = value
             elif key.lower() = 't_lo'
                 T_lo = value
-            elif key.lower() = 'dead_state'
+            elif key.lower() = 'dead'
                 dead_state = value
         # check to see if at least one high and one low value are entered
         if not((p_hi or T_hi) and (p_lo or T_lo)):
@@ -250,6 +259,12 @@ class Cycle(Process):
             cyc_prop_lo = {'P':p_lo*10**6}  # pressure must be saved in Pa
         self._cyc_prop_hi = cyc_prop_hi
         self._cyc_prop_lo = cyc_prop_lo
+        # set fluid property
+        self._fluid = fluid
+        # set dead state
+        if not dead:
+            dead = State(None,fluid,'T',15+273.15,'P',101325,'Dead State')
+        self._dead = dead
 
 
 
