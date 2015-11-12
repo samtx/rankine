@@ -1,13 +1,6 @@
 # Create Python class for a thermodynamic state
 
-#import pandas as pd.... never mind, just use CoolProp for the fluid data
 import CoolProp.CoolProp as CP  #must have CoolProp library installed
-
-# def class fluid_props(subcooled_csv, saturated_csv, superheated_csv):
-#     ''' This class is a pandas panel of three data frames that define the fluid properties. The inputs are the filenames of the .csv's that contain the fluid data. The saturated_csv can be one filename or a list of filenames (such as saturated data listed by pressure or by temperature) that will be combined into one dataframe'''
-#     # how do I structure this pandas panel of three data frames?
-    # idea: use MultiIndex to index the subcooled and superheated data frames by both pressure and temperature
-
 
 class State(object):
     ''' This is a class that can be used to define a thermodynamic state for a given fluid. The user must enter the fluid string to select in CoolProp and then 2 independent named variables for the state to be properly defined. All variables are specific, in that they are valued per unit mass. Optional variables and their default units are:
@@ -33,13 +26,20 @@ class State(object):
         elif prop == 'V':
             prop = 'D'
             value = 1/value
-#         # convert MPa to Pa for CoolProp
-#         elif prop == 'P':
-#             value = value * 10**6
-        # convert kJ to J for CoopProp
-#         elif prop in ['H','U','S']:
-#             value = value * 10
         return prop,value
+
+    # need to add kinetic and potential energy values
+    def flow_exergy(self,dead_state):
+        if dead_state == "":
+            # then the state in question is the dead state. Don't find flow exergy
+            return
+        else:
+            return self.h-dead_state.h - dead_state.T*(self.s-dead_state.s)
+
+    # flow exergy
+    @property
+    def ef(self):
+        return self._ef
 
     @property
     def T(self):
@@ -92,7 +92,7 @@ class State(object):
     def __str__():
         return self._name
 
-    def __init__(self,fluid,prop1,value1,prop2,value2,name="",velocity=0,z=0):
+    def __init__(self,fluid,prop1,value1,prop2,value2,name="",dead_state="",velocity=0,z=0):
         self._fluid = fluid
         # note that 'x' and 'Q' both represent two-phase quality
         # set property name if specified
@@ -117,6 +117,7 @@ class State(object):
         self._h = CP.PropsSI('H',prop1,value1,prop2,value2,fluid)
         self._s = CP.PropsSI('S',prop1,value1,prop2,value2,fluid)
         self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
+        self._ef = self.flow_exergy(dead_state)
         self._vel = velocity
         self._z = z     #height
 
@@ -139,6 +140,11 @@ class Process(object):
     '''A class that defines values for a process based on a
     state in and a state out. '''
 
+    def calc_exergy(self,state_in,state_out,env_vars):
+        ''' Calculate the exergy in, exergy out, and exergy destruction of the process'''
+        To = env_vars["To"] # environment temperature in Kelvin
+        po = env_vars["po"] # environment pressure in Pa
+
     @property
     def heat(self):
         return self._heat
@@ -155,12 +161,28 @@ class Process(object):
     def state_out(self):
         return self._state_out
 
-    def __init__(self,state_in,state_out,heat=0,work=0,name=""):
+    @property
+    def ex_in(self):
+        return self._ex_in
+
+    @property
+    def ex_out(self):
+        return self._ex_out
+
+    @property
+    def ex_d(self):
+        return self._ex_d
+
+    def __init__(self,state_in,state_out,heat=0,work=0,name="",dead_state=""):
         self._heat = heat
         self._work = work
         self._state_in = state_in  # these are of class State
         self._state_out = state_out
         self.name = name
+        self._ex_in = state_in.ef       # exergy in
+        self._ex_out = state_out.ef     # exergy out
+        self._ex_d = dead_state.T*(self.state_out.s-self.state_in.s) # exergy destroyed
+
 # class Cycle(Process):
 #     '''A class that defines values for a thermodynamic power cycle'''
 
