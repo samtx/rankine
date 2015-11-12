@@ -89,10 +89,21 @@ class State(object):
     def name(self):
         return self._name
 
+    @property
+    def proc(self):
+        return self._process
+
     def __str__():
         return self._name
 
+<<<<<<< Updated upstream
     def __init__(self,fluid,prop1,value1,prop2,value2,name="",velocity=0,z=0):
+=======
+    def __init__(self,process,fluid,prop1,value1,prop2,value2,name="",dead_state="",velocity=0,z=0):
+
+        self._process = process  # this should be an object of class Process
+
+>>>>>>> Stashed changes
         self._fluid = fluid
         # note that 'x' and 'Q' both represent two-phase quality
         # set property name if specified
@@ -155,16 +166,49 @@ class Process(object):
     def state_out(self):
         return self._state_out
 
+<<<<<<< Updated upstream
     def __init__(self,state_in,state_out,heat=0,work=0,name=""):
+=======
+    @property
+    def ex_in(self):
+        return self._ex_in
+
+    @property
+    def ex_out(self):
+        return self._ex_out
+
+    @property
+    def ex_d(self):
+        return self._ex_d
+
+    @property
+    def cyc(self):
+        return self._cycle
+
+    def __init__(self,cycle,state_in,state_out,heat=0,work=0,name="",dead_state=""):
+        self._cycle = cycle # this should be an object of class Cycle
+>>>>>>> Stashed changes
         self._heat = heat
         self._work = work
         self._state_in = state_in  # these are of class State
         self._state_out = state_out
         self.name = name
+<<<<<<< Updated upstream
 # class Cycle(Process):
 #     '''A class that defines values for a thermodynamic power cycle'''
 
 #     def __init__(self,)
+=======
+        self._ex_in = state_in.ef       # exergy in
+        self._ex_out = state_out.ef     # exergy out
+        self._ex_d = dead_state.T*(self.state_out.s-self.state_in.s) # exergy destroyed
+
+class Cycle(Process):
+     '''A class that defines values for a thermodynamic power cycle'''
+    def __init__(self,fluid,cyc_props,dead_state=""):
+        pass
+        
+>>>>>>> Stashed changes
 
 
 
