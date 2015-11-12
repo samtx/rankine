@@ -96,6 +96,9 @@ class State(object):
     def __str__():
         return self._name
 
+    def __repr__(self):
+        return self.name
+
     def __init__(
         self,
         process,fluid,
@@ -183,7 +186,10 @@ class Process(object):
     def cyc(self):
         return self._cycle
 
-    def __init__(self,cycle,state_in,state_out,heat=0,work=0,name="",dead_state=""):
+    def __repr__(self):
+        return self.name
+
+    def __init__(self,cycle,state_in,state_out,heat=0,work=0,name=""):
         self._cycle = cycle # this should be an object of class Cycle
         self._heat = heat
         self._work = work
@@ -192,7 +198,7 @@ class Process(object):
         self.name = name
         self._ex_in = state_in.ef       # exergy in
         self._ex_out = state_out.ef     # exergy out
-        self._ex_d = dead_state.T*(self.state_out.s-self.state_in.s) # exergy destroyed
+        self._ex_d = cyc.dead.T*(self.state_out.s-self.state_in.s) # exergy destroyed
 
 class Cycle(object):
      '''A class that defines values for a thermodynamic power cycle
@@ -225,13 +231,23 @@ class Cycle(object):
         #return dead state
         return self._dead
 
+    def __repr__(self):
+        return self.name
+    
+    def add_proc(self,process):
+        self._proc_list.append(process)
+        
+    def get_procs(self):
+        return self._proc_list
+
     def __init__(self,fluid,**kwargs):
         # unpack keyword arguments
         p_hi = None
         p_lo = None
         T_hi = None
         T_lo = None
-        dead_state = None
+        dead = None
+        name = ""
         for key, value in kwargs.iteritems():
             if key.lower() = 'p_hi':
                 p_hi = value
@@ -242,7 +258,9 @@ class Cycle(object):
             elif key.lower() = 't_lo'
                 T_lo = value
             elif key.lower() = 'dead'
-                dead_state = value
+                dead = value
+            elif key.lower() = 'name'
+                name = value
         # check to see if at least one high and one low value are entered
         if not((p_hi or T_hi) and (p_lo or T_lo)):
             raise ValueError('Must enter one of each group (p_hi or T_h) and (p_lo and T_lo)')
@@ -265,6 +283,11 @@ class Cycle(object):
         if not dead:
             dead = State(None,fluid,'T',15+273.15,'P',101325,'Dead State')
         self._dead = dead
+        # set cycle name
+        self.name = name
+        # initialize process list
+        self._proc_list = []
+        
 
 
 
