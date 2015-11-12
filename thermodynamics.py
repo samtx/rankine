@@ -96,14 +96,11 @@ class State(object):
     def __str__():
         return self._name
 
-<<<<<<< Updated upstream
-    def __init__(self,fluid,prop1,value1,prop2,value2,name="",velocity=0,z=0):
-=======
     def __init__(self,process,fluid,prop1,value1,prop2,value2,name="",dead_state="",velocity=0,z=0):
 
         self._process = process  # this should be an object of class Process
 
->>>>>>> Stashed changes
+
         self._fluid = fluid
         # note that 'x' and 'Q' both represent two-phase quality
         # set property name if specified
@@ -166,9 +163,6 @@ class Process(object):
     def state_out(self):
         return self._state_out
 
-<<<<<<< Updated upstream
-    def __init__(self,state_in,state_out,heat=0,work=0,name=""):
-=======
     @property
     def ex_in(self):
         return self._ex_in
@@ -187,28 +181,49 @@ class Process(object):
 
     def __init__(self,cycle,state_in,state_out,heat=0,work=0,name="",dead_state=""):
         self._cycle = cycle # this should be an object of class Cycle
->>>>>>> Stashed changes
         self._heat = heat
         self._work = work
         self._state_in = state_in  # these are of class State
         self._state_out = state_out
         self.name = name
-<<<<<<< Updated upstream
-# class Cycle(Process):
-#     '''A class that defines values for a thermodynamic power cycle'''
-
-#     def __init__(self,)
-=======
         self._ex_in = state_in.ef       # exergy in
         self._ex_out = state_out.ef     # exergy out
         self._ex_d = dead_state.T*(self.state_out.s-self.state_in.s) # exergy destroyed
 
 class Cycle(Process):
-     '''A class that defines values for a thermodynamic power cycle'''
-    def __init__(self,fluid,cyc_props,dead_state=""):
-        pass
+     '''A class that defines values for a thermodynamic power cycle
+     keyword arguments:
+         p_hi = high pressure of cycle in MPa
+         p_lo = low pressure of cycle in MPa
+         T_hi = high temperature of cycle in Celcius
+         T_lo = low temperature of cycle in Celcius
+         dead_state = object of class State that represents the dead state pressure and temperature
+         
+     note: the user must enter at least one "high" value and one "low" value for either temperature, pressure, or mixed.
+     Entering the dead state is optional but will default to T = 15 degC, P = 0.101325 MPa (1 atm) for the given fluid'''
+    def __init__(self,fluid,**kwargs):
+        # unpack keyword arguments
+        p_hi = None
+        p_lo = None
+        T_hi = None
+        T_lo = None
+        dead_state = None
+        for key, value in kwargs.iteritems():
+            if key.lower() = 'p_hi':
+                p_hi = value
+            elif key.lower() = 'p_lo':
+                p_lo = value
+            elif key.lower() = 't_hi'
+                T_hi = value
+            elif key.lower() = 't_lo'
+                T_lo = value
+            elif key.lower() = 'dead_state'
+                dead_state = value
+        # check to see if at least one high and one low value are entered
+        if not((p_hi or T_hi) and (p_lo or T_lo)):
+            raise ValueError('Must enter one of each group (p_hi or T_h) and (p_lo and T_lo)')
         
->>>>>>> Stashed changes
+            
 
 
 
