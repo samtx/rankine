@@ -207,15 +207,15 @@ class Cycle(Process):
      Entering the dead state is optional but will default to T = 15 degC, P = 0.101325 MPa (1 atm) for the given fluid'''
 
     @propety
-    def prop_hi:
+    def prop_hi(self):
         # return the dictionary
         return _cyc_prop_hi
-    
+
     @propety
-    def prop_lo:
+    def prop_lo(self):
         # return the dictionary
         return _cyc_prop_lo
-        
+
     def __init__(self,fluid,**kwargs):
         # unpack keyword arguments
         p_hi = None
@@ -249,8 +249,8 @@ class Cycle(Process):
         elif p_lo:
             cyc_prop_lo = {'P':p_lo*10**6}  # pressure must be saved in Pa
         self._cyc_prop_hi = cyc_prop_hi
-        self._cyc_prop_lo = cyc_prop_lo 
-        
+        self._cyc_prop_lo = cyc_prop_lo
+
 
 
 
