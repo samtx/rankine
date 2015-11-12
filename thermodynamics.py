@@ -205,8 +205,8 @@ class Process(object):
 
 
 class Cycle(object):
-     '''A class that defines values for a thermodynamic power cycle
-     keyword arguments:
+    '''A class that defines values for a thermodynamic power cycle
+    keyword arguments:
          p_hi = high pressure of cycle in MPa
          p_lo = low pressure of cycle in MPa
          T_hi = high temperature of cycle in Celcius
@@ -215,8 +215,8 @@ class Cycle(object):
          name = string to represent the cycle
          mdot = mass flow rate in kg/s
 
-     note: the user must enter at least one "high" value and one "low" value for either temperature, pressure, or mixed.
-     Entering the dead state is optional but will default to T = 15 degC, P = 0.101325 MPa (1 atm) for the given fluid'''
+    note: the user must enter at least one "high" value and one "low" value for either temperature, pressure, or mixed.
+    Entering the dead state is optional but will default to T = 15 degC, P = 0.101325 MPa (1 atm) for the given fluid'''
 
     @property
     def prop_hi(self):
@@ -266,19 +266,19 @@ class Cycle(object):
         name = ""
         mdot = None
         for key, value in kwargs.iteritems():
-            if key.lower() = 'p_hi':
+            if key.lower() == 'p_hi':
                 p_hi = value
-            elif key.lower() = 'p_lo':
+            elif key.lower() == 'p_lo':
                 p_lo = value
-            elif key.lower() = 't_hi'
+            elif key.lower() == 't_hi':
                 T_hi = value
-            elif key.lower() = 't_lo'
+            elif key.lower() == 't_lo':
                 T_lo = value
-            elif key.lower() = 'dead'
+            elif key.lower() == 'dead':
                 dead = value
-            elif key.lower() = 'name'
+            elif key.lower() == 'name':
                 name = value
-            elif key.lower() = 'mdot'
+            elif key.lower() == 'mdot':
                 mdot = value
         # check to see if at least one high and one low value are entered
         if not((p_hi or T_hi) and (p_lo or T_lo)):
