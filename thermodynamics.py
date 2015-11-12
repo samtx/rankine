@@ -33,12 +33,6 @@ class State(object):
         elif prop == 'V':
             prop = 'D'
             value = 1/value
-#         # convert MPa to Pa for CoolProp
-#         elif prop == 'P':
-#             value = value * 10**6
-        # convert kJ to J for CoopProp
-#         elif prop in ['H','U','S']:
-#             value = value * 10
         return prop,value
 
     @property
@@ -251,7 +245,7 @@ class Cycle(object):
 
     def get_procs(self):
         return self._proc_list
-    
+
     @property
     def mdot(self):
         return self._mdot
