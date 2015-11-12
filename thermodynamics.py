@@ -90,8 +90,8 @@ class State(object):
         return self._name
 
     @property
-    def proc(self):
-        return self._process
+    def cycle(self):
+        return self._cycle
 
     def __str__():
         return self._name
@@ -101,11 +101,11 @@ class State(object):
 
     def __init__(
         self,
-        process,fluid,
+        cycle,fluid,
         prop1,value1,prop2,value2,
         name="",dead_state="",velocity=0,z=0):
 
-        self._process = process  # this should be an object of class Process
+        self._cycle = cycle  # should be an object of class cycle
 
 
         self._fluid = fluid
@@ -167,7 +167,15 @@ class Process(object):
         return self._state_in
 
     @property
+    def in_(self):
+        return self._state_in
+    
+    @property
     def state_out(self):
+        return self._state_out
+
+    @property
+    def out(self):
         return self._state_out
 
     @property
@@ -183,7 +191,7 @@ class Process(object):
         return self._ex_d
 
     @property
-    def cyc(self):
+    def cycle(self):
         return self._cycle
 
     def __repr__(self):
@@ -199,6 +207,7 @@ class Process(object):
         self._ex_in = state_in.ef       # exergy in
         self._ex_out = state_out.ef     # exergy out
         self._ex_d = cyc.dead.T*(self.state_out.s-self.state_in.s) # exergy destroyed
+
 
 class Cycle(object):
      '''A class that defines values for a thermodynamic power cycle
@@ -233,10 +242,11 @@ class Cycle(object):
 
     def __repr__(self):
         return self.name
-    
+
     def add_proc(self,process):
         self._proc_list.append(process)
-        
+
+    @property
     def get_procs(self):
         return self._proc_list
 
@@ -287,7 +297,7 @@ class Cycle(object):
         self.name = name
         # initialize process list
         self._proc_list = []
-        
+
 
 
 
