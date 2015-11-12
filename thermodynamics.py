@@ -103,12 +103,13 @@ class State(object):
         self,
         cycle,fluid,
         prop1,value1,prop2,value2,
-        name="",dead_state="",velocity=0,z=0):
+        name="",
+        velocity=0,z=0):
 
         self._cycle = cycle  # should be an object of class cycle
 
-
         self._fluid = fluid
+
         # note that 'x' and 'Q' both represent two-phase quality
         # set property name if specified
         self._name = name # 1, 2, 2s, 3, 4, 4s, 4b, etc.
@@ -169,7 +170,7 @@ class Process(object):
     @property
     def in_(self):
         return self._state_in
-    
+
     @property
     def state_out(self):
         return self._state_out
@@ -201,12 +202,12 @@ class Process(object):
         self._cycle = cycle # this should be an object of class Cycle
         self._heat = heat
         self._work = work
-        self._state_in = state_in  # these are of class State
+        self._state_in = state_in  # these are objects of class State
         self._state_out = state_out
         self.name = name
-        self._ex_in = state_in.ef       # exergy in
-        self._ex_out = state_out.ef     # exergy out
-        self._ex_d = cyc.dead.T*(self.state_out.s-self.state_in.s) # exergy destroyed
+        self._ex_in = state_in.ef       # flow exergy in
+        self._ex_out = state_out.ef     # flow exergy out
+        self._ex_d = cycle.dead.T*(self.state_out.s-self.state_in.s) # exergy destroyed
 
 
 class Cycle(object):
@@ -217,6 +218,8 @@ class Cycle(object):
          T_hi = high temperature of cycle in Celcius
          T_lo = low temperature of cycle in Celcius
          dead = object of class State that represents the dead state pressure and temperature
+         name = string to represent the cycle
+         mdot = mass flow rate in kg/s
 
      note: the user must enter at least one "high" value and one "low" value for either temperature, pressure, or mixed.
      Entering the dead state is optional but will default to T = 15 degC, P = 0.101325 MPa (1 atm) for the given fluid'''
@@ -246,9 +249,12 @@ class Cycle(object):
     def add_proc(self,process):
         self._proc_list.append(process)
 
-    @property
     def get_procs(self):
         return self._proc_list
+    
+    @property
+    def mdot(self):
+        return self._mdot
 
     def __init__(self,fluid,**kwargs):
         # unpack keyword arguments
@@ -258,6 +264,7 @@ class Cycle(object):
         T_lo = None
         dead = None
         name = ""
+        mdot = None
         for key, value in kwargs.iteritems():
             if key.lower() = 'p_hi':
                 p_hi = value
@@ -271,6 +278,8 @@ class Cycle(object):
                 dead = value
             elif key.lower() = 'name'
                 name = value
+            elif key.lower() = 'mdot'
+                mdot = value
         # check to see if at least one high and one low value are entered
         if not((p_hi or T_hi) and (p_lo or T_lo)):
             raise ValueError('Must enter one of each group (p_hi or T_h) and (p_lo and T_lo)')
@@ -297,6 +306,8 @@ class Cycle(object):
         self.name = name
         # initialize process list
         self._proc_list = []
+        # set mass flow rate
+        self._mdot = mdot # in kg/s
 
 
 
