@@ -245,7 +245,13 @@ class Cycle(object):
 
     def get_procs(self):
         return self._proc_list
+    
+    def add_state(self,state):
+        self._state_list.append(state)
 
+    def get_states(self):
+        return self._state_list
+        
     @property
     def mdot(self):
         return self._mdot
@@ -300,6 +306,8 @@ class Cycle(object):
         self.name = name
         # initialize process list
         self._proc_list = []
+        # initialize state list
+        self._state_list = []
         # set mass flow rate
         self._mdot = mdot # in kg/s
 
