@@ -59,16 +59,14 @@ def main():
     t.add_row([st_4.name,st_4.h/1000,st_4.s/1000,'Sub-Cooled Liq'])
     print(t,'\n')
 
-    t = PrettyTable(['Process','Heat (kJ/kg)','Work (kJ/kg)'])
+    t = PrettyTable(['Process','States','Heat (kJ/kg)','Work (kJ/kg)'])
     t.align['Heat (kJ/kg)'] = 'r'
     t.align['Work (kJ/kg)'] = 'r'
     t.float_format['Heat (kJ/kg)'] = '5.1'
     t.float_format['Work (kJ/kg)'] = '5.1'
-    t.add_row([turb.name,0,turb.work/1000])
-    t.add_row([cond.name,cond.heat/1000,0])
-    t.add_row([pump.name,0,pump.work/1000])
-    t.add_row([boil.name,boil.heat/1000,0])
-    t.add_row(['Net',cyc_props["qnet"]/1000,cyc_props["wnet"]/1000])
+    for p in p_list:
+        t.add_row([p.name,p.state_in.name+' -> '+p.state_out.name,p.heat/1000,p.work/1000])
+    t.add_row(['Net','',cyc_props["qnet"]/1000,cyc_props["wnet"]/1000])
     print(t)
 
     print('\nOther Values \n------------ ')
@@ -285,7 +283,7 @@ def compute_cycle(props):
     cyc_props = {}
     cyc_props['wnet'] = turb.work + pump.work
     cyc_props['qnet'] = boil.heat + cond.heat
-    cyc_props['thermal_eff'] = wnet / boil.heat
+    cyc_props['thermal_eff'] = cyc_props['wnet'] / boil.heat
     cyc_props['bwr'] = -pump.work / turb.work
 
     return (cyc_props, process_list, state_list)
