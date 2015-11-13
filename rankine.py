@@ -14,119 +14,11 @@ from prettytable import PrettyTable #for output formatting
 def main():
     #Obtaining user-defined properties of Rankine cycle
     props = define_inputs()
-    #print(props)
     # begin computing processess for rankine cycle
     (cyc_props,p_list,s_list) = compute_cycle(props)
-    print('Done!')
-
-    # unpack states
-    st_1 = s_list[0]
-    st_2s = s_list[1]
-    st_2 = s_list[2]
-    st_3 = s_list[3]
-    st_4s = s_list[4]
-    st_4 = s_list[5]
-    st_4b = s_list[6]
-
-    # unpack processes
-    turb = p_list[0]
-    cond = p_list[1]
-    pump = p_list[2]
-    boil = p_list[3]
-
-    # ----- PUT THIS INTO A SEPARATE FUNCTION LATER -----
-
-    # print values to screen
-    print('\nUser entered values\n-------------------')
-    print('Working Fluid: '+props["fluid"])
-    print('Low Pressure:  {:>3.3f} MPa'.format(props["p_lo"]))
-    print('High Pressure: {:>3.3f} MPa'.format(props["p_hi"]))
-    print('Isentropic Turbine Efficiency: {:>2.1f}%'.format(props["turb_eff"]*100))
-    print('Isentropic Pump Efficiency:    {:>2.1f}%\n'.format(props["pump_eff"]*100))
-
-    t = PrettyTable(['State','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Quality'])
-    t.align['Enthalpy (kJ/kg)'] = 'r'
-    t.align['Entropy (kJ/kg.K)']= 'r'
-    t.float_format['Enthalpy (kJ/kg)'] = '4.2'
-    t.float_format['Entropy (kJ/kg.K)'] = '6.5'
-    t.float_format['Quality'] = '0.2'
-    t.padding_width = 1
-    t.add_row([st_1.name,st_1.h/1000,st_1.s/1000,'Sat Vapor'])
-    t.add_row([st_2s.name,st_2s.h/1000,st_2s.s/1000,st_2s.x])
-    t.add_row([st_2.name,st_2.h/1000,st_2.s/1000,st_2.x])
-    t.add_row([st_3.name,st_3.h/1000,st_3.s/1000,'Sat Liquid'])
-    t.add_row([st_4s.name,st_4s.h/1000,st_4s.s/1000,'Sub-Cooled Liq'])
-    t.add_row([st_4.name,st_4.h/1000,st_4.s/1000,'Sub-Cooled Liq'])
-    print(t,'\n')
-
-    t = PrettyTable(['Process','States','Heat (kJ/kg)','Work (kJ/kg)'])
-    t.align['Heat (kJ/kg)'] = 'r'
-    t.align['Work (kJ/kg)'] = 'r'
-    t.float_format['Heat (kJ/kg)'] = '5.1'
-    t.float_format['Work (kJ/kg)'] = '5.1'
-    for p in p_list:
-        t.add_row([p.name,p.state_in.name+' -> '+p.state_out.name,p.heat/1000,p.work/1000])
-    t.add_row(['Net','',cyc_props["qnet"]/1000,cyc_props["wnet"]/1000])
-    print(t)
-
-    print('\nOther Values \n------------ ')
-    print('v3 = {:.4e} m^3/kg'.format(st_3.v))
-    print('thermal efficiency = {:2.1f}%'.format(cyc_props["thermal_eff"]*100))
-    print('back work ratio = {:.3f}'.format(cyc_props["bwr"]))
-
-    # get temperature values for T-s plot
-#     T1 =  h2o_sat[h2o_sat['P']==p_hi]['T'].values[0]
-#     T2 =  h2o_sat[h2o_sat['P']==p_lo]['T'].values[0] # come back to this
-#     T2s = T2  # come back to this
-#     T3 = T2s
-#     T4s = T3 + 5 # temporary until I can interpolate to find real T4
-#     T4b = T1
-#     T4 = T4b * (s4 - s4s)/(s4b - s4s) + T4s
-
-    # note: use h4, s4 to fix the state to find T4
-    T_pts = [st_1.T, st_2s.T, st_2.T, st_2s.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
-    s_pts = [st_1.s, st_2s.s, st_2.s, st_2s.s, st_3.s, st_4s.s, st_4b.s, st_1.s]
-
-    s_dash_12 = [st_1.s, st_2.s]
-    T_dash_12 = [st_1.T, st_2.T]
-    s_dash_34 = [st_3.s, st_4.s]
-    T_dash_34 = [st_3.T, st_4.T]
-
-    # for i in s_pts: #round to two decimal places
-    #   s_pts(i) = float('{:.2f}'.format(i))
-    #print T_pts
-    #print s_pts
-
-#     # draw saturated dome. Get values from sat table
-#     step = 5
-#     for step
-
-
-#     Tsat_pts = h2o_sat['T'].tolist()
-#     sfsat_pts = h2o_sat['sf'].tolist()
-#     sgsat_pts = h2o_sat['sg'].tolist()
-#     # sort the lists
-    #Tsat_pts =
-
-    # Draw T-s plot
-    plt.clf()
-#     plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
-    plt.plot(s_dash_12,T_dash_12,'b--',s_dash_34,T_dash_34,'b--')
-    plt.annotate("1.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
-    plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
-    plt.annotate("3.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+25 ), arrowprops=dict(facecolor = 'red', shrink=0.05),)
-    plt.annotate("4.", xy = (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
-    plt.suptitle("Rankine Cycle T-s Diagram")
-    plt.xlabel("Entropy (kJ/kg.K)")
-    plt.ylabel("Temperature (deg C)")
-    # Save plot
-    filename = 'ts_plot.png'
-    # if os.access(filename,os.F_OK):  # check if a ts_plot.png already exists
-    #   if not os.access(filename,os.W_OK): # check to see if it is not writable
-    #     os.fchmod(filename,stat.S_IWOTH) # if not writable, then make it writable
-    plt.savefig(filename) # save figure to directory
+    # print output to screen
+    print_output_to_screen(cyc_props,p_list,s_list,props)
     return
-
 
 def should_quit(string):
     exit_cmds = ['quit','exit','q','x','e','stop']
@@ -184,8 +76,8 @@ def select_fluid():
     return fluid
 
 def select_pressures():
-    p_lo = enter_pressure('low')
     p_hi = enter_pressure('high')
+    p_lo = enter_pressure('low')
     return p_hi,p_lo
 
 def enter_pressure(which_p):
@@ -243,7 +135,6 @@ def compute_cycle(props):
     state_list = []
     # State 1, saturated vapor at high pressure
     st_1 = thermo.State(cyc,fluid,'p',p_hi,'x',1.0,'1')
-    print(st_1.s)
 
     # State 2s, two-phase at low pressure with same entropy as state 1
     st_2s = thermo.State(cyc,fluid,'p',p_lo,'s',st_1.s,'2s')
@@ -282,6 +173,99 @@ def compute_cycle(props):
     cyc_props['bwr'] = -pump.work / turb.work
 
     return (cyc_props, cyc.get_procs(), cyc.get_states())
+
+def print_output_to_screen(cyc_props,p_list,s_list,props):
+    print_user_values(props)
+    print_state_table(s_list)
+    print_process_table(cyc_props,p_list)
+    print_cycle_values(cyc_props)
+    create_plot(p_list,s_list)
+    return
+
+def create_plot(p_list,s_list):
+    # unpack states
+    st_1 = s_list[0]
+    st_2s = s_list[1]
+    st_2 = s_list[2]
+    st_3 = s_list[3]
+    st_4s = s_list[4]
+    st_4 = s_list[5]
+    st_4b = s_list[6]
+
+    # unpack processes
+    turb = p_list[0]
+    cond = p_list[1]
+    pump = p_list[2]
+    boil = p_list[3]
+
+    # note: use h4, s4 to fix the state to find T4
+    T_pts = [st_1.T, st_2s.T, st_2.T, st_2s.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
+    s_pts = [st_1.s, st_2s.s, st_2.s, st_2s.s, st_3.s, st_4s.s, st_4b.s, st_1.s]
+
+    s_dash_12 = [st_1.s, st_2.s]
+    T_dash_12 = [st_1.T, st_2.T]
+    s_dash_34 = [st_3.s, st_4.s]
+    T_dash_34 = [st_3.T, st_4.T]
+
+    # Draw T-s plot
+    plt.clf()
+#     plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
+    plt.plot(s_dash_12,T_dash_12,'b--',s_dash_34,T_dash_34,'b--')
+    plt.annotate("1.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
+    plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
+    plt.annotate("3.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+25 ), arrowprops=dict(facecolor = 'red', shrink=0.05),)
+    plt.annotate("4.", xy = (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
+    plt.suptitle("Rankine Cycle T-s Diagram")
+    plt.xlabel("Entropy (kJ/kg.K)")
+    plt.ylabel("Temperature (deg C)")
+    # Save plot
+    filename = 'ts_plot.png'
+    plt.savefig(filename) # save figure to directory
+    return
+
+def print_user_values(props):
+    # print values to screen
+    print('\nUser entered values\n-------------------')
+    print('Working Fluid: '+props["fluid"])
+    print('Low Pressure:  {:>3.3f} MPa'.format(props["p_lo"]))
+    print('High Pressure: {:>3.3f} MPa'.format(props["p_hi"]))
+    print('Isentropic Turbine Efficiency: {:>2.1f}%'.format(props["turb_eff"]*100))
+    print('Isentropic Pump Efficiency:    {:>2.1f}%\n'.format(props["pump_eff"]*100))
+    return
+
+def print_state_table(s_list):
+    headers = ['State','Press (MPa)','Temp (deg C)','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Quality']
+    t = PrettyTable(headers)
+    for item in headers[1:5]:
+        t.align[item] = 'r'
+    for item in headers[2:4]:
+        t.float_format[item] = '4.2'
+    t.float_format[headers[1]] = '4.3'
+    t.float_format[headers[4]] = '6.5'
+    t.float_format[headers[5]] = '0.2'
+    t.padding_width = 1
+    for item in s_list:
+        t.add_row([item.name,item.p/1000000,item.T-273.15,item.h/1000,item.s/1000,item.x])
+    print(t,'\n')
+    return
+
+def print_process_table(cyc_props,p_list):
+    headers = ['Process','States','Heat (kJ/kg)','Work (kJ/kg)']
+    t = PrettyTable(headers)
+    for item in headers[2:]:
+        t.align[item] = 'r'
+        t.float_format[item] = '5.1'
+    for p in p_list:
+        t.add_row([p.name,p.state_in.name+' -> '+p.state_out.name,p.heat/1000,p.work/1000])
+    t.add_row(['Net','cycle',cyc_props["qnet"]/1000,cyc_props["wnet"]/1000])
+    print(t)
+    return
+
+def print_cycle_values(cyc_props):
+    print('\nCycle Values \n------------ ')
+    print('thermal efficiency = {:2.1f}%'.format(cyc_props["thermal_eff"]*100))
+    print('back work ratio = {:.3f}'.format(cyc_props["bwr"]))
+    return
 
 if __name__ == '__main__':
     main()
