@@ -140,7 +140,7 @@ class State(object):
         # add state to cycle's state list if not dead state
         if self.cycle:
             self.cycle.add_state(self)
-            
+
 
 #         # determine phase of fluid and add description
 #         if self.x == 1:
@@ -248,7 +248,7 @@ class Process(object):
         # add process to cycle's process list
         if self.cycle:
             self._cycle.add_proc(self)
- 
+
 
 class Cycle(object):
     '''A class that defines values for a thermodynamic power cycle
@@ -356,7 +356,10 @@ class Cycle(object):
         self._state_list = []
         # set mass flow rate
         self._mdot = mdot # in kg/s
-
+        self.wnet = 0
+        self.qnet = 0
+        self.thermal_eff = 1
+        self.bwr = 1
 
 
 
