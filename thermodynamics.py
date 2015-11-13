@@ -204,21 +204,23 @@ class Process(object):
     def out(self):
         return self._state_out
 
+    # flow exergy in
     @property
-    def ex_in(self):
-        return self._ex_in
+    def ef_in(self):
+        return self._ef_in
 
+    # flow exergy out
     @property
-    def ex_out(self):
-        return self._ex_out
+    def ef_out(self):
+        return self._ef_out
 
-    @property
-    def ex_d(self):
-        return self._ex_d
+#     @property
+#     def ex_d(self):
+#         return self._ex_d
 
-    @property
-    def intrev(self):
-        return self._intrev
+#     @property
+#     def intrev(self):
+#         return self._intrev
 
     @property
     def cycle(self):
@@ -237,11 +239,16 @@ class Process(object):
 
         exergy = self.calc_exergy()
 
-        self._ex_in = state_in.ef       # flow exergy in
-        self._ex_out = state_out.ef     # flow exergy out
-        self._ex_d = self.exergy_destroyed()
+        self._ef_in = state_in.ef       # flow exergy in
+        self._ef_out = state_out.ef     # flow exergy out
+        # default these exergy process values to zero. Compute them ad-hoc 
+        # and then add them to the object attributes.
+        self.ex_d = 0  
+        self.ex_in = 0
+        self.ex_out = 0
 
-        self._intrev = intrev
+        # is the process internally reversible?
+        self.intrev = intrev  # True/False
 
         # add process to cycle's process list
         if self.cycle != None:
