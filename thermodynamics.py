@@ -241,11 +241,12 @@ class Process(object):
 
         self._ef_in = state_in.ef       # flow exergy in
         self._ef_out = state_out.ef     # flow exergy out
-        # default these exergy process values to zero. Compute them ad-hoc 
+        # default these exergy process values to zero. Compute them ad-hoc
         # and then add them to the object attributes.
-        self.ex_d = 0  
-        self.ex_in = 0
-        self.ex_out = 0
+        self.ex_d = 0      # exergy destroyed
+        self.ex_in = 0     # exergy input
+        self.ex_out = 0    # exergy output
+        self.ex_eff = 1.0  # exergetic efficiency
 
         # is the process internally reversible?
         self.intrev = intrev  # True/False
