@@ -238,10 +238,11 @@ def print_state_table(s_list):
     t = PrettyTable(headers)
     for item in headers[1:5]:
         t.align[item] = 'r'
-    for item in headers[1:4]:
+    for item in headers[2:4]:
         t.float_format[item] = '4.2'
-    t.float_format['Entropy (kJ/kg.K)'] = '6.5'
-    t.float_format['Quality'] = '0.2'
+    t.float_format[headers[1]] = '4.3'
+    t.float_format[headers[4]] = '6.5'
+    t.float_format[headers[5]] = '0.2'
     t.padding_width = 1
     for item in s_list:
         t.add_row([item.name,item.p/1000000,item.T-273.15,item.h/1000,item.s/1000,item.x])
