@@ -293,7 +293,7 @@ class Cycle(object):
         T_lo = None
         dead = None
         name = ""
-        mdot = None
+        mdot = 1.0  # default to 1 kg/s
         for key, value in kwargs.iteritems():
             if key.lower() == 'p_hi':
                 p_hi = value
@@ -311,19 +311,19 @@ class Cycle(object):
                 mdot = value
         # check to see if at least one high and one low value are entered
         if not((p_hi or T_hi) and (p_lo or T_lo)):
-            raise ValueError('Must enter one of each group (p_hi or T_h) and (p_lo and T_lo)')
+            raise ValueError('Must enter one of each group (p_hi or T_h) and (p_lo and T_lo) when defining a cycle')
         # set low and high cycle properties
         # high property
         if T_hi:
             cyc_prop_hi = {'T':T_hi + 273.15} # temperature must be saved in K
         elif p_hi:
             cyc_prop_hi = {'P':p_hi*10**6}  # pressure must be saved in Pa
+        self._cyc_prop_hi = cyc_prop_hi
         # low property
         if T_lo:
             cyc_prop_lo = {'T':T_lo + 273.15} # temperature must be saved in K
         elif p_lo:
             cyc_prop_lo = {'P':p_lo*10**6}  # pressure must be saved in Pa
-        self._cyc_prop_hi = cyc_prop_hi
         self._cyc_prop_lo = cyc_prop_lo
         # set fluid property
         self._fluid = fluid

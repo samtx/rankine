@@ -14,10 +14,9 @@ from prettytable import PrettyTable #for output formatting
 def main():
     #Obtaining user-defined properties of Rankine cycle
     props = define_inputs()
-    #print(props)
+
     # begin computing processess for rankine cycle
     (cyc_props,p_list,s_list) = compute_cycle(props)
-    print('Done!')
 
     # unpack states
     st_1 = s_list[0]
@@ -39,8 +38,10 @@ def main():
     # print values to screen
     print('\nUser entered values\n-------------------')
     print('Working Fluid: '+props["fluid"])
-    print('Low Pressure:  {:>3.3f} MPa'.format(props["p_lo"]))
-    print('High Pressure: {:>3.3f} MPa'.format(props["p_hi"]))
+    #print('Low Pressure:  {:>3.3f} MPa'.format(props["p_lo"]))
+    #print('High Pressure: {:>3.3f} MPa'.format(props["p_hi"]))
+    print('Low Temperature:  {:>3.0f} deg C'.format(props["t_lo"]))
+    print('High Temperature: {:>3.0f} deg C'.format(props["t_hi"]))
     print('Isentropic Turbine Efficiency: {:>2.1f}%'.format(props["turb_eff"]*100))
     print('Isentropic Pump Efficiency:    {:>2.1f}%\n'.format(props["pump_eff"]*100))
 
@@ -75,8 +76,8 @@ def main():
     print('back work ratio = {:.3f}'.format(cyc_props["bwr"]))
 
     # get temperature values for T-s plot
-#     T1 =  h2o_sat[h2o_sat['P']==p_hi]['T'].values[0]
-#     T2 =  h2o_sat[h2o_sat['P']==p_lo]['T'].values[0] # come back to this
+#     T1 =  h2o_sat[h2o_sat['P']==p_hi]['T'].values()[0]
+#     T2 =  h2o_sat[h2o_sat['P']==p_lo]['T'].values()[0] # come back to this
 #     T2s = T2  # come back to this
 #     T3 = T2s
 #     T4s = T3 + 5 # temporary until I can interpolate to find real T4
@@ -150,16 +151,21 @@ def define_inputs():
         fluid = 'Water'
         p_hi = 8.0
         p_lo = 0.008
-        turb_eff = 0.80
+        t_hi = 90
+        t_lo = 20
+        turb_eff = 1
         pump_eff = 0.75
     else:
-        (p_hi,p_lo) = select_pressures()
+        (t_hi,t_lo) = select_temps()
+        #(p_hi,p_lo) = select_pressures()
         (turb_eff,pump_eff) = select_efficiencies()
     #create dictionary of properties
     props = {}
     props["fluid"] = fluid
-    props["p_hi"] = p_hi
-    props["p_lo"] = p_lo
+    #props["p_hi"] = p_hi
+    #props["p_lo"] = p_lo
+    props['t_hi'] = t_hi
+    props['t_lo'] = t_lo
     props["turb_eff"] = turb_eff
     props["pump_eff"] = pump_eff
     return props
@@ -182,6 +188,19 @@ def select_fluid():
             break
         else: print("Invalid input: Please Select Again. Enter Q to quit.\n")
     return fluid
+
+def select_temps():
+    t_lo = enter_temp('low')
+    t_hi = enter_temp('high')
+    return t_hi,t_lo
+
+def enter_temp(which_t):
+    while True:
+        t = raw_input("Enter the desired " + which_t + " temperature in degrees Celcius: ")
+        should_quit(t)
+        t,loop_again = try_float(t)
+        if loop_again: continue  # must be a positive real number
+        return t
 
 def select_pressures():
     p_lo = enter_pressure('low')
@@ -231,41 +250,43 @@ def enter_efficiencies(which_eff):
 
 def compute_cycle(props):
     fluid = props['fluid']
-    p_hi = props['p_hi']*10**6
-    p_lo = props['p_lo']*10**6
+    #p_hi = props['p_hi']*10**6
+    #p_lo = props['p_lo']*10**6
+    t_hi = props['t_hi'] + 273.15
+    t_lo = props['t_lo'] + 273.15
     turb_eff = props['turb_eff']
     pump_eff = props['pump_eff']
 
     # initialize cycle
-    cyc = thermo.Cycle(fluid,p_hi=p_hi,p_lo=p_lo,name='Rankine')
+    cyc = thermo.Cycle(fluid,t_hi=t_hi,t_lo=t_lo,name='Rankine')
 
     # Define States
     state_list = []
     # State 1, saturated vapor at high pressure
-    st_1 = thermo.State(cyc,fluid,'p',p_hi,'x',1.0,'1')
+    st_1 = thermo.State(cyc,fluid,cyc.prop_hi.keys()[0],cyc.prop_hi.values()[0],'x',1.0,'1')
     print(st_1.s)
 
     # State 2s, two-phase at low pressure with same entropy as state 1
-    st_2s = thermo.State(cyc,fluid,'p',p_lo,'s',st_1.s,'2s')
+    st_2s = thermo.State(cyc,fluid,cyc.prop_lo.keys()[0],cyc.prop_lo.values()[0],'s',st_1.s,'2s')
 
     # State 2, two-phase at low pressure determined by turbine efficiency
     h2 = turb_eff * (st_2s.h - st_1.h) + st_1.h  # with an irreversible turbine
-    st_2 = thermo.State(cyc,fluid,'p',p_lo,'h',h2,'2')
+    st_2 = thermo.State(cyc,fluid,'P',st_2s.p,'h',h2,'2')
     if st_2.x > 1:
-        print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
+        print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency. \nExiting...')
         sys.exit()
 
     # State 3, saturated liquid at low pressure
-    st_3 = thermo.State(cyc,fluid,'p',p_lo,'x',0.0,'3')
+    st_3 = thermo.State(cyc,fluid,cyc.prop_lo.keys()[0],cyc.prop_lo.values()[0],'x',0.0,'3')
 
     # States 4 and 4s, sub-cooled liquid at high pressure
     # assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
     # find values for irreversible pump operation
-    wp = 1/pump_eff * (-st_3.v)*(p_hi - p_lo)
-    st_4s = thermo.State(cyc,fluid,'p',p_hi,'s',st_3.s,'4s')
-    st_4 = thermo.State(cyc,fluid,'p',p_hi,'h',st_3.h-wp,'4')
+    wp = 1/pump_eff * (-st_3.v)*(st_1.p - st_2.p)
+    st_4s = thermo.State(cyc,fluid,cyc.prop_hi.keys()[0],cyc.prop_hi.values()[0],'s',st_3.s,'4s')
+    st_4 = thermo.State(cyc,fluid,'P',st_1.p,'h',st_3.h-wp,'4')
     # find State 4b, high pressure saturated liquid
-    st_4b = thermo.State(cyc,fluid,'p',p_hi,'x',0.0,'4b')
+    st_4b = thermo.State(cyc,fluid,cyc.prop_hi.keys()[0],cyc.prop_hi.values()[0],'x',0.0,'4b')
 
     # Define processes
     # Find work and heat for each process
