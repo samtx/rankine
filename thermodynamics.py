@@ -30,11 +30,11 @@ class State(object):
 
     # need to add kinetic and potential energy values
     def flow_exergy(self):
-        if self.cycle == None:
-            # then the state in question is the dead state. Don't find flow exergy
-            return None
-        else:
+        if self.cycle:
             return self.h-self.cycle.dead.h - self.cycle.dead.T*(self.s-self.cycle.dead.s)
+        else:       # then the state in question is the dead state. Don't find flow exergy
+            return 0
+
 
     # flow exergy
     @property
@@ -137,10 +137,10 @@ class State(object):
         self._vel = velocity
         self._z = z     #height
 
-        # add state to cycle's state list
-        if self.cycle != None:
+        # add state to cycle's state list if not dead state
+        if self.cycle:
             self.cycle.add_state(self)
-
+            
 
 #         # determine phase of fluid and add description
 #         if self.x == 1:
@@ -234,7 +234,7 @@ class Process(object):
 
         exergy = self.calc_exergy()
         # change in flow exergy
-        self._delta_ef = (self.out.h - self.in_.h) - self.cycle.dead.T * (self.out.s - self.in_.s) 
+        self._delta_ef = (self.out.h - self.in_.h) - self.cycle.dead.T * (self.out.s - self.in_.s)
         # default these exergy process values to zero. Compute them ad-hoc
         # and then add them to the object attributes.
         self.ex_d = 0      # exergy destroyed
@@ -246,10 +246,9 @@ class Process(object):
         self.intrev = intrev  # True/False
 
         # add process to cycle's process list
-        if self.cycle != None:
+        if self.cycle:
             self._cycle.add_proc(self)
-
-
+ 
 
 class Cycle(object):
     '''A class that defines values for a thermodynamic power cycle
@@ -311,7 +310,7 @@ class Cycle(object):
         T_lo = None
         dead = None
         name = ""
-        mdot = None
+        mdot = 1
         for key, value in kwargs.iteritems():
             if key.lower() == 'p_hi':
                 p_hi = value

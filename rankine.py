@@ -132,7 +132,6 @@ def compute_cycle(props):
     cyc = thermo.Cycle(fluid,p_hi=p_hi,p_lo=p_lo,name='Rankine')
 
     # Define States
-    state_list = []
     # State 1, saturated vapor at high pressure
     st_1 = thermo.State(cyc,fluid,'p',p_hi,'T',480+273,'1')
 
@@ -227,11 +226,10 @@ def print_state_table(s_list,dead):
     t.float_format[headers[5]] = '4.2'
     t.float_format[headers[6]] = '0.2'
     t.padding_width = 1
-
+    s_list.append(dead)
     for item in s_list:
         print(item.name)
         t.add_row([item.name,item.p/1000000,item.T-273,item.h/1000,item.s/1000,item.ef/1000,item.x])
-    t.add_row([dead.name,dead.p/1000000,dead.T-273,dead.h/1000,dead.s/1000,'',dead.x])  # add dead state at bottom
     print(t,'\n')
     return
 
