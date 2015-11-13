@@ -205,47 +205,6 @@ def print_output_to_screen(cyc_props,p_list,s_list,props,dead):
     create_plot(p_list,s_list)
     return
 
-def create_plot(p_list,s_list):
-    # unpack states
-    st_1 = s_list[0]
-    st_2s = s_list[1]
-    st_2 = s_list[2]
-    st_3 = s_list[3]
-    st_4s = s_list[4]
-    st_4 = s_list[5]
-    st_4b = s_list[6]
-
-    # unpack processes
-    turb = p_list[0]
-    cond = p_list[1]
-    pump = p_list[2]
-    boil = p_list[3]
-
-    # note: use h4, s4 to fix the state to find T4
-    T_pts = [st_1.T, st_2s.T, st_2.T, st_2s.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
-    s_pts = [st_1.s, st_2s.s, st_2.s, st_2s.s, st_3.s, st_4s.s, st_4b.s, st_1.s]
-
-    s_dash_12 = [st_1.s, st_2.s]
-    T_dash_12 = [st_1.T, st_2.T]
-    s_dash_34 = [st_3.s, st_4.s]
-    T_dash_34 = [st_3.T, st_4.T]
-
-    # Draw T-s plot
-    plt.clf()
-#     plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
-    plt.plot(s_dash_12,T_dash_12,'b--',s_dash_34,T_dash_34,'b--')
-    plt.annotate("1.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
-    plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
-    plt.annotate("3.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+25 ), arrowprops=dict(facecolor = 'red', shrink=0.05),)
-    plt.annotate("4.", xy = (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
-    plt.suptitle("Rankine Cycle T-s Diagram")
-    plt.xlabel("Entropy (kJ/kg.K)")
-    plt.ylabel("Temperature (deg C)")
-    # Save plot
-    filename = 'ts_plot.png'
-    plt.savefig(filename) # save figure to directory
-    return
-
 def print_user_values(props):
     # print values to screen
     print('\nUser entered values\n-------------------')
@@ -320,6 +279,47 @@ def print_cycle_values(cyc_props):
     print('\nCycle Values \n------------ ')
     print('thermal efficiency = {:2.1f}%'.format(cyc_props["thermal_eff"]*100))
     print('back work ratio = {:.3f}'.format(cyc_props["bwr"]))
+    return
+
+def create_plot(p_list,s_list):
+    # unpack states
+    st_1 = s_list[0]
+    st_2s = s_list[1]
+    st_2 = s_list[2]
+    st_3 = s_list[3]
+    st_4s = s_list[4]
+    st_4 = s_list[5]
+    st_4b = s_list[6]
+
+    # unpack processes
+    turb = p_list[0]
+    cond = p_list[1]
+    pump = p_list[2]
+    boil = p_list[3]
+
+    # note: use h4, s4 to fix the state to find T4
+    T_pts = [st_1.T, st_2s.T, st_2.T, st_2s.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
+    s_pts = [st_1.s, st_2s.s, st_2.s, st_2s.s, st_3.s, st_4s.s, st_4b.s, st_1.s]
+
+    s_dash_12 = [st_1.s, st_2.s]
+    T_dash_12 = [st_1.T, st_2.T]
+    s_dash_34 = [st_3.s, st_4.s]
+    T_dash_34 = [st_3.T, st_4.T]
+
+    # Draw T-s plot
+    plt.clf()
+#     plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
+    plt.plot(s_dash_12,T_dash_12,'b--',s_dash_34,T_dash_34,'b--')
+    plt.annotate("1.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
+    plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
+    plt.annotate("3.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+25 ), arrowprops=dict(facecolor = 'red', shrink=0.05),)
+    plt.annotate("4.", xy = (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
+    plt.suptitle("Rankine Cycle T-s Diagram")
+    plt.xlabel("Entropy (kJ/kg.K)")
+    plt.ylabel("Temperature (deg C)")
+    # Save plot
+    filename = 'ts_plot.png'
+    plt.savefig(filename) # save figure to directory
     return
 
 if __name__ == '__main__':
