@@ -107,7 +107,7 @@ class State(object):
         velocity=0,z=0):
 
         self._cycle = cycle  # should be an object of class cycle
-        
+
         self._fluid = fluid
 
         # note that 'x' and 'Q' both represent two-phase quality
@@ -138,9 +138,10 @@ class State(object):
         self._z = z     #height
 
         # add state to cycle's state list
-        self.cycle.add_state(self)
-        
-        
+        if self.cycle != None:
+            self.cycle.add_state(self)
+
+
 #         # determine phase of fluid and add description
 #         if self.x == 1:
 #             phase = 'Sat Vapor'
@@ -160,13 +161,14 @@ class Process(object):
     '''A class that defines values for a process based on a
     state in and a state out. '''
 
-    def calc_exergy(self,state_in,state_out,env_vars):
-        ''' Calculate the exergy in, exergy out, and exergy destruction of the process'''
-        To = env_vars["To"] # environment temperature in Kelvin
-        po = env_vars["po"] # environment pressure in Pa
+    def calc_exergy(self,state_in=None,state_out=None,env_vars=[]):
+        pass
+#         ''' Calculate the exergy in, exergy out, and exergy destruction of the process'''
+#         To = env_vars["To"] # environment temperature in Kelvin
+#         po = env_vars["po"] # environment pressure in Pa
 
     def exergy_destroyed(self):
-        return cycle.dead.T*(self.state_out.s-self.state_in.s) # exergy destroyed
+        return self.cycle.dead.T*(self.state_out.s-self.state_in.s) # exergy destroyed
 
     @property
     def heat(self):
@@ -219,14 +221,15 @@ class Process(object):
         self._state_out = state_out
         self.name = name
 
-        exergy = calc_exergy()
+        exergy = self.calc_exergy()
 
         self._ex_in = state_in.ef       # flow exergy in
         self._ex_out = state_out.ef     # flow exergy out
-        self._ex_d = exergy_destroyed()
-        
+        self._ex_d = self.exergy_destroyed()
+
         # add process to cycle's process list
-        self.cycle.add_proc(self)
+        if self.cycle != None:
+            self._cycle.add_proc(self)
 
 
 
