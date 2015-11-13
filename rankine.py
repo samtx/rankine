@@ -128,69 +128,52 @@ def compute_cycle(props):
     turb_eff = props['turb_eff']
     pump_eff = props['pump_eff']
 
+    # initialize cycle
+    cyc = thermo.Cycle(fluid,p_hi=p_hi,p_lo=p_lo,name='Rankine')
+
     # Define States
     state_list = []
     # State 1, saturated vapor at high pressure
-    st_1 = thermo.State(fluid,'p',p_hi,'x',1.0,'1')
-    state_list.append(st_1)
+    st_1 = thermo.State(cyc,fluid,'p',p_hi,'x',1.0,'1')
     print(st_1.s)
 
     # State 2s, two-phase at low pressure with same entropy as state 1
-    st_2s = thermo.State(fluid,'p',p_lo,'s',st_1.s,'2s')
-    state_list.append(st_2s)
+    st_2s = thermo.State(cyc,fluid,'p',p_lo,'s',st_1.s,'2s')
 
     # State 2, two-phase at low pressure determined by turbine efficiency
     h2 = turb_eff * (st_2s.h - st_1.h) + st_1.h  # with an irreversible turbine
-    st_2 = thermo.State(fluid,'p',p_lo,'h',h2,'2')
+    st_2 = thermo.State(cyc,fluid,'p',p_lo,'h',h2,'2')
     if st_2.x > 1:
         print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
         sys.exit()
-    state_list.append(st_2)
 
     # State 3, saturated liquid at low pressure
-    st_3 = thermo.State(fluid,'p',p_lo,'x',0.0,'3')
-    state_list.append(st_3)
+    st_3 = thermo.State(cyc,fluid,'p',p_lo,'x',0.0,'3')
 
     # States 4 and 4s, sub-cooled liquid at high pressure
     # assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
-    # find values for isentropic pump operation
-    wps = -st_3.v*(p_hi - p_lo)
-    h4s = st_3.h - wps
     # find values for irreversible pump operation
-    wp = 1/pump_eff * wps
-    st_4s = thermo.State(fluid,'p',p_hi,'s',st_3.s,'4s')
-    state_list.append(st_4s)
-    st_4 = thermo.State(fluid,'p',p_hi,'h',st_3.h-wp,'4')
-    state_list.append(st_4)
+    wp = 1/pump_eff * (-st_3.v)*(p_hi - p_lo)
+    st_4s = thermo.State(cyc,fluid,'p',p_hi,'s',st_3.s,'4s')
+    st_4 = thermo.State(cyc,fluid,'p',p_hi,'h',st_3.h-wp,'4')
     # find State 4b, high pressure saturated liquid
-    st_4b = thermo.State(fluid,'p',p_hi,'x',0.0,'4b')
-    state_list.append(st_4b)
+    st_4b = thermo.State(cyc,fluid,'p',p_hi,'x',0.0,'4b')
 
     # Define processes
     # Find work and heat for each process
-    wt = st_1.h - st_2.h
-    qb = st_1.h - st_4.h
-    qc = st_3.h - st_2.h
-    turb = thermo.Process(st_1,st_2,0,wt,"Turbine")
-    cond = thermo.Process(st_2,st_3,qc,0,"Condenser")
-    pump = thermo.Process(st_3,st_4,0,wp,"Pump")
-    boil = thermo.Process(st_4,st_1,qb,0,"Boiler")
-    process_list = [turb,cond,pump,boil]
+    turb = thermo.Process(cyc,st_1, st_2, 0, st_1.h-st_2.h, "Turbine")
+    cond = thermo.Process(cyc,st_2, st_3, st_3.h-st_2.h, 0, "Condenser")
+    pump = thermo.Process(cyc,st_3, st_4, 0, wp, "Pump")
+    boil = thermo.Process(cyc,st_4, st_1, st_1.h-st_4.h, 0, "Boiler")
 
     # Define cycle properties
-    wnet = turb.work + pump.work
-    qnet = boil.heat + cond.heat
-    # Find thermal efficiency for cycle
-    thermal_eff = wnet / boil.heat
-    # Find back work ratio
-    bwr = -pump.work / turb.work
     cyc_props = {}
-    cyc_props['wnet'] = wnet
-    cyc_props['qnet'] = qnet
-    cyc_props['thermal_eff'] = thermal_eff
-    cyc_props['bwr'] = bwr
+    cyc_props['wnet'] = turb.work + pump.work
+    cyc_props['qnet'] = boil.heat + cond.heat
+    cyc_props['thermal_eff'] = cyc_props['wnet'] / boil.heat
+    cyc_props['bwr'] = -pump.work / turb.work
 
-    return (cyc_props, process_list, state_list)
+    return (cyc_props, cyc.get_procs(), cyc.get_states())
 
 def print_output_to_screen(cyc_props,p_list,s_list):
     # unpack states
