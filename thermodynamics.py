@@ -30,11 +30,11 @@ class State(object):
 
     # need to add kinetic and potential energy values
     def flow_exergy(self):
-        if self.cycle == None:
-            # then the state in question is the dead state. Don't find flow exergy
-            return None
-        else:
+        if self.cycle:
             return self.h-self.cycle.dead.h - self.cycle.dead.T*(self.s-self.cycle.dead.s)
+        else:       # then the state in question is the dead state. Don't find flow exergy
+            return 0
+
 
     # flow exergy
     @property
@@ -137,10 +137,10 @@ class State(object):
         self._vel = velocity
         self._z = z     #height
 
-        # add state to cycle's state list
-        if self.cycle != None:
+        # add state to cycle's state list if not dead state
+        if self.cycle:
             self.cycle.add_state(self)
-
+            
 
 #         # determine phase of fluid and add description
 #         if self.x == 1:
@@ -162,6 +162,16 @@ class Process(object):
     state in and a state out. '''
 
     def calc_exergy(self,state_in=None,state_out=None,env_vars=[]):
+        pass
+#         '''Calculate the exergy in, exergy out, and exergy destroyed for each process'''
+#         # if heat = 0
+#         if self.heat == 0:
+#             if self.
+#         # find difference in flow exergy
+#         (state_in.ef - state_out.ef)
+
+
+
         pass
 #         ''' Calculate the exergy in, exergy out, and exergy destruction of the process'''
 #         To = env_vars["To"] # environment temperature in Kelvin
@@ -194,17 +204,18 @@ class Process(object):
     def out(self):
         return self._state_out
 
+    # change in flow exergy
     @property
-    def ex_in(self):
-        return self._ex_in
+    def delta_ef(self):
+        return self._delta_ef
 
-    @property
-    def ex_out(self):
-        return self._ex_out
+#     @property
+#     def ex_d(self):
+#         return self._ex_d
 
-    @property
-    def ex_d(self):
-        return self._ex_d
+#     @property
+#     def intrev(self):
+#         return self._intrev
 
     @property
     def cycle(self):
@@ -213,7 +224,7 @@ class Process(object):
     def __repr__(self):
         return self.name
 
-    def __init__(self,cycle,state_in,state_out,heat=0,work=0,name=""):
+    def __init__(self,cycle,state_in,state_out,heat=0,work=0,name="",intrev=False):
         self._cycle = cycle # this should be an object of class Cycle
         self._heat = heat
         self._work = work
@@ -222,16 +233,22 @@ class Process(object):
         self.name = name
 
         exergy = self.calc_exergy()
+        # change in flow exergy
+        self._delta_ef = (self.out.h - self.in_.h) - self.cycle.dead.T * (self.out.s - self.in_.s)
+        # default these exergy process values to zero. Compute them ad-hoc
+        # and then add them to the object attributes.
+        self.ex_d = 0      # exergy destroyed
+        self.ex_in = 0     # exergy input
+        self.ex_out = 0    # exergy output
+        self.ex_eff = 1.0  # exergetic efficiency
 
-        self._ex_in = state_in.ef       # flow exergy in
-        self._ex_out = state_out.ef     # flow exergy out
-        self._ex_d = self.exergy_destroyed()
+        # is the process internally reversible?
+        self.intrev = intrev  # True/False
 
         # add process to cycle's process list
-        if self.cycle != None:
+        if self.cycle:
             self._cycle.add_proc(self)
-
-
+ 
 
 class Cycle(object):
     '''A class that defines values for a thermodynamic power cycle
@@ -293,7 +310,7 @@ class Cycle(object):
         T_lo = None
         dead = None
         name = ""
-        mdot = None
+        mdot = 1
         for key, value in kwargs.iteritems():
             if key.lower() == 'p_hi':
                 p_hi = value
@@ -329,7 +346,7 @@ class Cycle(object):
         self._fluid = fluid
         # set dead state
         if not dead:
-            dead = State(None,fluid,'T',15+273.15,'P',101325,'Dead State')
+            dead = State(None,fluid,'T',15+273,'P',101325,'Dead State')
         self._dead = dead
         # set cycle name
         self.name = name
