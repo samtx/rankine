@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 #import os           # for file system utilities
 import sys
 from prettytable import PrettyTable, MSWORD_FRIENDLY, PLAIN_COLUMNS #for output formatting
+import CoolProp.CoolProp as CP
 
 ######################################
 
@@ -295,6 +296,8 @@ def create_plot(p_list,s_list):
     pump = p_list[2]
     boil = p_list[3]
 
+#    (spts,tpts) = get_sat_dome(cyc.fluid)
+
     # note: use h4, s4 to fix the state to find T4
     T_pts = [st_1.T, st_2s.T, st_2.T, st_2s.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
     s_pts = [st_1.s, st_2s.s, st_2.s, st_2s.s, st_3.s, st_4s.s, st_4b.s, st_1.s]
@@ -319,6 +322,23 @@ def create_plot(p_list,s_list):
     filename = 'ts_plot.png'
     plt.savefig(filename) # save figure to directory
     return
+
+def get_sat_dome(fluid):
+    pass
+#     smin = ?
+#     smax = ?
+#     step = ?
+#     quality = 0
+#     tpts = []
+#     spts = []
+#     crit_pt = thermo.State(None,fluid, critical) point?asdlkfjasd;lkf100 #something
+#     for s in range(s_min:step:s_max):
+#         if s > crit_pt.s:
+#             quality = 1
+#         T = CP.PropsSI('T','S',s,'Q',quality,fluid)
+#         spts.append(s)
+#         tpts.append(T-273) # save in celcius
+#     return spts,tpts
 
 if __name__ == '__main__':
     main()
