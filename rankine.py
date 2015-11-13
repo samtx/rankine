@@ -175,21 +175,12 @@ def compute_cycle(props):
     return (cyc_props, cyc.get_procs(), cyc.get_states())
 
 def print_output_to_screen(cyc_props,p_list,s_list,props):
-
-    # print user-defined values
     print_user_values(props)
-
-    # print state table
     print_state_table(s_list)
-
-    #print process table
     print_process_table(cyc_props,p_list)
-
-    # print cycle values
     print_cycle_values(cyc_props)
-    
-    # create plot
     create_plot(p_list,s_list)
+    return
 
 def create_plot(p_list,s_list):
     # unpack states
