@@ -7,7 +7,7 @@ matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of u
 import matplotlib.pyplot as plt
 #import os           # for file system utilities
 import sys
-from prettytable import PrettyTable #for output formatting
+from prettytable import PrettyTable, MSWORD_FRIENDLY, PLAIN_COLUMNS #for output formatting
 
 ######################################
 
@@ -17,7 +17,7 @@ def main():
     # begin computing processess for rankine cycle
     (cyc_props,p_list,s_list) = compute_cycle(props)
     # print output to screen
-    print_output_to_screen(cyc_props,p_list,s_list,props)
+    print_output_to_screen(cyc_props,p_list,s_list,props,s_list[0].cycle.dead)
     return
 
 def should_quit(string):
@@ -40,10 +40,10 @@ def define_inputs():
     if fluid == 'eg_mode':
         # use example mode
         fluid = 'Water'
-        p_hi = 8.0
-        p_lo = 0.008
+        p_hi = 10.0
+        p_lo = 0.006
         turb_eff = 0.80
-        pump_eff = 0.75
+        pump_eff = 0.70
     else:
         (p_hi,p_lo) = select_pressures()
         (turb_eff,pump_eff) = select_efficiencies()
@@ -134,7 +134,7 @@ def compute_cycle(props):
     # Define States
     state_list = []
     # State 1, saturated vapor at high pressure
-    st_1 = thermo.State(cyc,fluid,'p',p_hi,'x',1.0,'1')
+    st_1 = thermo.State(cyc,fluid,'p',p_hi,'T',480+273,'1')
 
     # State 2s, two-phase at low pressure with same entropy as state 1
     st_2s = thermo.State(cyc,fluid,'p',p_lo,'s',st_1.s,'2s')
@@ -172,20 +172,20 @@ def compute_cycle(props):
     boil.ex_out = 0
     boil.ex_eff = 1
     # Turbine
-    turb.ex_in = turb.delta_ef
+    turb.ex_in = 0
     turb.ex_d = turb.cycle.dead.T * (turb.out.s - turb.in_.s)
     turb.ex_out = turb.work
-    turb.ex_eff = turb.ex_out / -turb.ex_in
+    turb.ex_eff = turb.ex_out / -turb.delta_ef
     # Condenser
     cond.ex_in = 0
     cond.ex_d = 0
     cond.ex_out = -cond.delta_ef
     cond.ex_eff = 1
     # Pump
-    pump.ex_out = -pump.work
-    pump.ex_in = pump.delta_ef
+    pump.ex_out = 0
+    pump.ex_in = -pump.work
     pump.ex_d = pump.cycle.dead.T * (pump.out.s - pump.in_.s)
-    pump.ex_eff = -pump.ex_out / pump.ex_in
+    pump.ex_eff = pump.delta_ef / pump.ex_in
 
     # Define cycle properties
     cyc_props = {}
@@ -196,9 +196,9 @@ def compute_cycle(props):
 
     return (cyc_props, cyc.get_procs(), cyc.get_states())
 
-def print_output_to_screen(cyc_props,p_list,s_list,props):
+def print_output_to_screen(cyc_props,p_list,s_list,props,dead):
     print_user_values(props)
-    print_state_table(s_list)
+    print_state_table(s_list,dead)
     print_process_table(cyc_props,p_list)
     print_exergy_table(p_list)
     print_cycle_values(cyc_props)
@@ -256,37 +256,43 @@ def print_user_values(props):
     print('Isentropic Pump Efficiency:    {:>2.1f}%\n'.format(props["pump_eff"]*100))
     return
 
-def print_state_table(s_list):
-    headers = ['State','Press (MPa)','Temp (deg C)','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Quality']
+def print_state_table(s_list,dead):
+    headers = ['State','Press (MPa)','Temp (deg C)','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Flow Exergy (kJ/kg)','Quality']
     t = PrettyTable(headers)
-    for item in headers[1:5]:
+    for item in headers[1:6]:
         t.align[item] = 'r'
     for item in headers[2:4]:
         t.float_format[item] = '4.2'
     t.float_format[headers[1]] = '4.3'
     t.float_format[headers[4]] = '6.5'
-    t.float_format[headers[5]] = '0.2'
+    t.float_format[headers[5]] = '4.2'
+    t.float_format[headers[6]] = '0.2'
     t.padding_width = 1
+
     for item in s_list:
-        t.add_row([item.name,item.p/1000000,item.T-273.15,item.h/1000,item.s/1000,item.x])
+        print(item.name)
+        t.add_row([item.name,item.p/1000000,item.T-273,item.h/1000,item.s/1000,item.ef/1000,item.x])
+    t.add_row([dead.name,dead.p/1000000,dead.T-273,dead.h/1000,dead.s/1000,'',dead.x])  # add dead state at bottom
     print(t,'\n')
     return
 
 def print_process_table(cyc_props,p_list):
     headers = ['Process','States','Heat (kJ/kg)','Work (kJ/kg)']
     t = PrettyTable(headers)
+    #t.set_style(MSWORD_FRIENDLY)
     for item in headers[2:]:
         t.align[item] = 'r'
         t.float_format[item] = '5.1'
     for p in p_list:
         t.add_row([p.name,p.state_in.name+' -> '+p.state_out.name,p.heat/1000,p.work/1000])
     t.add_row(['Net','cycle',cyc_props["qnet"]/1000,cyc_props["wnet"]/1000])
-    print(t)
+    print(t, '\n')
     return
 
 def print_exergy_table(p_list):
     headers = ['Process','States','Exergy In (kJ/kg)','Exergy Out (kJ/kg)','Delta Ef (kJ/kg)','Exergy Dest. (kJ/kg)','Exergetic Eff.']
     t = PrettyTable(headers)
+    #t.set_style(PLAIN_COLUMNS)
     for item in headers[2:6]:
         t.align[item] = 'r'
         t.float_format[item] = '5.1'
@@ -296,19 +302,18 @@ def print_exergy_table(p_list):
         t.add_row(row)
         # calculate exergy totals
         idx = 0
-        print('row[2:6]: ',row[2:6])
         for i in row[2:6]:
-            print(ex_totals)
-            print(idx)
             ex_totals[idx] += i
             idx += 1
     # print net exergy row
     row = ['Net','']
     for i in ex_totals:
         row.append(i)
-    row.append('')  # blank cycle exergetic efficiency
+    # cycle exergetic efficiency
+    cyc_ex_eff = ex_totals[1]/ex_totals[0]  # (total ex_out)/(total ex_in)
+    row.append('{:.1%}'.format(cyc_ex_eff))
     t.add_row(row)
-    print(t)
+    print(t, '\n')
     return
 
 def print_cycle_values(cyc_props):

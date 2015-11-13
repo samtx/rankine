@@ -233,8 +233,8 @@ class Process(object):
         self.name = name
 
         exergy = self.calc_exergy()
-
-        self._delta_ef = state_out.ef - state_in.ef # change in flow exergy
+        # change in flow exergy
+        self._delta_ef = (self.out.h - self.in_.h) - self.cycle.dead.T * (self.out.s - self.in_.s) 
         # default these exergy process values to zero. Compute them ad-hoc
         # and then add them to the object attributes.
         self.ex_d = 0      # exergy destroyed
@@ -347,7 +347,7 @@ class Cycle(object):
         self._fluid = fluid
         # set dead state
         if not dead:
-            dead = State(None,fluid,'T',15+273.15,'P',101325,'Dead State')
+            dead = State(None,fluid,'T',15+273,'P',101325,'Dead State')
         self._dead = dead
         # set cycle name
         self.name = name
