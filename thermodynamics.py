@@ -204,15 +204,10 @@ class Process(object):
     def out(self):
         return self._state_out
 
-    # flow exergy in
+    # change in flow exergy
     @property
-    def ef_in(self):
-        return self._ef_in
-
-    # flow exergy out
-    @property
-    def ef_out(self):
-        return self._ef_out
+    def delta_ef(self):
+        return self._delta_ef
 
 #     @property
 #     def ex_d(self):
@@ -239,8 +234,7 @@ class Process(object):
 
         exergy = self.calc_exergy()
 
-        self._ef_in = state_in.ef       # flow exergy in
-        self._ef_out = state_out.ef     # flow exergy out
+        self._delta_ef = state_out.ef - state_in.ef # change in flow exergy
         # default these exergy process values to zero. Compute them ad-hoc
         # and then add them to the object attributes.
         self.ex_d = 0      # exergy destroyed
