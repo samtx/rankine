@@ -165,6 +165,34 @@ def compute_cycle(props):
     pump = thermo.Process(cyc,st_3, st_4, 0, wp, "Pump")
     boil = thermo.Process(cyc,st_4, st_1, st_1.h-st_4.h, 0, "Boiler")
 
+    # calculate exergy values for each process
+    # Boiler....
+    boil.ex_in = boil.ef_out - boil.ef_in
+    boil.ex_d = 0
+    boil.ex_out = 0
+    boil.ex_eff = 1
+    # Turbine
+    turb.ex_in = 0
+    turb.ex_d = turb.cycle.dead.T * (turb.out.s - turb.in_.s)
+    turb.ex_out = turb.work
+    turb.ex_eff = (turb.ex_out) / (turb.ef_in - turb.ef_out) 
+    # Condenser
+    cond.ex_in = 0
+    cond.ex_d = 0
+    cond.ex_out = cond.ef_in - cond.ef_out
+    cond.ex_eff = 1
+    # Pump
+    pump.ex_out = 0
+    pump.ex_in = -pump.work
+    pump.ex_d = pump.cycle.dead.T * (pump.out.s - pump.in_.s)
+    pump.ex_eff = 
+    
+    
+    
+    print('boil.ex_in = '+str(boil.ex_in))
+    print('boil.ex_out = '+str(boil.ex_out))
+    print('boil.ex_d = '+str(boil.ex_d))
+
     # Define cycle properties
     cyc_props = {}
     cyc_props['wnet'] = turb.work + pump.work
