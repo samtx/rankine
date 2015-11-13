@@ -107,7 +107,7 @@ class State(object):
         velocity=0,z=0):
 
         self._cycle = cycle  # should be an object of class cycle
-
+        
         self._fluid = fluid
 
         # note that 'x' and 'Q' both represent two-phase quality
@@ -137,6 +137,10 @@ class State(object):
         self._vel = velocity
         self._z = z     #height
 
+        # add state to cycle's state list
+        self.cycle.add_state(self)
+        
+        
 #         # determine phase of fluid and add description
 #         if self.x == 1:
 #             phase = 'Sat Vapor'
@@ -160,6 +164,9 @@ class Process(object):
         ''' Calculate the exergy in, exergy out, and exergy destruction of the process'''
         To = env_vars["To"] # environment temperature in Kelvin
         po = env_vars["po"] # environment pressure in Pa
+
+    def exergy_destroyed(self):
+        return cycle.dead.T*(self.state_out.s-self.state_in.s) # exergy destroyed
 
     @property
     def heat(self):
@@ -211,9 +218,16 @@ class Process(object):
         self._state_in = state_in  # these are objects of class State
         self._state_out = state_out
         self.name = name
+
+        exergy = calc_exergy()
+
         self._ex_in = state_in.ef       # flow exergy in
         self._ex_out = state_out.ef     # flow exergy out
-        self._ex_d = cycle.dead.T*(self.state_out.s-self.state_in.s) # exergy destroyed
+        self._ex_d = exergy_destroyed()
+        
+        # add process to cycle's process list
+        self.cycle.add_proc(self)
+
 
 
 class Cycle(object):
