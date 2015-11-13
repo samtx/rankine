@@ -17,7 +17,7 @@ def main():
     # begin computing processess for rankine cycle
     (cyc_props,p_list,s_list) = compute_cycle(props)
     # print output to screen
-    print_output_to_screen(cyc_props,p_list,s_list)
+    print_output_to_screen(cyc_props,p_list,s_list,props)
     return
 
 def should_quit(string):
@@ -175,7 +175,7 @@ def compute_cycle(props):
 
     return (cyc_props, cyc.get_procs(), cyc.get_states())
 
-def print_output_to_screen(cyc_props,p_list,s_list):
+def print_output_to_screen(cyc_props,p_list,s_list,props):
     # unpack states
     st_1 = s_list[0]
     st_2s = s_list[1]
