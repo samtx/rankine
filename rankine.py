@@ -166,32 +166,26 @@ def compute_cycle(props):
     boil = thermo.Process(cyc,st_4, st_1, st_1.h-st_4.h, 0, "Boiler")
 
     # calculate exergy values for each process
-    # Boiler....
-    boil.ex_in = boil.ef_out - boil.ef_in
+    # Boiler
+    boil.ex_in = boil.delta_ef
     boil.ex_d = 0
     boil.ex_out = 0
     boil.ex_eff = 1
     # Turbine
-    turb.ex_in = 0
+    turb.ex_in = turb.delta_ef
     turb.ex_d = turb.cycle.dead.T * (turb.out.s - turb.in_.s)
     turb.ex_out = turb.work
-    turb.ex_eff = (turb.ex_out) / (turb.ef_in - turb.ef_out) 
+    turb.ex_eff = turb.ex_out / -turb.ex_in
     # Condenser
     cond.ex_in = 0
     cond.ex_d = 0
-    cond.ex_out = cond.ef_in - cond.ef_out
+    cond.ex_out = -cond.delta_ef
     cond.ex_eff = 1
     # Pump
-    pump.ex_out = 0
-    pump.ex_in = -pump.work
+    pump.ex_out = -pump.work
+    pump.ex_in = pump.delta_ef
     pump.ex_d = pump.cycle.dead.T * (pump.out.s - pump.in_.s)
-    pump.ex_eff = 
-    
-    
-    
-    print('boil.ex_in = '+str(boil.ex_in))
-    print('boil.ex_out = '+str(boil.ex_out))
-    print('boil.ex_d = '+str(boil.ex_d))
+    pump.ex_eff = -pump.ex_out / pump.ex_in
 
     # Define cycle properties
     cyc_props = {}
@@ -206,6 +200,7 @@ def print_output_to_screen(cyc_props,p_list,s_list,props):
     print_user_values(props)
     print_state_table(s_list)
     print_process_table(cyc_props,p_list)
+    print_exergy_table(p_list)
     print_cycle_values(cyc_props)
     create_plot(p_list,s_list)
     return
@@ -286,6 +281,33 @@ def print_process_table(cyc_props,p_list):
     for p in p_list:
         t.add_row([p.name,p.state_in.name+' -> '+p.state_out.name,p.heat/1000,p.work/1000])
     t.add_row(['Net','cycle',cyc_props["qnet"]/1000,cyc_props["wnet"]/1000])
+    print(t)
+    return
+
+def print_exergy_table(p_list):
+    headers = ['Process','States','Exergy In (kJ/kg)','Exergy Out (kJ/kg)','Delta Ef (kJ/kg)','Exergy Dest. (kJ/kg)','Exergetic Eff.']
+    t = PrettyTable(headers)
+    for item in headers[2:6]:
+        t.align[item] = 'r'
+        t.float_format[item] = '5.1'
+    ex_totals = [0,0,0,0]
+    for p in p_list:
+        row = [p.name,p.state_in.name+' -> '+p.state_out.name,p.ex_in/1000,p.ex_out/1000,p.delta_ef/1000,p.ex_d/1000,'{:.1%}'.format(p.ex_eff)]
+        t.add_row(row)
+        # calculate exergy totals
+        idx = 0
+        print('row[2:6]: ',row[2:6])
+        for i in row[2:6]:
+            print(ex_totals)
+            print(idx)
+            ex_totals[idx] += i
+            idx += 1
+    # print net exergy row
+    row = ['Net','']
+    for i in ex_totals:
+        row.append(i)
+    row.append('')  # blank cycle exergetic efficiency
+    t.add_row(row)
     print(t)
     return
 
