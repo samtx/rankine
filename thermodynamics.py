@@ -163,6 +163,16 @@ class Process(object):
 
     def calc_exergy(self,state_in=None,state_out=None,env_vars=[]):
         pass
+#         '''Calculate the exergy in, exergy out, and exergy destroyed for each process'''
+#         # if heat = 0
+#         if self.heat == 0:
+#             if self.
+#         # find difference in flow exergy
+#         (state_in.ef - state_out.ef)
+
+
+
+        pass
 #         ''' Calculate the exergy in, exergy out, and exergy destruction of the process'''
 #         To = env_vars["To"] # environment temperature in Kelvin
 #         po = env_vars["po"] # environment pressure in Pa
@@ -207,13 +217,17 @@ class Process(object):
         return self._ex_d
 
     @property
+    def intrev(self):
+        return self._intrev
+
+    @property
     def cycle(self):
         return self._cycle
 
     def __repr__(self):
         return self.name
 
-    def __init__(self,cycle,state_in,state_out,heat=0,work=0,name=""):
+    def __init__(self,cycle,state_in,state_out,heat=0,work=0,name="",intrev=False):
         self._cycle = cycle # this should be an object of class Cycle
         self._heat = heat
         self._work = work
@@ -226,6 +240,8 @@ class Process(object):
         self._ex_in = state_in.ef       # flow exergy in
         self._ex_out = state_out.ef     # flow exergy out
         self._ex_d = self.exergy_destroyed()
+
+        self._intrev = intrev
 
         # add process to cycle's process list
         if self.cycle != None:
