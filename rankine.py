@@ -200,35 +200,27 @@ def print_output_to_screen(cyc_props,p_list,s_list,props):
     print('Isentropic Turbine Efficiency: {:>2.1f}%'.format(props["turb_eff"]*100))
     print('Isentropic Pump Efficiency:    {:>2.1f}%\n'.format(props["pump_eff"]*100))
 
-    header_list = ['State','Press (MPa)','Temp (deg C)','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Quality']
-    t = PrettyTable(header_list)
-    for item in header_list[1:5]:
+    headers = ['State','Press (MPa)','Temp (deg C)','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Quality']
+    t = PrettyTable(headers)
+    for item in headers[1:5]:
         t.align[item] = 'r'
-    for item in header_list[1:4]:
+    for item in headers[1:4]:
         t.float_format[item] = '4.2'
     t.float_format['Entropy (kJ/kg.K)'] = '6.5'
     t.float_format['Quality'] = '0.2'
     t.padding_width = 1
     for item in s_list:
         t.add_row([item.name,item.p/1000000,item.T-273.15,item.h/1000,item.s/1000,item.x])
-#     t.add_row(['1',st_1.h/1000,st_1.s/1000,'Sat Vapor'])
-#     t.add_row(['2s',st_2s.h/1000,st_2s.s/1000,st_2s.x])
-#     t.add_row(['2',st_2.h/1000,st_2.s/1000,st_2.x])
-#     t.add_row(['3',st_3.h/1000,st_3.s/1000,'Sat Liquid'])
-#     t.add_row(['4s',st_4s.h/1000,st_4s.s/1000,'Sub-Cooled Liq'])
-#     t.add_row(['4',st_4.h/1000,st_4.s/1000,'Sub-Cooled Liq'])
     print(t,'\n')
 
-    t = PrettyTable(['Process','Heat (kJ/kg)','Work (kJ/kg)'])
-    t.align['Heat (kJ/kg)'] = 'r'
-    t.align['Work (kJ/kg)'] = 'r'
-    t.float_format['Heat (kJ/kg)'] = '5.1'
-    t.float_format['Work (kJ/kg)'] = '5.1'
-    t.add_row(['1 - 2',0,turb.work/1000])
-    t.add_row(['2 - 3',cond.heat/1000,0])
-    t.add_row(['3 - 4',0,pump.work/1000])
-    t.add_row(['4 - 1',boil.heat/1000,0])
-    t.add_row(['Net',cyc_props["qnet"]/1000,cyc_props["wnet"]/1000])
+    headers = ['Process','States','Heat (kJ/kg)','Work (kJ/kg)']
+    t = PrettyTable(headers)
+    for item in headers[2:]:
+        t.align[item] = 'r'
+        t.float_format[item] = '5.1'
+    for p in p_list:
+        t.add_row([p.name,p.state_in.name+' -> '+p.state_out.name,p.heat/1000,p.work/1000])
+    t.add_row(['Net','cycle',cyc_props["qnet"]/1000,cyc_props["wnet"]/1000])
     print(t)
 
     print('\nOther Values \n------------ ')
