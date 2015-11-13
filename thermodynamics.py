@@ -29,12 +29,12 @@ class State(object):
         return prop,value
 
     # need to add kinetic and potential energy values
-    def flow_exergy(self,dead_state):
-        if dead_state == "":
+    def flow_exergy(self):
+        if self.cycle == None:
             # then the state in question is the dead state. Don't find flow exergy
-            return
+            return None
         else:
-            return self.h-dead_state.h - dead_state.T*(self.s-dead_state.s)
+            return self.h-self.cycle.dead.h - self.cycle.dead.T*(self.s-self.cycle.dead.s)
 
     # flow exergy
     @property
@@ -133,7 +133,7 @@ class State(object):
         self._h = CP.PropsSI('H',prop1,value1,prop2,value2,fluid)
         self._s = CP.PropsSI('S',prop1,value1,prop2,value2,fluid)
         self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
-        self._ef = self.flow_exergy(dead_state)
+        self._ef = self.flow_exergy()
         self._vel = velocity
         self._z = z     #height
 
