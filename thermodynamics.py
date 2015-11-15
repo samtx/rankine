@@ -126,9 +126,14 @@ class State(object):
 #             print('Oops. Something happened when calling CoolProp for state ' + self.name)
         self._T = CP.PropsSI('T',prop1,value1,prop2,value2,fluid)
         self._p = CP.PropsSI('P',prop1,value1,prop2,value2,fluid)
-        rho = CP.PropsSI('D',prop1,value1,prop2,value2,fluid)
-        self._d = rho
-        self._v = 1 / rho
+        psat = CP.PropsSI('P','T',self.T,'Q',0.0,fluid) # saturation pressure at temperature T
+        if self.p < psat:
+            self._x = -1  # subcooled liquid
+        elif self.p > psat:
+            self._x = 2   # superheated vapor
+        else:
+            self._d = CP.PropsSI('D',prop1,value1,prop2,value2,fluid)
+            self._v = 1 / self.d
         self._u = CP.PropsSI('U',prop1,value1,prop2,value2,fluid)
         self._h = CP.PropsSI('H',prop1,value1,prop2,value2,fluid)
         self._s = CP.PropsSI('S',prop1,value1,prop2,value2,fluid)
@@ -403,7 +408,8 @@ class Geotherm(object):
         # default brine fluid is 20% NaCl solution with water.
         # See http://www.coolprop.org/fluid_properties/Incompressibles.html for more
         # information on available brines
-        self._brine = "INCOMP::" + kwargs.pop('brine','MNA[.01]')
+        self._brine = "INCOMP::" + kwargs.pop('brine','ZM[.01]')  # ZM -> Zitrec M, Ethylene Glycol
+        # use MNA for sodium chloride aqueous mix
         # default mass flow rate is 1 kg/s
         self._mdot = kwargs.pop('mdot',1)
         # default name is 'Geothermal'
