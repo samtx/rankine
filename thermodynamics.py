@@ -357,7 +357,61 @@ class Cycle(object):
         # set mass flow rate
         self._mdot = mdot # in kg/s
 
+class Geotherm(object):
+    '''This class describes the geothermal heating cycle of the power plant'''
+    
+    @property
+    def 
+    
+    def __init__(self,**kwargs):
+        ''' Create an instance of a geothermal heating cycle object
+        arguments: 
+            brine (optional) = which fluid to use for the brine in the geothermal plant
+            mdot (optional) = mass flow rate of brine fluid        
+            name (optional) = string used to describe the geothermal cycle
+            t_ground (optional) = underground temperature that brine will be raised
+            p_ground (optional) = underground pressure of brine
+            to before entering the steam generator of the organic Rankine cycle.'''
 
+        # get optional arguments from kwargs
+        
+        # default brine fluid is 20% NaCl solution with water. 
+        # See http://www.coolprop.org/v4/FluidInformation.html for more 
+        # information on available brines
+        self._brine = kwargs.pop('brine','MNA-20')  
+        # default mass flow rate is 1 kg/s
+        self._mdot = kwargs.pop('mdot',1)
+        # default name is 'Geothermal'
+        self._name = kwargs.pop('name','Geothermal')
+
+        # initialize process list
+        self._proc_list = []
+        # initialize state list
+        self._state_list = []
+        
+        # create initial brine state
+        # default ground temperature is 120 deg C
+        t = kwargs.pop('t_ground',120)
+        # default ground pressure is 0.5 MPa (5 bar)
+        p = kwargs.pop('p_ground',0.5)
+        g1 = State(self,brine,'T',t+273,'P',p*10**6,'Brine In')
+        
+        
+        
+class Plant(object):
+    '''This class describes the whole geothermal power plant, including both
+    the geothermal heat source and the organic Rankine cycle power generation '''
+    
+    def __init__(self,cycle,geotherm,**kwargs):
+        ''' Create an instance of a geothermal Plant object
+        arguments: 
+            cycle (required) = an instance of object Cycle for the organic Rankine cycle used in the plant
+            brine (optional) = which fluid to use for the brine in the geothermal plant
+            mdot (optional) = mass flow rate of brine fluid
+            
+            
+            '''
+        self._cycle = cycle
 
 
 
