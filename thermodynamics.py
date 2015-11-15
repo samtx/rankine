@@ -140,7 +140,9 @@ class State(object):
         # add state to cycle's state list if not dead state
         if self.cycle:
             self.cycle.add_state(self)
-            
+
+        return
+
 
 #         # determine phase of fluid and add description
 #         if self.x == 1:
@@ -155,8 +157,6 @@ class State(object):
 #             phase = ""
 #         self._phase = phase
 
-
-
 class Process(object):
     '''A class that defines values for a process based on a
     state in and a state out. '''
@@ -169,10 +169,6 @@ class Process(object):
 #             if self.
 #         # find difference in flow exergy
 #         (state_in.ef - state_out.ef)
-
-
-
-        pass
 #         ''' Calculate the exergy in, exergy out, and exergy destruction of the process'''
 #         To = env_vars["To"] # environment temperature in Kelvin
 #         po = env_vars["po"] # environment pressure in Pa
@@ -209,13 +205,13 @@ class Process(object):
     def delta_ef(self):
         return self._delta_ef
 
-#     @property
-#     def ex_d(self):
-#         return self._ex_d
+    #     @property
+    #     def ex_d(self):
+    #         return self._ex_d
 
-#     @property
-#     def intrev(self):
-#         return self._intrev
+    #     @property
+    #     def intrev(self):
+    #         return self._intrev
 
     @property
     def cycle(self):
@@ -248,7 +244,8 @@ class Process(object):
         # add process to cycle's process list
         if self.cycle:
             self._cycle.add_proc(self)
- 
+
+        return
 
 class Cycle(object):
     '''A class that defines values for a thermodynamic power cycle
@@ -356,11 +353,3 @@ class Cycle(object):
         self._state_list = []
         # set mass flow rate
         self._mdot = mdot # in kg/s
-
-
-
-
-
-
-
-
