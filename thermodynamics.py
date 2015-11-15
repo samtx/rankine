@@ -420,7 +420,7 @@ class Geotherm(object):
         t = kwargs.pop('t_ground',120)
         # default ground pressure is 0.5 MPa (5 bar)
         p = kwargs.pop('p_ground',0.5)
-        g1 = State(self,self.brine,'T',t+190,'P',p*10**6,'Brine In')
+        g1 = State(self,self.brine,'T',t+273,'P',p*(10**6),'Brine In')
 
         self._dead = kwargs.pop('dead',
                                 State(None,self.brine,'T',15+273,
