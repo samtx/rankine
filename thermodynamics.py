@@ -143,7 +143,6 @@ class State(object):
 
         return
 
-
 #         # determine phase of fluid and add description
 #         if self.x == 1:
 #             phase = 'Sat Vapor'
