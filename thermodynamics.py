@@ -299,6 +299,16 @@ class Cycle(object):
     def mdot(self):
         return self._mdot
 
+    def compute_cycle_results(self):
+        ''' Compute and store rankine cycle 
+          wnet        = net work output
+          qnet        = net heat input
+          thermal_eff = thermal efficiency
+          bwr         = back work ratio
+          ex_eff      = exergetic efficiency
+          '''
+        return
+    
     def __init__(self,fluid,**kwargs):
         # unpack keyword arguments
         p_hi = kwargs.pop('p_hi',None)
@@ -338,6 +348,14 @@ class Cycle(object):
         self._state_list = []
         # set mass flow rate
         self._mdot = mdot # in kg/s
+        
+        # initialize cycle results
+        self.wnet = None
+        self.qnet = None
+        self.thermal_eff = None
+        self.bwr = None
+        self.ex_eff = None
+        
 
 class Geotherm(object):
     '''This class describes the geothermal heating cycle of the power plant'''
@@ -349,7 +367,7 @@ class Geotherm(object):
     def dead(self):
         #return dead state
         return self._dead
-    
+
     def add_proc(self,process):
         self._proc_list.append(process)
 
@@ -444,7 +462,7 @@ class Plant(object):
             '''
         self._rank = rankine
         self._geo = geotherm
-        
+
         # calculate and store plant efficiencies
         (en_eff, ex_eff) = self.calc_plant_eff()
         self._en_eff = en_eff   # plant energetic efficiency
