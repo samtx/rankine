@@ -401,7 +401,7 @@ class Geotherm(object):
         # get optional arguments from kwargs
 
         # default brine fluid is 20% NaCl solution with water.
-        # See http://www.coolprop.org/v4/FluidInformation.html for more
+        # See http://www.coolprop.org/fluid_properties/Incompressibles.html for more
         # information on available brines
         self._brine = "INCOMP::" + kwargs.pop('brine','MNA[.01]')
         # default mass flow rate is 1 kg/s
