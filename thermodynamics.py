@@ -300,7 +300,7 @@ class Cycle(object):
         return self._mdot
 
     def compute_cycle_results(self):
-        ''' Compute and store rankine cycle 
+        ''' Compute and store rankine cycle
           wnet        = net work output
           qnet        = net heat input
           thermal_eff = thermal efficiency
@@ -308,7 +308,7 @@ class Cycle(object):
           ex_eff      = exergetic efficiency
           '''
         return
-    
+
     def __init__(self,fluid,**kwargs):
         # unpack keyword arguments
         p_hi = kwargs.pop('p_hi',None)
@@ -348,20 +348,28 @@ class Cycle(object):
         self._state_list = []
         # set mass flow rate
         self._mdot = mdot # in kg/s
-        
+
         # initialize cycle results
         self.wnet = None
         self.qnet = None
         self.thermal_eff = None
         self.bwr = None
         self.ex_eff = None
-        
+
 
 class Geotherm(object):
     '''This class describes the geothermal heating cycle of the power plant'''
 
     # should probably make this a subclass of Cycle later, and make a new
     # class called Rankine a subclass of Cycle also.
+
+    @property
+    def brine(self):
+        return self._brine
+
+    @property
+    def mdot(self):
+        return self._mdot
 
     @property
     def dead(self):
@@ -396,7 +404,7 @@ class Geotherm(object):
         # default brine fluid is 20% NaCl solution with water.
         # See http://www.coolprop.org/v4/FluidInformation.html for more
         # information on available brines
-        self._brine = kwargs.pop('brine','MNA-20')
+        self._brine = "INCOMP::" + kwargs.pop('brine','MNA[.01]')
         # default mass flow rate is 1 kg/s
         self._mdot = kwargs.pop('mdot',1)
         # default name is 'Geothermal'
@@ -412,10 +420,10 @@ class Geotherm(object):
         t = kwargs.pop('t_ground',120)
         # default ground pressure is 0.5 MPa (5 bar)
         p = kwargs.pop('p_ground',0.5)
-        g1 = State(self,brine,'T',t+273,'P',p*10**6,'Brine In')
+        g1 = State(self,self.brine,'T',t+190,'P',p*10**6,'Brine In')
 
         self._dead = kwargs.pop('dead',
-                                State(None,brine,'T',15+273,
+                                State(None,self.brine,'T',15+273,
                                       'P',101325,'Brine Dead State')
                                )
 

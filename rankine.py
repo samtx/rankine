@@ -14,6 +14,7 @@ from prettytable import PrettyTable, MSWORD_FRIENDLY, PLAIN_COLUMNS #for output 
 def main():
     #Obtaining user-defined properties of Rankine cycle
     props = define_inputs()
+
     # begin computing processess for rankine cycle
     rankine = compute_cycle(props)
     cyc_props = {}
@@ -23,10 +24,16 @@ def main():
     cyc_props['bwr'] = rankine.bwr
     s_list = rankine.get_states()
     p_list = rankine.get_procs()
+
+    # initialize geothermal cycle using defaults
+    geotherm = thermo.Geotherm()
+
     # print output to screen
     print_output_to_screen(cyc_props,p_list,s_list,props,s_list[0].cycle.dead)
+
     # compute plant efficiencies
     plant = compute_plant(rankine,geotherm)
+    
     return
 
 def should_quit(string):
