@@ -14,10 +14,26 @@ from prettytable import PrettyTable, MSWORD_FRIENDLY, PLAIN_COLUMNS #for output 
 def main():
     #Obtaining user-defined properties of Rankine cycle
     props = define_inputs()
+
     # begin computing processess for rankine cycle
-    (cyc_props,p_list,s_list) = compute_cycle(props)
+    rankine = compute_cycle(props)
+    cyc_props = {}
+    cyc_props['wnet'] = rankine.wnet
+    cyc_props['qnet'] = rankine.qnet
+    cyc_props['thermal_eff'] = rankine.thermal_eff
+    cyc_props['bwr'] = rankine.bwr
+    s_list = rankine.get_states()
+    p_list = rankine.get_procs()
+
+#     initialize geothermal cycle using defaults
+#     geotherm = thermo.Geotherm()
+
     # print output to screen
     print_output_to_screen(cyc_props,p_list,s_list,props,s_list[0].cycle.dead)
+
+#     compute plant efficiencies
+#     plant = compute_plant(rankine,geotherm)
+    
     return
 
 def should_quit(string):
@@ -187,13 +203,12 @@ def compute_cycle(props):
     pump.ex_eff = pump.delta_ef / pump.ex_in
 
     # Define cycle properties
-    cyc_props = {}
-    cyc_props['wnet'] = turb.work + pump.work
-    cyc_props['qnet'] = boil.heat + cond.heat
-    cyc_props['thermal_eff'] = cyc_props['wnet'] / boil.heat
-    cyc_props['bwr'] = -pump.work / turb.work
+    cyc.wnet = turb.work + pump.work
+    cyc.qnet = boil.heat + cond.heat
+    cyc.thermal_eff = cyc.wnet / boil.heat
+    cyc.bwr = -pump.work / turb.work
 
-    return (cyc_props, cyc.get_procs(), cyc.get_states())
+    return cyc
 
 def print_output_to_screen(cyc_props,p_list,s_list,props,dead):
     print_user_values(props)
@@ -319,6 +334,10 @@ def create_plot(p_list,s_list):
     filename = 'ts_plot.png'
     plt.savefig(filename) # save figure to directory
     return
+
+def compute_plant(rank,geo):
+    ''' Compute and return plant object from rankine cycle and geothermal cycle objects '''
+    pass
 
 if __name__ == '__main__':
     main()
