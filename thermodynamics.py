@@ -301,28 +301,13 @@ class Cycle(object):
 
     def __init__(self,fluid,**kwargs):
         # unpack keyword arguments
-        p_hi = None
-        p_lo = None
-        T_hi = None
-        T_lo = None
-        dead = None
-        name = ""
-        mdot = 1
-        for key, value in kwargs.iteritems():
-            if key.lower() == 'p_hi':
-                p_hi = value
-            elif key.lower() == 'p_lo':
-                p_lo = value
-            elif key.lower() == 't_hi':
-                T_hi = value
-            elif key.lower() == 't_lo':
-                T_lo = value
-            elif key.lower() == 'dead':
-                dead = value
-            elif key.lower() == 'name':
-                name = value
-            elif key.lower() == 'mdot':
-                mdot = value
+        p_hi = kwargs.pop('p_hi',None)
+        p_lo = kwargs.pop('p_lo',None)
+        T_hi = kwargs.pop('T_hi',None)
+        T_lo = kwargs.pop('T_lo',None)
+        dead = kwargs.pop('dead',None)
+        name = kwargs.pop('name',"")
+        mdot = kwargs.pop('mdot',1)  #default is 1 kg/s
         # check to see if at least one high and one low value are entered
         if not((p_hi or T_hi) and (p_lo or T_lo)):
             raise ValueError('Must enter one of each group (p_hi or T_h) and (p_lo and T_lo)')
@@ -352,31 +337,30 @@ class Cycle(object):
         # initialize state list
         self._state_list = []
         # set mass flow rate
-<<<<<<< HEAD
         self._mdot = mdot # in kg/s
 
 class Geotherm(object):
     '''This class describes the geothermal heating cycle of the power plant'''
-    
-    @property
-    def 
-    
+
+#     @property
+#     def
+
     def __init__(self,**kwargs):
         ''' Create an instance of a geothermal heating cycle object
-        arguments: 
+        arguments:
             brine (optional) = which fluid to use for the brine in the geothermal plant
-            mdot (optional) = mass flow rate of brine fluid        
+            mdot (optional) = mass flow rate of brine fluid
             name (optional) = string used to describe the geothermal cycle
             t_ground (optional) = underground temperature that brine will be raised
             p_ground (optional) = underground pressure of brine
             to before entering the steam generator of the organic Rankine cycle.'''
 
         # get optional arguments from kwargs
-        
-        # default brine fluid is 20% NaCl solution with water. 
-        # See http://www.coolprop.org/v4/FluidInformation.html for more 
+
+        # default brine fluid is 20% NaCl solution with water.
+        # See http://www.coolprop.org/v4/FluidInformation.html for more
         # information on available brines
-        self._brine = kwargs.pop('brine','MNA-20')  
+        self._brine = kwargs.pop('brine','MNA-20')
         # default mass flow rate is 1 kg/s
         self._mdot = kwargs.pop('mdot',1)
         # default name is 'Geothermal'
@@ -386,36 +370,25 @@ class Geotherm(object):
         self._proc_list = []
         # initialize state list
         self._state_list = []
-        
+
         # create initial brine state
         # default ground temperature is 120 deg C
         t = kwargs.pop('t_ground',120)
         # default ground pressure is 0.5 MPa (5 bar)
         p = kwargs.pop('p_ground',0.5)
         g1 = State(self,brine,'T',t+273,'P',p*10**6,'Brine In')
-        
-        
-        
+        return
+
 class Plant(object):
     '''This class describes the whole geothermal power plant, including both
     the geothermal heat source and the organic Rankine cycle power generation '''
-    
+
     def __init__(self,cycle,geotherm,**kwargs):
         ''' Create an instance of a geothermal Plant object
-        arguments: 
+        arguments:
             cycle (required) = an instance of object Cycle for the organic Rankine cycle used in the plant
             brine (optional) = which fluid to use for the brine in the geothermal plant
             mdot (optional) = mass flow rate of brine fluid
-            
-            
             '''
         self._cycle = cycle
 
-
-
-
-
-
-=======
-        self._mdot = mdot # in kg/s
->>>>>>> master
