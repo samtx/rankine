@@ -7,14 +7,12 @@ matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of u
 import matplotlib.pyplot as plt
 #import os           # for file system utilities
 import sys
-<<<<<<< Updated upstream
-from prettytable import PrettyTable #for output formatting
-=======
+
 from prettytable import PrettyTable, MSWORD_FRIENDLY, PLAIN_COLUMNS #for output formatting
 import csv
 
 import CoolProp.CoolProp as CP
->>>>>>> Stashed changes
+
 
 ######################################
 
@@ -23,119 +21,7 @@ def main():
     props = define_inputs()
     print(props)
     # begin computing processess for rankine cycle
-<<<<<<< Updated upstream
-    (cyc_props,p_list,s_list) = compute_cycle(props)
-    print('Done!')
 
-    # unpack states
-    st_1 = s_list[0]
-    st_2s = s_list[1]
-    st_2 = s_list[2]
-    st_3 = s_list[3]
-    st_4s = s_list[4]
-    st_4 = s_list[5]
-    st_4b = s_list[6]
-
-    # unpack processes
-    turb = p_list[0]
-    cond = p_list[1]
-    pump = p_list[2]
-    boil = p_list[3]
-
-    # ----- PUT THIS INTO A SEPARATE FUNCTION LATER -----
-
-    # print values to screen
-    print('\nUser entered values\n-------------------')
-    print('Working Fluid: '+props["fluid"])
-    print('Low Pressure:  {:>3.3f} MPa'.format(props["p_lo"]))
-    print('High Pressure: {:>3.3f} MPa'.format(props["p_hi"]))
-    print('Isentropic Turbine Efficiency: {:>2.1f}%'.format(props["turb_eff"]*100))
-    print('Isentropic Pump Efficiency:    {:>2.1f}%\n'.format(props["pump_eff"]*100))
-
-    t = PrettyTable(['State','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Quality'])
-    t.align['Enthalpy (kJ/kg)'] = 'r'
-    t.align['Entropy (kJ/kg.K)']= 'r'
-    t.float_format['Enthalpy (kJ/kg)'] = '4.2'
-    t.float_format['Entropy (kJ/kg.K)'] = '6.5'
-    t.float_format['Quality'] = '0.2'
-    t.padding_width = 1
-    t.add_row([st_1.name,st_1.h/1000,st_1.s/1000,'Sat Vapor'])
-    t.add_row([st_2s.name,st_2s.h/1000,st_2s.s/1000,st_2s.x])
-    t.add_row([st_2.name,st_2.h/1000,st_2.s/1000,st_2.x])
-    t.add_row([st_3.name,st_3.h/1000,st_3.s/1000,'Sat Liquid'])
-    t.add_row([st_4s.name,st_4s.h/1000,st_4s.s/1000,'Sub-Cooled Liq'])
-    t.add_row([st_4.name,st_4.h/1000,st_4.s/1000,'Sub-Cooled Liq'])
-    print(t,'\n')
-
-    t = PrettyTable(['Process','Heat (kJ/kg)','Work (kJ/kg)'])
-    t.align['Heat (kJ/kg)'] = 'r'
-    t.align['Work (kJ/kg)'] = 'r'
-    t.float_format['Heat (kJ/kg)'] = '5.1'
-    t.float_format['Work (kJ/kg)'] = '5.1'
-    t.add_row([turb.name,0,turb.work/1000])
-    t.add_row([cond.name,cond.heat/1000,0])
-    t.add_row([pump.name,0,pump.work/1000])
-    t.add_row([boil.name,boil.heat/1000,0])
-    t.add_row(['Net',cyc_props["qnet"]/1000,cyc_props["wnet"]/1000])
-    print(t)
-
-    print('\nOther Values \n------------ ')
-    print('v3 = {:.4e} m^3/kg'.format(st_3.v))
-    print('thermal efficiency = {:2.1f}%'.format(cyc_props["thermal_eff"]*100))
-    print('back work ratio = {:.3f}'.format(cyc_props["bwr"]))
-
-    # get temperature values for T-s plot
-#     T1 =  h2o_sat[h2o_sat['P']==p_hi]['T'].values[0]
-#     T2 =  h2o_sat[h2o_sat['P']==p_lo]['T'].values[0] # come back to this
-#     T2s = T2  # come back to this
-#     T3 = T2s
-#     T4s = T3 + 5 # temporary until I can interpolate to find real T4
-#     T4b = T1
-#     T4 = T4b * (s4 - s4s)/(s4b - s4s) + T4s
-
-    # note: use h4, s4 to fix the state to find T4
-    T_pts = [st_1.T, st_2s.T, st_2.T, st_2s.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
-    s_pts = [st_1.s, st_2s.s, st_2.s, st_2s.s, st_3.s, st_4s.s, st_4b.s, st_1.s]
-
-    s_dash_12 = [st_1.s, st_2.s]
-    T_dash_12 = [st_1.T, st_2.T]
-    s_dash_34 = [st_3.s, st_4.s]
-    T_dash_34 = [st_3.T, st_4.T]
-
-    # for i in s_pts: #round to two decimal places
-    #   s_pts(i) = float('{:.2f}'.format(i))
-    #print T_pts
-    #print s_pts
-
-#     # draw saturated dome. Get values from sat table
-#     step = 5
-#     for step
-
-
-#     Tsat_pts = h2o_sat['T'].tolist()
-#     sfsat_pts = h2o_sat['sf'].tolist()
-#     sgsat_pts = h2o_sat['sg'].tolist()
-#     # sort the lists
-    #Tsat_pts =
-
-    # Draw T-s plot
-    plt.clf()
-#     plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
-    plt.plot(s_dash_12,T_dash_12,'b--',s_dash_34,T_dash_34,'b--')
-    plt.annotate("1.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
-    plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
-    plt.annotate("3.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+25 ), arrowprops=dict(facecolor = 'red', shrink=0.05),)
-    plt.annotate("4.", xy = (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
-    plt.suptitle("Rankine Cycle T-s Diagram")
-    plt.xlabel("Entropy (kJ/kg.K)")
-    plt.ylabel("Temperature (deg C)")
-    # Save plot
-    filename = 'ts_plot.png'
-    # if os.access(filename,os.F_OK):  # check if a ts_plot.png already exists
-    #   if not os.access(filename,os.W_OK): # check to see if it is not writable
-    #     os.fchmod(filename,stat.S_IWOTH) # if not writable, then make it writable
-    plt.savefig(filename) # save figure to directory
-=======
     rankine = compute_cycle(props)
     cyc_props = {}
     cyc_props['wnet'] = rankine.wnet
@@ -154,7 +40,6 @@ def main():
 #     compute plant efficiencies
 #     plant = compute_plant(rankine,geotherm)
 
->>>>>>> Stashed changes
     return
 
 
@@ -315,22 +200,6 @@ def compute_cycle(props):
     boil = thermo.Process(st_4,st_1,qb,0,"Boiler")
     process_list = [turb,cond,pump,boil]
 
-    # Define cycle properties
-<<<<<<< Updated upstream
-    wnet = turb.work + pump.work
-    qnet = boil.heat + cond.heat
-    # Find thermal efficiency for cycle
-    thermal_eff = wnet / boil.heat
-    # Find back work ratio
-    bwr = -pump.work / turb.work
-    cyc_props = {}
-    cyc_props['wnet'] = wnet
-    cyc_props['qnet'] = qnet
-    cyc_props['thermal_eff'] = thermal_eff
-    cyc_props['bwr'] = bwr
-
-    return (cyc_props, process_list, state_list)
-=======
     cyc.wnet = turb.work + pump.work
     cyc.qnet = boil.heat + cond.heat
     cyc.thermal_eff = cyc.wnet / boil.heat
@@ -496,7 +365,6 @@ def get_sat_dome(fluid):
 #         spts.append(s)
 #         tpts.append(T-273) # save in celcius
 #     return spts,tpts
->>>>>>> Stashed changes
 
 if __name__ == '__main__':
   main()
