@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 #import os           # for file system utilities
 import sys
 from prettytable import PrettyTable, MSWORD_FRIENDLY, PLAIN_COLUMNS #for output formatting
+import csv
 
 ######################################
 
@@ -202,6 +203,7 @@ def print_output_to_screen(cyc_props,p_list,s_list,props,dead):
     print_exergy_table(p_list)
     print_cycle_values(cyc_props)
     create_plot(p_list,s_list)
+    write_csv(p_list,s_list)
     return
 
 def print_user_values(props):
@@ -279,6 +281,39 @@ def print_cycle_values(cyc_props):
     print('back work ratio = {:.3f}'.format(cyc_props["bwr"]))
     return
 
+#write our output data to a csv file
+def write_csv(p_list,s_list):
+  file = open('test.csv' , 'w')
+  a = csv.writer(file)
+
+  headers = ['Process','States','Exergy In (kJ/kg)','Exergy Out (kJ/kg)','Delta Ef (kJ/kg)','Exergy Dest. (kJ/kg)','Exergetic Eff.']
+  t = PrettyTable(headers)
+  for item in headers[2:6]:
+      t.align[item] = 'r'
+      t.float_format[item] = '5.1'
+  ex_totals = [0,0,0,0]
+  for p in p_list:
+      row = [p.name,p.state_in.name+' -> '+p.state_out.name,p.ex_in/1000,p.ex_out/1000,p.delta_ef/1000,p.ex_d/1000,'{:.1%}'.format(p.ex_eff)]
+      t.add_row(row)
+      # calculate exergy totals
+      idx = 0
+      for i in row[2:6]:
+          ex_totals[idx] += i
+          idx += 1
+  # print net exergy row
+  row = ['Net','']
+  for i in ex_totals:
+      row.append(i)
+  # cycle exergetic efficiency
+  cyc_ex_eff = ex_totals[1]/ex_totals[0]  # (total ex_out)/(total ex_in)
+  row.append('{:.1%}'.format(cyc_ex_eff))
+  t.add_row(row)
+
+  data = [t]
+  a.writerows(data)
+  file.close()
+  return
+
 def create_plot(p_list,s_list):
     # unpack states
     st_1 = s_list[0]
@@ -306,19 +341,36 @@ def create_plot(p_list,s_list):
 
     # Draw T-s plot
     plt.clf()
-#     plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
+    plt.plot(s_pts,T_pts,'b') #,sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
     plt.plot(s_dash_12,T_dash_12,'b--',s_dash_34,T_dash_34,'b--')
-    plt.annotate("1.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
-    plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
-    plt.annotate("3.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+25 ), arrowprops=dict(facecolor = 'red', shrink=0.05),)
-    plt.annotate("4.", xy = (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
+    plt.annotate("2s.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
+    plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
+    plt.annotate("1.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
+    plt.annotate("3.", xy = (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
     plt.suptitle("Rankine Cycle T-s Diagram")
-    plt.xlabel("Entropy (kJ/kg.K)")
-    plt.ylabel("Temperature (deg C)")
+    plt.xlabel("Entropy (J/kg*K)")
+    plt.ylabel("Temperature (deg K)")
     # Save plot
     filename = 'ts_plot.png'
     plt.savefig(filename) # save figure to directory
     return
+
+    def get_sat_dome(fluid):
+      pass
+ #      smin = ?
+  #     smax = ?
+   #    step = ?
+    #   quality = 0
+     #  tpts = []
+     #  spts = []
+     #  crit_pt = thermo.State(None,fluid, critical) point?asdlkfjasd;lkf100 #something
+      # for s in range(s_min:step:s_max):
+       #    if s > crit_pt.s:
+        #       quality = 1
+         #  T = CP.PropsSI('T','S',s,'Q',quality,fluid)
+          # spts.append(s)
+          # tpts.append(T-273) # save in celcius
+       #return spts,tpts
 
 if __name__ == '__main__':
     main()
