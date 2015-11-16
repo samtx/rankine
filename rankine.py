@@ -13,7 +13,7 @@ import CoolProp.CoolProp as CP
 ######################################
 
 def main():
-    
+
     fluid_list = ['Water']
     for fluid in fluid_list:
         #create dictionary of properties
@@ -23,9 +23,9 @@ def main():
         props["p_lo"] = 0.008 #MPa
         props["t_hi"] = 120  # deg C
         props["t_lo"] = 25 # deg C
-        props["turb_eff"] = 0.85
+        props["turb_eff"] = 1
         props["pump_eff"] = 0.60
-    
+
         # begin computing processess for rankine cycle
         rankine = compute_cycle(props)
         cyc_props = {}
@@ -165,33 +165,36 @@ def compute_cycle(props):
     pump_eff = props['pump_eff']
 
     # initialize cycle
-    cyc = thermo.Cycle(fluid,p_hi=p_hi,p_lo=p_lo,name='Rankine',mdot=0.43)
+    cyc = thermo.Cycle(fluid,name='Rankine',mdot=0.43,
+                       T_hi=t_hi,T_lo=t_lo)
 
     # Define States
     # State 1, saturated vapor at high pressure
-    st_1 = thermo.State(cyc,fluid,'p',p_hi,'Q',1,'1')
+    st_1 = thermo.State(cyc,fluid,'T',t_hi,'Q',1,'1')
 
     # State 2s, two-phase at low pressure with same entropy as state 1
-    st_2s = thermo.State(cyc,fluid,'p',p_lo,'s',st_1.s,'2s')
+    st_2s = thermo.State(cyc,fluid,'T',t_lo,'s',st_1.s,'2s')
 
     # State 2, two-phase at low pressure determined by turbine efficiency
     h2 = turb_eff * (st_2s.h - st_1.h) + st_1.h  # with an irreversible turbine
-    st_2 = thermo.State(cyc,fluid,'p',p_lo,'h',h2,'2')
+    psat_low = CP.PropsSI('P','T',t_lo,'Q',0,fluid)
+    st_2 = thermo.State(cyc,fluid,'p',psat_low,'h',h2,'2')
+    print('state 2 quality: ',st_2.x)
     if st_2.x > 1:
         print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
         sys.exit()
 
-    # State 3, saturated liquid at low pressure
-    st_3 = thermo.State(cyc,fluid,'p',p_lo,'x',0.0,'3')
+    # State 3, saturated liquid at low temperature
+    st_3 = thermo.State(cyc,fluid,'T',t_lo,'x',0.0,'3')
 
     # States 4 and 4s, sub-cooled liquid at high pressure
     # assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
     # find values for irreversible pump operation
-    wp = 1/pump_eff * (-st_3.v)*(p_hi - p_lo)
-    st_4s = thermo.State(cyc,fluid,'p',p_hi,'s',st_3.s,'4s')
-    st_4 = thermo.State(cyc,fluid,'p',p_hi,'h',st_3.h-wp,'4')
+    wp = 1/pump_eff * (-st_3.v)*(st_1.p - st_3.p)
+    st_4s = thermo.State(cyc,fluid,'P',st_1.p,'s',st_3.s,'4s')
+    st_4 = thermo.State(cyc,fluid,'P',st_1.p,'h',st_3.h-wp,'4')
     # find State 4b, high pressure saturated liquid
-    st_4b = thermo.State(cyc,fluid,'p',p_hi,'x',0.0,'4b')
+    st_4b = thermo.State(cyc,fluid,'p',st_1.p,'x',0.0,'4b')
 
     # Define processes
     # Find work and heat for each process
@@ -244,8 +247,8 @@ def print_user_values(props):
     # print values to screen
     print('\nUser entered values\n-------------------')
     print('Working Fluid: '+props["fluid"])
-    print('Low Pressure:  {:>3.3f} MPa'.format(props["p_lo"]))
-    print('High Pressure: {:>3.3f} MPa'.format(props["p_hi"]))
+    print('Low Temperature:  {:>3.0f} deg C'.format(props["t_lo"]))
+    print('High Temperature: {:>3.0f} deg C'.format(props["t_hi"]))
     print('Isentropic Turbine Efficiency: {:>2.1f}%'.format(props["turb_eff"]*100))
     print('Isentropic Pump Efficiency:    {:>2.1f}%\n'.format(props["pump_eff"]*100))
     return
