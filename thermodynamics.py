@@ -166,13 +166,13 @@ class State(object):
         # find fluid phase using given properties
         # for brines, just set quality to None.
         if fluid.count("INCOMP"):
-            print("this is brine!")
+            #print("this is brine!")
             self._x = 'Liquid'  #
         else:
-            print('tcrit,(',fluid,')=,',CP.PropsSI('Tcrit',prop1,value1,prop2,value2,fluid))
-            print('pcrit,(',fluid,')=,',CP.PropsSI('Pcrit',prop1,value1,prop2,value2,fluid))
+            #print('tcrit,(',fluid,')=,',CP.PropsSI('Tcrit',prop1,value1,prop2,value2,fluid))
+            #print('pcrit,(',fluid,')=,',CP.PropsSI('Pcrit',prop1,value1,prop2,value2,fluid))
             phase = CP.PropsSI('Phase',prop1,value1,prop2,value2,fluid)
-            print('phase:',phase)
+            #print('phase:',phase)
             if phase == twophase_idx:
                 # fluid is two phase. Find quality.
                 self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
@@ -352,19 +352,19 @@ class Cycle(object):
         mdot = kwargs.pop('mdot',1)  #default is 1 kg/s
         # check to see if at least one high and one low value are entered
         if not((p_hi or T_hi) and (p_lo or T_lo)):
-            raise ValueError('Must enter one of each group (p_hi or T_h) and (p_lo and T_lo) when defining a cycle')
+            raise ValueError('Must enter one of each group (p_hi or T_h) and (p_lo and T_lo)')
         # set low and high cycle properties
         # high property
         if T_hi:
             cyc_prop_hi = {'T':T_hi + 273.15} # temperature must be saved in K
         elif p_hi:
             cyc_prop_hi = {'P':p_hi*10**6}  # pressure must be saved in Pa
-        self._cyc_prop_hi = cyc_prop_hi
         # low property
         if T_lo:
             cyc_prop_lo = {'T':T_lo + 273.15} # temperature must be saved in K
         elif p_lo:
             cyc_prop_lo = {'P':p_lo*10**6}  # pressure must be saved in Pa
+        self._cyc_prop_hi = cyc_prop_hi
         self._cyc_prop_lo = cyc_prop_lo
         # set fluid property
         self._fluid = fluid
