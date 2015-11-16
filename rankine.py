@@ -36,7 +36,7 @@ def main():
         s_list = rankine.get_states()
         p_list = rankine.get_procs()
 
-        # initialize geothermal cycle using defaults
+        # initialize geothermal cycle using defaults defined in object
         geotherm = thermo.Geotherm()
 
         # print output to screen
@@ -50,7 +50,6 @@ def main():
 
     return
 
-
 def compute_cycle(props):
     fluid = props['fluid']
     p_hi = props['p_hi']*10**6
@@ -61,53 +60,86 @@ def compute_cycle(props):
     pump_eff = props['pump_eff']
 
     # initialize cycle
-    cyc = thermo.Cycle(fluid,name='Rankine',mdot=0.43,
-                       T_hi=t_hi,T_lo=t_lo)
+    cyc = thermo.Cycle(fluid,name='Rankine',mdot=0.43)
+
+    # use pressures instead of temperatures when accessing CoolProp. So we
+    # want to find the saturation pressures for the given temperatures and
+    # fluid.
+    if t_hi:
+        p_hi = CP.PropsSI('P','T',t_hi,'Q',0,fluid)
+    if t_lo:
+        p_lo = CP.PropsSI('P','T',t_lo,'Q',0,fluid)
 
     # Define States
     # State 1, saturated vapor at high temperature
-    st_1 = thermo.State(cyc,fluid,'T',t_hi,'Q',1,'1')
+    st1 = thermo.State(cyc,'1')
+    st1.T = t_hi
+    st1.p = p_hi
+    st1.h = CP.PropsSI('H','P',p_hi,'Q',1,fluid)
+    st1.s = CP.PropsSI('S','P',p_hi,'Q',1,fluid)
+    st1.flow_exergy()
 
     # State 2s, two-phase at low temperature with same entropy as state 1
-    st_2s = thermo.State(cyc,fluid,'T',t_lo,'s',st_1.s,'2s')
+    st2s = thermo.State(cyc,'2s')
+    st2s.T = CP.PropsSI('T','P',p_lo,'S',st1.s,fluid)
+    st2s.p = p_lo
+    st2s.s = st1.s
+    sf = CP.PropsSI('S','P',p_lo,'Q',0,fluid)
+    sg = CP.PropsSI('S','P',p_lo,'Q',1,fluid)
+    st2s.x = (st2s.s - sf) / (sg - sf)
+    hf = CP.PropsSI('H','P',p_lo,'Q',0,fluid)
+    hg = CP.PropsSI('H','P',p_lo,'Q',1,fluid)
+    st2s.h = st2s.x * (hg - hf) + hf
+    st2s.flow_exergy()
 
-    # State 2, two-phase at low temperature determined by turbine efficiency
-    h2 = turb_eff * (st_2s.h - st_1.h) + st_1.h  # with an irreversible turbine
+    # State 2, two-phase at low pressure determined by turbine efficiency
+    st2 = thermo.State(cyc,'2')
+    st2.h = turb_eff * (st2s.h - st1.h) + st1.h  #with an irreversible turbine
+    st2.x = (st2.h - hf) / (hg - hf)
+    st2.s = st2.x * (sg - sf) + sf
+    st2.flow_exergy()
 
-
-
-
-
-    #x2 = CP.PropsSI('Q','T',t_lo,'H',h2,fluid)
-    psat_low = CP.PropsSI('P','T',t_lo,'Q',0,fluid)
-    print('psat_low:',psat_low)
-    st_2 = thermo.State(cyc,fluid,'p',psat_low,'h',h2,'2')
-    #st_2b = thermo.State(cyc,fluid,'p',psat_low,'Q',x2,'2b')
-
-
-    print('state 2 quality: ',st_2.x)
-    if st_2.x > 1:
+    print('state 2 quality: ',st2.x)
+    if st2.x > 1:
         print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
         sys.exit()
 
-    # State 3, saturated liquid at low temperature
-    st_3 = thermo.State(cyc,fluid,'T',t_lo,'x',0.0,'3')
+    # State 3, saturated liquid at low pressure
+    st3 = thermo.State(cyc,'3')
+    st3.T = t_lo
+    st3.p = p_lo
+    st3.x = 0
+    st3.s = CP.PropsSI('S','P',p_lo,'Q',st3.x,fluid)
+    st3.h = CP.PropsSI('H','P',p_lo,'Q',st3.x,fluid)
+    st3.flow_exergy()
 
-    # States 4 and 4s, sub-cooled liquid at high pressure
+    # States 4 and 4s, subcooled liquid at high pressure
     # assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
     # find values for irreversible pump operation
-    wp = 1/pump_eff * (-st_3.v)*(st_1.p - st_3.p)
-    st_4s = thermo.State(cyc,fluid,'P',st_1.p,'s',st_3.s,'4s')
-    st_4 = thermo.State(cyc,fluid,'P',st_1.p,'h',st_3.h-wp,'4')
+    wp = 1/pump_eff * (-st3.v)*(st1.p - st3.p)
+    st4s = thermo.State(cyc,'4s')
+    st4s.s = st3.s
+
+    # State 4
+    st4 = thermo.State(cyc,'4')
+    st4.h = st3.h - wp
+    st4.T = CP.PropsSI('T','H',st4.h,'P',p_hi,fluid)
+    st4.s = CP.PropsSI('S','H',st4.h,'P',p_hi,fluid)
     # find State 4b, high pressure saturated liquid
-    st_4b = thermo.State(cyc,fluid,'p',st_1.p,'x',0.0,'4b')
+    st4b = thermo.State(cyc,'4b')
+    st4b.p = p_hi
+    st4b.T = t_hi
+    st4b.x = 0
+    st4b.h = CP.PropsSI('H','P',p_hi,'Q',st4b.x,fluid)
+    st4b.s = CP.PropsSI('S','P',p_hi,'Q',st4b.x,fluid)
+    st4b.flow_exergy()
 
     # Define processes
     # Find work and heat for each process
-    turb = thermo.Process(cyc,st_1, st_2, 0, st_1.h-st_2.h, "Turbine")
-    cond = thermo.Process(cyc,st_2, st_3, st_3.h-st_2.h, 0, "Condenser")
-    pump = thermo.Process(cyc,st_3, st_4, 0, wp, "Pump")
-    boil = thermo.Process(cyc,st_4, st_1, st_1.h-st_4.h, 0, "Boiler")
+    turb = thermo.Process(cyc,st1, st2, 0, st1.h-st2.h, "Turbine")
+    cond = thermo.Process(cyc,st2, st3, st3.h-st2.h, 0, "Condenser")
+    pump = thermo.Process(cyc,st3, st4, 0, wp, "Pump")
+    boil = thermo.Process(cyc,st4, st1, st1.h-st4.h, 0, "Boiler")
 
     # calculate exergy values for each process
     # Boiler
@@ -313,9 +345,9 @@ def get_sat_dome(fluid):
 
 
 
-##############################################
-# -------- User Input Functions --------------
-##############################################
+##############################################################################
+# ----------------------- User Input Functions -------------------------------
+##############################################################################
 
 def should_quit(string):
     exit_cmds = ['quit','exit','q','x','e','stop']
@@ -421,8 +453,6 @@ def enter_efficiencies(which_eff):
             eff = eff/100 # convert to decimal if entered in percent
         break
     return eff
-
-
 
 if __name__ == '__main__':
     main()
