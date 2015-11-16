@@ -166,21 +166,44 @@ def compute_cycle(props):
     boil.ex_d = 0
     boil.ex_out = 0
     boil.ex_eff = 1
+    # add results to cycle exergy totals
+    cyc.ex_in += boil.ex_in
+    cyc.ex_d += boil.ex_d
+    cyc.ex_out += boil.ex_out
+    cyc.delta_ef += boil.delta_ef
+
     # Turbine
     turb.ex_in = 0
     turb.ex_d = turb.cycle.dead.T * (turb.out.s - turb.in_.s)
     turb.ex_out = turb.work
     turb.ex_eff = turb.ex_out / -turb.delta_ef
+    # add results to cycle exergy totals
+    cyc.ex_in += turb.ex_in
+    cyc.ex_d += turb.ex_d
+    cyc.ex_out += turb.ex_out
+    cyc.delta_ef += turb.delta_ef
+
     # Condenser
     cond.ex_in = 0
     cond.ex_d = 0
     cond.ex_out = -cond.delta_ef
     cond.ex_eff = 1
+    # add results to cycle exergy totals
+    cyc.ex_in += cond.ex_in
+    cyc.ex_d += cond.ex_d
+    cyc.ex_out += cond.ex_out
+    cyc.delta_ef += cond.delta_ef
+
     # Pump
     pump.ex_out = 0
     pump.ex_in = -pump.work
     pump.ex_d = pump.cycle.dead.T * (pump.out.s - pump.in_.s)
     pump.ex_eff = pump.delta_ef / pump.ex_in
+    # add results to cycle exergy totals
+    cyc.ex_in += pump.ex_in
+    cyc.ex_d += pump.ex_d
+    cyc.ex_out += pump.ex_out
+    cyc.delta_ef += pump.delta_ef
 
     # Define cycle properties
     cyc.wnet = cyc.mdot * (turb.work + pump.work)
@@ -188,6 +211,7 @@ def compute_cycle(props):
     cyc.en_eff = cyc.wnet / boil.heat
     cyc.thermal_eff = cyc.en_eff
     cyc.bwr = -pump.work / turb.work
+    cyc.ex_eff = cyc.ex_out / cyc.ex_in  # cycle exergetic eff
 
     return cyc
 

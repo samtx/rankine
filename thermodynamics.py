@@ -165,8 +165,14 @@ class Cycle(object):
         self.wnet = None
         self.qnet = None
         self.en_eff = None
-        self.ex_eff = 0
         self.bwr = None
+        
+        # initialize cycle exergy totals
+        self.ex_in = 0.0
+        self.ex_out = 0.0
+        self.delta_ef = 0.0
+        self.ex_d = 0.0
+        self.ex_eff = 0.0
 
         return
 
