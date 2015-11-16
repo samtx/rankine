@@ -36,65 +36,65 @@ class State(object):
             return 0
 
 
-    # flow exergy
-    @property
-    def ef(self):
-        return self._ef
+#     # flow exergy
 
-    @property
-    def T(self):
-        return self._T
-
-    @property
-    def p(self):
-        return self._p
-
-    @property
-    def v(self):
-        return self._v
-
-    @property
-    def d(self):
-        return self._d
-
-    @property
-    def u(self):
-        return self._u
-
-    @property
-    def h(self):
-        return self._h
-
-    @property
-    def s(self):
-        return self._s
-
-    @property
-    def x(self):
-        return self._x
-
-    @property
-    def vel(self):
-        return self._vel
-
-    @property
-    def z(self):
-        return self._z
+#     def ef(self):
+#         return self._ef
 
 #     @property
-#     def phase(self):
-#         return self._phase
+#     def T(self):
+#         return self._T
 
-    @property
-    def name(self):
-        return self._name
+#     @property
+#     def p(self):
+#         return self._p
 
-    @property
-    def cycle(self):
-        return self._cycle
+#     @property
+#     def v(self):
+#         return self._v
+
+#     @property
+#     def d(self):
+#         return self._d
+
+#     @property
+#     def u(self):
+#         return self._u
+
+
+#     def h(self):
+#         return self._h
+
+
+#     def s(self):
+#         return self._s
+
+
+#     def x(self):
+#         return self._x
+
+#     @property
+#     def vel(self):
+#         return self._vel
+
+#     @property
+#     def z(self):
+#         return self._z
+
+# #     @property
+# #     def phase(self):
+# #         return self._phase
+
+#     @property
+#     def name(self):
+#         return self._name
+
+#     @property
+#     def cycle(self):
+#         return self.cycle
 
     def __str__():
-        return self._name
+        return self.name
 
     def __repr__(self):
         return self.name
@@ -104,15 +104,19 @@ class State(object):
         cycle,fluid,
         prop1,value1,prop2,value2,
         name="",
-        velocity=0,z=0):
+        velocity=0,z=0,
+        t_lo=25+273.15,
+        t_hi=120+273.15,
+        h2=2545.87*1000,
+        s2=7.1307*1000):
 
-        self._cycle = cycle  # should be an object of class cycle
+        self.cycle = cycle  # should be an object of class cycle
 
-        self._fluid = fluid
+        self.fluid = fluid
 
         # note that 'x' and 'Q' both represent two-phase quality
         # set property name if specified
-        self._name = name # 1, 2, 2s, 3, 4, 4s, 4b, etc.
+        self.name = name # 1, 2, 2s, 3, 4, 4s, 4b, etc.
 
         # add state to cycle's state list if not dead state
         if self.cycle:
@@ -122,16 +126,16 @@ class State(object):
         if fluid.count("INCOMP"):
             print("this is brine!")
             if self.cycle:
-                self._h = 491.6 * 1000 # J/kg
-                self._T = 120 + 273 # K
-                self._s = 1.492 * 1000 # J/kg.K
-                self._ef = self.flow_exergy()
+                self.h = 491.6 * 1000 # J/kg
+                self.T = 120 + 273 # K
+                self.s = 1.492 * 1000 # J/kg.K
+                self.ef = self.flow_exergy()
             else:
                 # this is the dead state brine
-                self._h = 61.05 * 1000 # J/kg
-                self._T = 15 + 273 # K
-                self._s = 0.2205 * 1000 # J/kg.K
-                self._ef = self.flow_exergy()
+                self.h = 61.05 * 1000 # J/kg
+                self.T = 15 + 273 # K
+                self.s = 0.2205 * 1000 # J/kg.K
+                self.ef = self.flow_exergy()
             return
 
         # make necessary conversions for CoolProp functions
@@ -146,17 +150,57 @@ class State(object):
 #         except:
 #             print('Oops. Something happened when calling CoolProp for state ' + self.name)
 
-        self._T = CP.PropsSI('T',prop1,value1,prop2,value2,fluid)
-        self._p = CP.PropsSI('P',prop1,value1,prop2,value2,fluid)
-        self._d = CP.PropsSI('D',prop1,value1,prop2,value2,fluid)
-        self._v = 1 / self.d
-        self._u = CP.PropsSI('U',prop1,value1,prop2,value2,fluid)
-        self._h = CP.PropsSI('H',prop1,value1,prop2,value2,fluid)
-        self._s = CP.PropsSI('S',prop1,value1,prop2,value2,fluid)
-        self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
-        self._ef = self.flow_exergy()
-        self._vel = velocity
-        self._z = z     #height
+        self.T = CP.PropsSI('T',prop1,value1,prop2,value2,fluid)
+        self.p = CP.PropsSI('P',prop1,value1,prop2,value2,fluid)
+        self.d = CP.PropsSI('D',prop1,value1,prop2,value2,fluid)
+        self.v = 1 / self.d
+        self.u = CP.PropsSI('U',prop1,value1,prop2,value2,fluid)
+        self.h = CP.PropsSI('H',prop1,value1,prop2,value2,fluid)
+
+
+        if self.name == '2s':
+            # it seems that CoolProp isn't interpolating correctly. We will do it ourselves
+            sf = CP.PropsSI('S','T',t_lo,'Q',0,fluid)/1000
+            sg = CP.PropsSI('S','T',t_lo,'Q',1,fluid)/1000
+            hf = CP.PropsSI('H','T',t_lo,'Q',0,fluid)/1000
+            hg = CP.PropsSI('H','T',t_lo,'Q',1,fluid)/1000
+            print("HELLO!!! this is State 2s")
+            print('hf= ',hf,'     hg=',hg)
+            print('sf= ',sf,'     sg=',sg)
+
+            # redefine state 2s
+            self.s = s2
+            self.x = (self.s/1000 - sf)/(sg - sf)
+            print("state ",self.name,' x = ',self.x)
+            self.h = self.x * (hg - hf) + hf
+            print("state ",self.name,' s = ',self.s)
+            self.ef = self.flow_exergy()
+            print("state ",self.name,' ef = ',self.ef)
+        elif self.name == '2':
+            # it seems that CoolProp isn't interpolating correctly. We will do it ourselves
+            sf = CP.PropsSI('S','T',t_lo,'Q',0,fluid)/1000
+            sg = CP.PropsSI('S','T',t_lo,'Q',1,fluid)/1000
+            hf = CP.PropsSI('H','T',t_lo,'Q',0,fluid)/1000
+            hg = CP.PropsSI('H','T',t_lo,'Q',1,fluid)/1000
+            print("HELLO!!! this is State 2")
+            print('hf= ',hf,'     hg=',hg)
+            print('sf= ',sf,'     sg=',sg)
+
+            self.h = h2
+            # redefine state 2
+            self.x = (self.h/1000 - hf)/(hg - hf)
+            print("state ",self.name,' x = ',self.x)
+            self.s = self.x * (sg - sf) + sf
+            print("state ",self.name,' s = ',self.s)
+            self.ef = self.flow_exergy()
+            print("state ",self.name,' ef = ',self.ef)
+        else:
+            self.s = CP.PropsSI('S',prop1,value1,prop2,value2,fluid)
+            self.x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
+            self.ef = self.flow_exergy()
+
+        self.vel = velocity
+        self.z = z     #height
 
 #         # determine phase of fluid and add description
 #         # get phase indecies from coolprop
@@ -184,9 +228,6 @@ class State(object):
 #                 self._x = 'Superheated Vapor'
 #             else:
 #                 self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
-
-
-
         return
 
 class Process(object):

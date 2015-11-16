@@ -40,7 +40,7 @@ def main():
         geotherm = thermo.Geotherm()
 
         # print output to screen
-        print_output_to_screen(cyc_props,p_list,s_list,props,s_list[0].cycle.dead)
+        print_output_to_screen(rankine,cyc_props,p_list,s_list,props,s_list[0].cycle.dead)
 
         # compute plant efficiencies
         plant = compute_plant(rankine,geotherm)
@@ -159,8 +159,8 @@ def compute_cycle(props):
     fluid = props['fluid']
     p_hi = props['p_hi']*10**6
     p_lo = props['p_lo']*10**6
-    t_hi = props['t_hi'] + 273
-    t_lo = props['t_lo'] + 273
+    t_hi = props['t_hi'] + 273.15
+    t_lo = props['t_lo'] + 273.15
     turb_eff = props['turb_eff']
     pump_eff = props['pump_eff']
 
@@ -169,16 +169,26 @@ def compute_cycle(props):
                        T_hi=t_hi,T_lo=t_lo)
 
     # Define States
-    # State 1, saturated vapor at high pressure
+    # State 1, saturated vapor at high temperature
     st_1 = thermo.State(cyc,fluid,'T',t_hi,'Q',1,'1')
 
-    # State 2s, two-phase at low pressure with same entropy as state 1
+    # State 2s, two-phase at low temperature with same entropy as state 1
     st_2s = thermo.State(cyc,fluid,'T',t_lo,'s',st_1.s,'2s')
 
-    # State 2, two-phase at low pressure determined by turbine efficiency
+    # State 2, two-phase at low temperature determined by turbine efficiency
     h2 = turb_eff * (st_2s.h - st_1.h) + st_1.h  # with an irreversible turbine
+
+
+
+
+
+    #x2 = CP.PropsSI('Q','T',t_lo,'H',h2,fluid)
     psat_low = CP.PropsSI('P','T',t_lo,'Q',0,fluid)
+    print('psat_low:',psat_low)
     st_2 = thermo.State(cyc,fluid,'p',psat_low,'h',h2,'2')
+    #st_2b = thermo.State(cyc,fluid,'p',psat_low,'Q',x2,'2b')
+
+
     print('state 2 quality: ',st_2.x)
     if st_2.x > 1:
         print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
@@ -234,13 +244,13 @@ def compute_cycle(props):
 
     return cyc
 
-def print_output_to_screen(cyc_props,p_list,s_list,props,dead):
-    print_user_values(props)
-    print_state_table(s_list,dead)
-    print_process_table(cyc_props,p_list)
-    print_exergy_table(p_list)
-    print_cycle_values(cyc_props)
-    create_plot(p_list,s_list)
+def print_output_to_screen(cycle,cyc_props,p_list,s_list,props,dead):
+    #print_user_values(props)
+    print_state_table(cycle.get_states(),cycle.dead)
+    #print_process_table(cyc_props,p_list)
+    #print_exergy_table(p_list)
+    #print_cycle_values(cyc_props)
+    #create_plot(p_list,s_list)
     return
 
 def print_user_values(props):
@@ -260,14 +270,13 @@ def print_state_table(s_list,dead):
         t.align[item] = 'r'
     for item in headers[2:4]:
         t.float_format[item] = '4.2'
-    t.float_format[headers[1]] = '4.3'
+    t.float_format[headers[1]] = '6.5'
     t.float_format[headers[4]] = '6.5'
     t.float_format[headers[5]] = '4.2'
     t.float_format[headers[6]] = '0.2'
     t.padding_width = 1
     s_list.append(dead)
     for item in s_list:
-        print(item.name)
         t.add_row([item.name,item.p/1000000,item.T-273,item.h/1000,item.s/1000,item.ef/1000,item.x])
     print(t,'\n')
     return
