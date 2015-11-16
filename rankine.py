@@ -21,10 +21,10 @@ def main():
         props["fluid"] = fluid
         props["p_hi"] = 8  #MPa
         props["p_lo"] = 0.008 #MPa
-        props["t_hi"] = 120  # deg C
-        props["t_lo"] = 25 # deg C
-        props["turb_eff"] = 1
-        props["pump_eff"] = 0.60
+        #props["t_hi"] = 295  # deg C
+        #props["t_lo"] = 42 # deg C
+        props["turb_eff"] = 0.80
+        props["pump_eff"] = 0.75
 
         # begin computing processess for rankine cycle
         rankine = compute_cycle(props)
@@ -51,13 +51,18 @@ def main():
     return
 
 def compute_cycle(props):
-    fluid = props['fluid']
-    p_hi = props['p_hi']*10**6
-    p_lo = props['p_lo']*10**6
-    t_hi = props['t_hi'] + 273.15
-    t_lo = props['t_lo'] + 273.15
-    turb_eff = props['turb_eff']
-    pump_eff = props['pump_eff']
+    fluid = props.get('fluid',None)
+    p_hi = props.get('p_hi',None)
+    p_lo = props.get('p_lo',None)
+    if p_hi: p_hi = p_hi * 10**6  #convert MPa to Pa
+    if p_lo: p_lo = p_lo * 10**6  #convert MPa to Pa
+    print('p_hi=',p_hi)
+    t_hi = props.get('t_hi',None)
+    t_lo = props.get('t_lo',None)
+    if t_hi: t_hi += 273.15  #convert deg C to K
+    if t_lo: t_lo += 273.15  #convert deg C to K
+    turb_eff = props.get('turb_eff',1.0)
+    pump_eff = props.get('pump_eff',1.0)
 
     # set dead state
     dead = thermo.State(None,'Dead State',fluid)
@@ -74,9 +79,12 @@ def compute_cycle(props):
     # fluid.
     if t_hi:
         p_hi = CP.PropsSI('P','T',t_hi,'Q',0,fluid)
+    else:
+        t_hi = CP.PropsSI('T','P',p_hi,'Q',0,fluid)
     if t_lo:
         p_lo = CP.PropsSI('P','T',t_lo,'Q',0,fluid)
-
+    else:
+        t_lo = CP.PropsSI('T','P',p_lo,'Q',0,fluid)
     # Define States
     # State 1, saturated vapor at high temperature
     st1 = thermo.State(cyc,'1')
@@ -109,7 +117,7 @@ def compute_cycle(props):
     st2.T = CP.PropsSI('T','P',p_lo,'S',st2.s,fluid)
     st2.flow_exergy()
 
-    print('state 2 quality: ',st2.x)
+    #print('state 2 quality: ',st2.x)
     if st2.x > 1:
         print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
         sys.exit()
@@ -121,17 +129,20 @@ def compute_cycle(props):
     st3.x = 0
     st3.s = CP.PropsSI('S','P',p_lo,'Q',st3.x,fluid)
     st3.h = CP.PropsSI('H','P',p_lo,'Q',st3.x,fluid)
+    st3.v = CP.PropsSI('V','P',p_lo,'Q',st3.x,fluid)
     st3.flow_exergy()
 
     # States 4 and 4s, subcooled liquid at high pressure
     # assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
     # find values for irreversible pump operation
-    wp = 1/pump_eff * (-st3.v)*(st1.p - st3.p)
+    wps = -st3.v * (st1.p - st3.p)
+    wp = 1/pump_eff * wps
     st4s = thermo.State(cyc,'4s')
+    st4s.h = st3.h - wps
     st4s.s = st3.s
     st4s.p = p_hi
     st4s.T = CP.PropsSI('T','P',p_hi,'S',st4s.s,fluid)
-    st4s.h = CP.PropsSI('H','P',p_hi,'S',st4s.s,fluid)
+    #st4s.h = CP.PropsSI('H','P',p_hi,'S',st4s.s,fluid)
     st4s.x = 'subcooled'
     st4s.flow_exergy()
 
@@ -140,7 +151,9 @@ def compute_cycle(props):
     st4 = thermo.State(cyc,'4')
     st4.h = st3.h - wp
     st4.T = CP.PropsSI('T','H',st4.h,'P',p_hi,fluid)
-    st4.s = CP.PropsSI('S','H',st4.h,'P',p_hi,fluid)
+    #st4.T = 0.0
+    st4.s = CP.PropsSI('S','P',p_hi,'H',st4.h,fluid)
+    #st4.s = 0.0
     st4.p = p_hi
     st4.x = 'subcooled'
     st4.flow_exergy()
@@ -148,7 +161,7 @@ def compute_cycle(props):
     st4b = thermo.State(cyc,'4b')
     st4b.p = p_hi
     st4b.T = t_hi
-    st4b.x = 0
+    st4b.x = 0.0
     st4b.h = CP.PropsSI('H','P',p_hi,'Q',st4b.x,fluid)
     st4b.s = CP.PropsSI('S','P',p_hi,'Q',st4b.x,fluid)
     st4b.flow_exergy()
@@ -216,9 +229,9 @@ def compute_cycle(props):
     return cyc
 
 def print_output_to_screen(cycle,cyc_props,p_list,s_list,props,dead):
-    #print_user_values(props)
+    print_user_values(props)
     print_state_table(cycle)
-    #print_process_table(cyc_props,p_list)
+    print_process_table(cycle,cyc_props,p_list)
     #print_exergy_table(p_list)
     #print_cycle_values(cyc_props)
     #create_plot(p_list,s_list)
@@ -226,10 +239,19 @@ def print_output_to_screen(cycle,cyc_props,p_list,s_list,props,dead):
 
 def print_user_values(props):
     # print values to screen
+    fluid = props.get('fluid',None)
+    p_hi = props.get('p_hi',None)
+    p_lo = props.get('p_lo',None)
+    t_hi = props.get('t_hi',None)
+    t_lo = props.get('t_lo',None)
+    turb_eff = props.get('turb_eff',1.0)
+    pump_eff = props.get('pump_eff',1.0)
     print('\nUser entered values\n-------------------')
-    print('Working Fluid: '+props["fluid"])
-    print('Low Temperature:  {:>3.0f} deg C'.format(props["t_lo"]))
-    print('High Temperature: {:>3.0f} deg C'.format(props["t_hi"]))
+    print('Working Fluid: '+fluid)
+    if t_lo: print('Low Temperature:  {:>3.1f} deg C'.format(t_lo))
+    if t_hi: print('High Temperature: {:>3.1f} deg C'.format(t_hi))
+    if p_lo: print('Low Pressure:  {:>5.4f} MPa'.format(p_lo))
+    if p_hi: print('High Pressure: {:>5.4f} MPa'.format(p_hi))
     print('Isentropic Turbine Efficiency: {:>2.1f}%'.format(props["turb_eff"]*100))
     print('Isentropic Pump Efficiency:    {:>2.1f}%\n'.format(props["pump_eff"]*100))
     return
@@ -249,11 +271,19 @@ def print_state_table(cycle):
     t.float_format[headers[6]] = '0.2'
     t.padding_width = 1
     for item in s_list:
-        t.add_row([item.name,item.p/1000,item.T-273,item.h/1000,item.s/1000,item.ef/1000,item.x])
+        #print('item.name = ',item.name)
+        t.add_row([item.name,
+                   item.p/1000,
+                   item.T-273,
+                   item.h/1000,
+                   item.s/1000,
+                   item.ef/1000,
+                   item.x])
     print(t,'\n')
     return
 
-def print_process_table(cyc_props,p_list):
+def print_process_table(cycle,cyc_props,p_list):
+    p_list = cycle.get_procs()
     headers = ['Process','States','Heat (kJ/kg)','Work (kJ/kg)']
     t = PrettyTable(headers)
     #t.set_style(MSWORD_FRIENDLY)
@@ -261,8 +291,8 @@ def print_process_table(cyc_props,p_list):
         t.align[item] = 'r'
         t.float_format[item] = '5.1'
     for p in p_list:
-        t.add_row([p.name,p.state_in.name+' -> '+p.state_out.name,p.heat/1000,p.work/1000])
-    t.add_row(['Net','cycle',cyc_props["qnet"]/1000,cyc_props["wnet"]/1000])
+        t.add_row([p.name,p.in_.name+' -> '+p.out.name,p.heat/1000,p.work/1000])
+    t.add_row(['Net','cycle',cycle.qnet/1000,cycle.wnet/1000])
     print(t, '\n')
     return
 
