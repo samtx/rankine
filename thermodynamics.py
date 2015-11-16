@@ -153,37 +153,37 @@ class State(object):
         self._u = CP.PropsSI('U',prop1,value1,prop2,value2,fluid)
         self._h = CP.PropsSI('H',prop1,value1,prop2,value2,fluid)
         self._s = CP.PropsSI('S',prop1,value1,prop2,value2,fluid)
-
+        self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
         self._ef = self.flow_exergy()
         self._vel = velocity
         self._z = z     #height
 
-        # determine phase of fluid and add description
-        # get phase indecies from coolprop
-        liq_idx = CP.get_phase_index('phase_liquid')
-        twophase_idx = CP.get_phase_index('phase_twophase')
-        vapor_idx = CP.get_phase_index('phase_gas')
-        # find fluid phase using given properties
-        # for brines, just set quality to None.
-        if fluid.count("INCOMP"):
-            #print("this is brine!")
-            self._x = 'Liquid'  #
-        else:
-            #print('tcrit,(',fluid,')=,',CP.PropsSI('Tcrit',prop1,value1,prop2,value2,fluid))
-            #print('pcrit,(',fluid,')=,',CP.PropsSI('Pcrit',prop1,value1,prop2,value2,fluid))
-            phase = CP.PropsSI('Phase',prop1,value1,prop2,value2,fluid)
-            #print('phase:',phase)
-            if phase == twophase_idx:
-                # fluid is two phase. Find quality.
-                self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
-            elif phase == liq_idx:
-                # fluid is subcooled. Use string description
-                self._x = 'Subcooled Liquid'
-            elif phase == vapor_idx:
-                # fluid is superheated. Use string description
-                self._x = 'Superheated Vapor'
-            else:
-                self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
+#         # determine phase of fluid and add description
+#         # get phase indecies from coolprop
+#         liq_idx = CP.get_phase_index('phase_liquid')
+#         twophase_idx = CP.get_phase_index('phase_twophase')
+#         vapor_idx = CP.get_phase_index('phase_gas')
+#         # find fluid phase using given properties
+#         # for brines, just set quality to None.
+#         if fluid.count("INCOMP"):
+#             #print("this is brine!")
+#             self._x = 'Liquid'  #
+#         else:
+#             #print('tcrit,(',fluid,')=,',CP.PropsSI('Tcrit',prop1,value1,prop2,value2,fluid))
+#             #print('pcrit,(',fluid,')=,',CP.PropsSI('Pcrit',prop1,value1,prop2,value2,fluid))
+#             phase = CP.PropsSI('Phase',prop1,value1,prop2,value2,fluid)
+#             #print('phase:',phase)
+#             if phase == twophase_idx:
+#                 # fluid is two phase. Find quality.
+#                 self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
+#             elif phase == liq_idx:
+#                 # fluid is subcooled. Use string description
+#                 self._x = 'Subcooled Liquid'
+#             elif phase == vapor_idx:
+#                 # fluid is superheated. Use string description
+#                 self._x = 'Superheated Vapor'
+#             else:
+#                 self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
 
 
 
