@@ -19,9 +19,8 @@ import CoolProp.CoolProp as CP
 def main():
     #Obtaining user-defined properties of Rankine cycle
     props = define_inputs()
-    print(props)
-    # begin computing processess for rankine cycle
 
+    # begin computing processess for rankine cycle
     rankine = compute_cycle(props)
     cyc_props = {}
     cyc_props['wnet'] = rankine.wnet
@@ -39,9 +38,8 @@ def main():
 
 #     compute plant efficiencies
 #     plant = compute_plant(rankine,geotherm)
-
+  
     return
-
 
 def should_quit(string):
     exit_cmds = ['quit','exit','q','x','e','stop']
@@ -63,10 +61,10 @@ def define_inputs():
     if fluid == 'eg_mode':
         # use example mode
         fluid = 'Water'
-        p_hi = 8.0
-        p_lo = 0.008
+        p_hi = 10.0
+        p_lo = 0.006
         turb_eff = 0.80
-        pump_eff = 0.75
+        pump_eff = 0.70
     else:
         (p_hi,p_lo) = select_pressures()
         (turb_eff,pump_eff) = select_efficiencies()
@@ -99,8 +97,8 @@ def select_fluid():
     return fluid
 
 def select_pressures():
-    p_lo = enter_pressure('low')
     p_hi = enter_pressure('high')
+    p_lo = enter_pressure('low')
     return p_hi,p_lo
 
 def enter_pressure(which_p):
@@ -151,54 +149,64 @@ def compute_cycle(props):
     turb_eff = props['turb_eff']
     pump_eff = props['pump_eff']
 
+    # initialize cycle
+    cyc = thermo.Cycle(fluid,p_hi=p_hi,p_lo=p_lo,name='Rankine')
+
     # Define States
-    state_list = []
     # State 1, saturated vapor at high pressure
-    st_1 = thermo.State(fluid,'p',p_hi,'x',1.0,'1')
-    state_list.append(st_1)
-    print(st_1.s)
+    st_1 = thermo.State(cyc,fluid,'p',p_hi,'T',480+273,'1')
 
     # State 2s, two-phase at low pressure with same entropy as state 1
-    st_2s = thermo.State(fluid,'p',p_lo,'s',st_1.s,'2s')
-    state_list.append(st_2s)
+    st_2s = thermo.State(cyc,fluid,'p',p_lo,'s',st_1.s,'2s')
 
     # State 2, two-phase at low pressure determined by turbine efficiency
     h2 = turb_eff * (st_2s.h - st_1.h) + st_1.h  # with an irreversible turbine
-    st_2 = thermo.State(fluid,'p',p_lo,'h',h2,'2')
+    st_2 = thermo.State(cyc,fluid,'p',p_lo,'h',h2,'2')
     if st_2.x > 1:
         print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
         sys.exit()
-    state_list.append(st_2)
 
     # State 3, saturated liquid at low pressure
-    st_3 = thermo.State(fluid,'p',p_lo,'x',0.0,'3')
-    state_list.append(st_3)
+    st_3 = thermo.State(cyc,fluid,'p',p_lo,'x',0.0,'3')
 
     # States 4 and 4s, sub-cooled liquid at high pressure
     # assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
-    # find values for isentropic pump operation
-    wps = -st_3.v*(p_hi - p_lo)
-    h4s = st_3.h - wps
     # find values for irreversible pump operation
-    wp = 1/pump_eff * wps
-    st_4s = thermo.State(fluid,'p',p_hi,'s',st_3.s,'4s')
-    state_list.append(st_4s)
-    st_4 = thermo.State(fluid,'p',p_hi,'h',st_3.h-wp,'4')
-    state_list.append(st_4)
+    wp = 1/pump_eff * (-st_3.v)*(p_hi - p_lo)
+    st_4s = thermo.State(cyc,fluid,'p',p_hi,'s',st_3.s,'4s')
+    st_4 = thermo.State(cyc,fluid,'p',p_hi,'h',st_3.h-wp,'4')
     # find State 4b, high pressure saturated liquid
-    st_4b = thermo.State(fluid,'p',p_hi,'x',0.0,'4b')
-    state_list.append(st_4b)
+    st_4b = thermo.State(cyc,fluid,'p',p_hi,'x',0.0,'4b')
 
     # Define processes
     # Find work and heat for each process
-    wt = st_1.h - st_2.h
-    qb = st_1.h - st_4.h
-    qc = st_3.h - st_2.h
-    turb = thermo.Process(st_1,st_2,0,wt,"Turbine")
-    cond = thermo.Process(st_2,st_3,qc,0,"Condenser")
-    pump = thermo.Process(st_3,st_4,0,wp,"Pump")
-    boil = thermo.Process(st_4,st_1,qb,0,"Boiler")
-    process_list = [turb,cond,pump,boil]
+    turb = thermo.Process(cyc,st_1, st_2, 0, st_1.h-st_2.h, "Turbine")
+    cond = thermo.Process(cyc,st_2, st_3, st_3.h-st_2.h, 0, "Condenser")
+    pump = thermo.Process(cyc,st_3, st_4, 0, wp, "Pump")
+    boil = thermo.Process(cyc,st_4, st_1, st_1.h-st_4.h, 0, "Boiler")
+
+    # calculate exergy values for each process
+    # Boiler
+    boil.ex_in = boil.delta_ef
+    boil.ex_d = 0
+    boil.ex_out = 0
+    boil.ex_eff = 1
+    # Turbine
+    turb.ex_in = 0
+    turb.ex_d = turb.cycle.dead.T * (turb.out.s - turb.in_.s)
+    turb.ex_out = turb.work
+    turb.ex_eff = turb.ex_out / -turb.delta_ef
+    # Condenser
+    cond.ex_in = 0
+    cond.ex_d = 0
+    cond.ex_out = -cond.delta_ef
+    cond.ex_eff = 1
+    # Pump
+    pump.ex_out = 0
+    pump.ex_in = -pump.work
+    pump.ex_d = pump.cycle.dead.T * (pump.out.s - pump.in_.s)
+    pump.ex_eff = pump.delta_ef / pump.ex_in
+    # Define cycle properties
 
     cyc.wnet = turb.work + pump.work
     cyc.qnet = boil.heat + cond.heat
@@ -366,5 +374,6 @@ def get_sat_dome(fluid):
 #         tpts.append(T-273) # save in celcius
 #     return spts,tpts
 
+
 if __name__ == '__main__':
-  main()
+    main()
