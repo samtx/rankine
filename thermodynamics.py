@@ -113,6 +113,24 @@ class State(object):
         # note that 'x' and 'Q' both represent two-phase quality
         # set property name if specified
         self._name = name # 1, 2, 2s, 3, 4, 4s, 4b, etc.
+        
+        # add state to cycle's state list if not dead state
+        if self.cycle:
+            self.cycle.add_state(self)
+
+        # for brines, just set values to harcoded quantities
+        if fluid.count("INCOMP"):
+            print("this is brine!")
+            if self.cycle:
+                self._h = 491.6 * 1000 # J/kg
+                self._T = 120 + 273 # K
+            else:
+                # this is the dead state brine
+                self._h = 61.05 * 1000 # J/kg
+                self._T = 15 + 273 # K
+                self._s = 0.2205 * 1000 # J/kg.K
+            return
+        
         # make necessary conversions for CoolProp functions
         (prop1, value1) = self.CP_convert(prop1,value1)
         (prop2, value2) = self.CP_convert(prop2,value2)
@@ -163,10 +181,6 @@ class State(object):
                 self._x = 'Superheated Vapor'
             else:
                 self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
-
-        # add state to cycle's state list if not dead state
-        if self.cycle:
-            self.cycle.add_state(self)
 
 
 
