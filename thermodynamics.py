@@ -38,29 +38,32 @@ class State(object):
     def __repr__(self):
         return self.name
 
-    def __init__(self,cycle,name=""):
+    def __init__(self,cycle,name="",fluid=None):
 
-        self.cycle = cycle  # should be an object of class cycle
-
-        self.fluid = cycle.fluid
-
-        # note that 'x' and 'Q' both represent two-phase quality
         # set property name if specified
         self.name = name # 1, 2, 2s, 3, 4, 4s, 4b, etc.
 
-        # add state to cycle's state list if not dead state
+        self.cycle = cycle  # should be an object of class cycle
+
         if self.cycle:
+            self.fluid = cycle.fluid
+            # add state to cycle's state list if not dead state
             self.cycle.add_state(self)
+        elif (not self.cycle) and fluid:
+            self.fluid = fluid
+        else:
+            print("You must enter a fluid when defining the dead state")
+            return
 
         # set state properties
         self.T = None
         self.p = None
-        self.d = None
+        self.d = 1
         self.v = 1 / self.d
         self.u = None
         self.h = None
         self.s = None
-        self.ef = 0
+        self.ef = 0  # default for dead state
         self.x = None
         return
 
@@ -83,7 +86,7 @@ class Process(object):
         self.name = name
 
         # change in flow exergy
-        self._delta_ef = (self.out.h - self.in_.h) - self.cycle.dead.T * (self.out.s - self.in_.s)
+        self.delta_ef = (self.out.h - self.in_.h) - self.cycle.dead.T * (self.out.s - self.in_.s)
         # default these exergy process values to zero. Compute them ad-hoc
         # and then add them to the object attributes.
         self.ex_d = 0      # exergy destroyed
@@ -96,7 +99,7 @@ class Process(object):
 
         # add process to cycle's process list
         if self.cycle:
-            self._cycle.add_proc(self)
+            self.cycle.add_proc(self)
 
         return
 
@@ -149,11 +152,11 @@ class Cycle(object):
         self.fluid = fluid
         # set dead state
         if not dead:
-            dead = State(None,fluid,'Dead State')
+            dead = State(None,'Dead State',fluid)
             dead.T = 15+273  #K
             dead.p = 101325  #Pa
-            dead.h = CP.Props('H','T',dead.T,'P',dead.P,dead.fluid)
-            dead.s = CP.Props('S','T',dead.T,'P',dead.P,dead.fluid)
+            dead.h = CP.Props('H','T',dead.T,'P',dead.p,dead.fluid)
+            dead.s = CP.Props('S','T',dead.T,'P',dead.p,dead.fluid)
         self.dead = dead
         # set cycle name
         self.name = name
@@ -207,7 +210,7 @@ class Geotherm(object):
         # default brine fluid is 20% NaCl solution with water.
         # See http://www.coolprop.org/fluid_properties/Incompressibles.html for more
         # information on available brines
-        self.brine = "INCOMP::" + kwargs.pop('brine','ZM[.01]')  # ZM -> Zitrec M, Ethylene Glycol
+        self.fluid = "INCOMP::" + kwargs.pop('brine','ZM[.01]')  # ZM -> Zitrec M, Ethylene Glycol
         # use MNA for sodium chloride aqueous mix
         # default mass flow rate is 1 kg/s
         self.mdot = kwargs.pop('mdot',1)
@@ -222,14 +225,14 @@ class Geotherm(object):
         # find brine dead state
         self.dead = kwargs.pop('dead',None)
         if not self.dead:
-            dead = State(None,self.brine,'Brine Dead State')
+            dead = State(None,'Brine Dead State',self.fluid)
             dead.h = 61.05 * 1000 # J/kg
             dead.s = 0.2205 * 1000 # J/kg.K
             dead.T = 15 + 273 # K
             self.dead = dead
 
         # create initial brine state
-        g1 = State(self,self.brine,'Brine In')
+        g1 = State(self,'Brine In')
         g1.s = 1.492 * 1000 # J/kg.K
         g1.h = 491.6 * 1000 # J/kg
         g1.T = 120 + 273.15 # K
