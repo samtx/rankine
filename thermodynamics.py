@@ -151,12 +151,6 @@ class Cycle(object):
         # set fluid property
         self.fluid = fluid
         # set dead state
-        if not dead:
-            dead = State(None,'Dead State',fluid)
-            dead.T = 15+273  #K
-            dead.p = 101325  #Pa
-            dead.h = CP.Props('H','T',dead.T,'P',dead.p,dead.fluid)
-            dead.s = CP.Props('S','T',dead.T,'P',dead.p,dead.fluid)
         self.dead = dead
         # set cycle name
         self.name = name

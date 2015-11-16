@@ -59,8 +59,15 @@ def compute_cycle(props):
     turb_eff = props['turb_eff']
     pump_eff = props['pump_eff']
 
+    # set dead state
+    dead = thermo.State(None,'Dead State',fluid)
+    dead.T = 15+273  #K
+    dead.p = 101325.0  #Pa
+    dead.h = CP.PropsSI('H','T',dead.T,'P',dead.p,dead.fluid)
+    dead.s = CP.PropsSI('S','T',dead.T,'P',dead.p,dead.fluid)
+
     # initialize cycle
-    cyc = thermo.Cycle(fluid,name='Rankine',mdot=0.43)
+    cyc = thermo.Cycle(fluid,name='Rankine',mdot=0.43,dead=dead)
 
     # use pressures instead of temperatures when accessing CoolProp. So we
     # want to find the saturation pressures for the given temperatures and
@@ -75,6 +82,7 @@ def compute_cycle(props):
     st1 = thermo.State(cyc,'1')
     st1.T = t_hi
     st1.p = p_hi
+    st1.x = 1
     st1.h = CP.PropsSI('H','P',p_hi,'Q',1,fluid)
     st1.s = CP.PropsSI('S','P',p_hi,'Q',1,fluid)
     st1.flow_exergy()
@@ -97,6 +105,8 @@ def compute_cycle(props):
     st2.h = turb_eff * (st2s.h - st1.h) + st1.h  #with an irreversible turbine
     st2.x = (st2.h - hf) / (hg - hf)
     st2.s = st2.x * (sg - sf) + sf
+    st2.p = p_lo
+    st2.T = CP.PropsSI('T','P',p_lo,'S',st2.s,fluid)
     st2.flow_exergy()
 
     print('state 2 quality: ',st2.x)
@@ -119,12 +129,21 @@ def compute_cycle(props):
     wp = 1/pump_eff * (-st3.v)*(st1.p - st3.p)
     st4s = thermo.State(cyc,'4s')
     st4s.s = st3.s
+    st4s.p = p_hi
+    st4s.T = CP.PropsSI('T','P',p_hi,'S',st4s.s,fluid)
+    st4s.h = CP.PropsSI('H','P',p_hi,'S',st4s.s,fluid)
+    st4s.x = 'subcooled'
+    st4s.flow_exergy()
+
 
     # State 4
     st4 = thermo.State(cyc,'4')
     st4.h = st3.h - wp
     st4.T = CP.PropsSI('T','H',st4.h,'P',p_hi,fluid)
     st4.s = CP.PropsSI('S','H',st4.h,'P',p_hi,fluid)
+    st4.p = p_hi
+    st4.x = 'subcooled'
+    st4.flow_exergy()
     # find State 4b, high pressure saturated liquid
     st4b = thermo.State(cyc,'4b')
     st4b.p = p_hi
@@ -174,7 +193,7 @@ def compute_cycle(props):
 
 def print_output_to_screen(cycle,cyc_props,p_list,s_list,props,dead):
     #print_user_values(props)
-    print_state_table(cycle.get_states(),cycle.dead)
+    print_state_table(cycle)
     #print_process_table(cyc_props,p_list)
     #print_exergy_table(p_list)
     #print_cycle_values(cyc_props)
@@ -191,8 +210,10 @@ def print_user_values(props):
     print('Isentropic Pump Efficiency:    {:>2.1f}%\n'.format(props["pump_eff"]*100))
     return
 
-def print_state_table(s_list,dead):
-    headers = ['State','Press (MPa)','Temp (deg C)','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Flow Exergy (kJ/kg)','Quality']
+def print_state_table(cycle):
+    s_list = cycle.get_states()
+    s_list.append(cycle.dead)
+    headers = ['State','Press (kPa)','Temp (deg C)','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Flow Exergy (kJ/kg)','Quality']
     t = PrettyTable(headers)
     for item in headers[1:6]:
         t.align[item] = 'r'
@@ -203,9 +224,8 @@ def print_state_table(s_list,dead):
     t.float_format[headers[5]] = '4.2'
     t.float_format[headers[6]] = '0.2'
     t.padding_width = 1
-    s_list.append(dead)
     for item in s_list:
-        t.add_row([item.name,item.p/1000000,item.T-273,item.h/1000,item.s/1000,item.ef/1000,item.x])
+        t.add_row([item.name,item.p/1000,item.T-273,item.h/1000,item.s/1000,item.ef/1000,item.x])
     print(t,'\n')
     return
 
