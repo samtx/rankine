@@ -140,7 +140,8 @@ class State(object):
         # add state to cycle's state list if not dead state
         if self.cycle:
             self.cycle.add_state(self)
-            
+
+        return
 
 #         # determine phase of fluid and add description
 #         if self.x == 1:
@@ -155,8 +156,6 @@ class State(object):
 #             phase = ""
 #         self._phase = phase
 
-
-
 class Process(object):
     '''A class that defines values for a process based on a
     state in and a state out. '''
@@ -169,10 +168,6 @@ class Process(object):
 #             if self.
 #         # find difference in flow exergy
 #         (state_in.ef - state_out.ef)
-
-
-
-        pass
 #         ''' Calculate the exergy in, exergy out, and exergy destruction of the process'''
 #         To = env_vars["To"] # environment temperature in Kelvin
 #         po = env_vars["po"] # environment pressure in Pa
@@ -209,13 +204,13 @@ class Process(object):
     def delta_ef(self):
         return self._delta_ef
 
-#     @property
-#     def ex_d(self):
-#         return self._ex_d
+    #     @property
+    #     def ex_d(self):
+    #         return self._ex_d
 
-#     @property
-#     def intrev(self):
-#         return self._intrev
+    #     @property
+    #     def intrev(self):
+    #         return self._intrev
 
     @property
     def cycle(self):
@@ -248,7 +243,8 @@ class Process(object):
         # add process to cycle's process list
         if self.cycle:
             self._cycle.add_proc(self)
- 
+
+        return
 
 class Cycle(object):
     '''A class that defines values for a thermodynamic power cycle
@@ -302,30 +298,25 @@ class Cycle(object):
     def mdot(self):
         return self._mdot
 
+    def compute_cycle_results(self):
+        ''' Compute and store rankine cycle
+          wnet        = net work output
+          qnet        = net heat input
+          thermal_eff = thermal efficiency
+          bwr         = back work ratio
+          ex_eff      = exergetic efficiency
+          '''
+        return
+
     def __init__(self,fluid,**kwargs):
         # unpack keyword arguments
-        p_hi = None
-        p_lo = None
-        T_hi = None
-        T_lo = None
-        dead = None
-        name = ""
-        mdot = 1
-        for key, value in kwargs.iteritems():
-            if key.lower() == 'p_hi':
-                p_hi = value
-            elif key.lower() == 'p_lo':
-                p_lo = value
-            elif key.lower() == 't_hi':
-                T_hi = value
-            elif key.lower() == 't_lo':
-                T_lo = value
-            elif key.lower() == 'dead':
-                dead = value
-            elif key.lower() == 'name':
-                name = value
-            elif key.lower() == 'mdot':
-                mdot = value
+        p_hi = kwargs.pop('p_hi',None)
+        p_lo = kwargs.pop('p_lo',None)
+        T_hi = kwargs.pop('T_hi',None)
+        T_lo = kwargs.pop('T_lo',None)
+        dead = kwargs.pop('dead',None)
+        name = kwargs.pop('name',"")
+        mdot = kwargs.pop('mdot',1)  #default is 1 kg/s
         # check to see if at least one high and one low value are entered
         if not((p_hi or T_hi) and (p_lo or T_lo)):
             raise ValueError('Must enter one of each group (p_hi or T_h) and (p_lo and T_lo)')
@@ -357,10 +348,130 @@ class Cycle(object):
         # set mass flow rate
         self._mdot = mdot # in kg/s
 
+        # initialize cycle results
+        self.wnet = None
+        self.qnet = None
+        self.thermal_eff = None
+        self.bwr = None
+        self.ex_eff = None
 
 
+class Geotherm(object):
+    '''This class describes the geothermal heating cycle of the power plant'''
+
+    # should probably make this a subclass of Cycle later, and make a new
+    # class called Rankine a subclass of Cycle also.
+
+    @property
+    def brine(self):
+        return self._brine
+
+    @property
+    def mdot(self):
+        return self._mdot
+
+    @property
+    def dead(self):
+        #return dead state
+        return self._dead
+
+    def add_proc(self,process):
+        self._proc_list.append(process)
+
+    def get_procs(self):
+        return self._proc_list
+
+    def add_state(self,state):
+        self._state_list.append(state)
+
+    def get_states(self):
+        return self._state_list
+
+    def __init__(self,**kwargs):
+        ''' Create an instance of a geothermal heating cycle object
+        arguments:
+            brine (optional) = which fluid to use for the brine in the geothermal plant
+            mdot (optional) = mass flow rate of brine fluid
+            name (optional) = string used to describe the geothermal cycle
+            t_ground (optional) = underground temperature that brine will be raised
+            p_ground (optional) = underground pressure of brine
+            dead (optional) = dead state of brine
+            to before entering the steam generator of the organic Rankine cycle.'''
+
+        # get optional arguments from kwargs
+
+        # default brine fluid is 20% NaCl solution with water.
+        # See http://www.coolprop.org/v4/FluidInformation.html for more
+        # information on available brines
+        self._brine = "INCOMP::" + kwargs.pop('brine','MNA[.01]')
+        # default mass flow rate is 1 kg/s
+        self._mdot = kwargs.pop('mdot',1)
+        # default name is 'Geothermal'
+        self._name = kwargs.pop('name','Geothermal')
+
+        # initialize process list
+        self._proc_list = []
+        # initialize state list
+        self._state_list = []
+
+        # create initial brine state
+        # default ground temperature is 120 deg C
+        t = kwargs.pop('t_ground',120)
+        # default ground pressure is 0.5 MPa (5 bar)
+        p = kwargs.pop('p_ground',0.5)
+        g1 = State(self,self.brine,'T',t+273,'P',p*(10**6),'Brine In')
+
+        self._dead = kwargs.pop('dead',
+                                State(None,self.brine,'T',15+273,
+                                      'P',101325,'Brine Dead State')
+                               )
+
+        # state in
+        self.in_ = g1
+
+        #state out
+        self.out = None  # default
+
+        return
+
+class Plant(object):
+    '''This class describes the whole geothermal power plant, including both
+    the geothermal heat source and the organic Rankine cycle power generation '''
 
 
+    # get rankine cycle for plant
+    @property
+    def rank(self):
+        return self._rank
 
+    # get geothermal cycle for plant
+    @property
+    def geo(self):
+        return self._geo
 
+    def calc_plant_effs(self):
+        '''Once the geothermal and rankine cycles have been defined for the
+        plant, calcuate the overall plant energetic and exergetic
+        efficiencies'''
+        # calculate plant energetic efficiency
+        q_avail = self.geo.mdot * (self.geo.in_.h - self.geo.dead.h)
+        en_eff = self.rank.wnet / q_avail
+        # calculate plant exergetic efficiency
+        ex_eff = self.rank.wnet / (self.geo.mdot * self.geo.in_.ef)
+        return (en_eff, ex_eff)
 
+    def __init__(self,rankine,geotherm):
+        ''' Create an instance of a geothermal Plant object
+        arguments:
+            rankine (required) = an instance of object Cycle/Rankine for the organic Rankine cycle used in the plant
+            geotherm (required) = the geothermal cycle used in the plant
+
+            '''
+        self._rank = rankine
+        self._geo = geotherm
+
+        # calculate and store plant efficiencies
+        (en_eff, ex_eff) = self.calc_plant_eff()
+        self._en_eff = en_eff   # plant energetic efficiency
+        self._ex_eff = ex_eff   # plant exergetic efficiency
+        return

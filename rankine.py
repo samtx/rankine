@@ -8,17 +8,37 @@ import matplotlib.pyplot as plt
 #import os           # for file system utilities
 import sys
 from prettytable import PrettyTable, MSWORD_FRIENDLY, PLAIN_COLUMNS #for output formatting
+<<<<<<< HEAD
 import csv
+=======
+import CoolProp.CoolProp as CP
+>>>>>>> 4ba38f037fe99b2fdbd014425a52ffe89facd377
 
 ######################################
 
 def main():
     #Obtaining user-defined properties of Rankine cycle
     props = define_inputs()
+
     # begin computing processess for rankine cycle
-    (cyc_props,p_list,s_list) = compute_cycle(props)
+    rankine = compute_cycle(props)
+    cyc_props = {}
+    cyc_props['wnet'] = rankine.wnet
+    cyc_props['qnet'] = rankine.qnet
+    cyc_props['thermal_eff'] = rankine.thermal_eff
+    cyc_props['bwr'] = rankine.bwr
+    s_list = rankine.get_states()
+    p_list = rankine.get_procs()
+
+#     initialize geothermal cycle using defaults
+#     geotherm = thermo.Geotherm()
+
     # print output to screen
     print_output_to_screen(cyc_props,p_list,s_list,props,s_list[0].cycle.dead)
+
+#     compute plant efficiencies
+#     plant = compute_plant(rankine,geotherm)
+    
     return
 
 def should_quit(string):
@@ -188,13 +208,12 @@ def compute_cycle(props):
     pump.ex_eff = pump.delta_ef / pump.ex_in
 
     # Define cycle properties
-    cyc_props = {}
-    cyc_props['wnet'] = turb.work + pump.work
-    cyc_props['qnet'] = boil.heat + cond.heat
-    cyc_props['thermal_eff'] = cyc_props['wnet'] / boil.heat
-    cyc_props['bwr'] = -pump.work / turb.work
+    cyc.wnet = turb.work + pump.work
+    cyc.qnet = boil.heat + cond.heat
+    cyc.thermal_eff = cyc.wnet / boil.heat
+    cyc.bwr = -pump.work / turb.work
 
-    return (cyc_props, cyc.get_procs(), cyc.get_states())
+    return cyc
 
 def print_output_to_screen(cyc_props,p_list,s_list,props,dead):
     print_user_values(props)
@@ -330,6 +349,8 @@ def create_plot(p_list,s_list):
     pump = p_list[2]
     boil = p_list[3]
 
+#    (spts,tpts) = get_sat_dome(cyc.fluid)
+
     # note: use h4, s4 to fix the state to find T4
     T_pts = [st_1.T, st_2s.T, st_2.T, st_2s.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
     s_pts = [st_1.s, st_2s.s, st_2.s, st_2s.s, st_3.s, st_4s.s, st_4b.s, st_1.s]
@@ -355,6 +376,7 @@ def create_plot(p_list,s_list):
     plt.savefig(filename) # save figure to directory
     return
 
+<<<<<<< HEAD
     def get_sat_dome(fluid):
       pass
  #      smin = ?
@@ -371,6 +393,28 @@ def create_plot(p_list,s_list):
           # spts.append(s)
           # tpts.append(T-273) # save in celcius
        #return spts,tpts
+=======
+def compute_plant(rank,geo):
+    ''' Compute and return plant object from rankine cycle and geothermal cycle objects '''
+    pass
+
+def get_sat_dome(fluid):
+    pass
+#     smin = ?
+#     smax = ?
+#     step = ?
+#     quality = 0
+#     tpts = []
+#     spts = []
+#     crit_pt = thermo.State(None,fluid, critical) point?asdlkfjasd;lkf100 #something
+#     for s in range(s_min:step:s_max):
+#         if s > crit_pt.s:
+#             quality = 1
+#         T = CP.PropsSI('T','S',s,'Q',quality,fluid)
+#         spts.append(s)
+#         tpts.append(T-273) # save in celcius
+#     return spts,tpts
+>>>>>>> 4ba38f037fe99b2fdbd014425a52ffe89facd377
 
 if __name__ == '__main__':
     main()
