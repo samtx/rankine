@@ -28,91 +28,21 @@ class State(object):
             value = 1/value
         return prop,value
 
-    # need to add kinetic and potential energy values
     def flow_exergy(self):
-        if self.cycle:
-            return self.h-self.cycle.dead.h - self.cycle.dead.T*(self.s-self.cycle.dead.s)
-        else:       # then the state in question is the dead state. Don't find flow exergy
-            return 0
-
-
-#     # flow exergy
-
-#     def ef(self):
-#         return self._ef
-
-#     @property
-#     def T(self):
-#         return self._T
-
-#     @property
-#     def p(self):
-#         return self._p
-
-#     @property
-#     def v(self):
-#         return self._v
-
-#     @property
-#     def d(self):
-#         return self._d
-
-#     @property
-#     def u(self):
-#         return self._u
-
-
-#     def h(self):
-#         return self._h
-
-
-#     def s(self):
-#         return self._s
-
-
-#     def x(self):
-#         return self._x
-
-#     @property
-#     def vel(self):
-#         return self._vel
-
-#     @property
-#     def z(self):
-#         return self._z
-
-# #     @property
-# #     def phase(self):
-# #         return self._phase
-
-#     @property
-#     def name(self):
-#         return self._name
-
-#     @property
-#     def cycle(self):
-#         return self.cycle
+        self.ef = self.h-self.cycle.dead.h - self.cycle.dead.T*(self.s-self.cycle.dead.s)
+        return
 
     def __str__():
-        return self.name
+        return self._name
 
     def __repr__(self):
         return self.name
 
-    def __init__(
-        self,
-        cycle,fluid,
-        prop1,value1,prop2,value2,
-        name="",
-        velocity=0,z=0,
-        t_lo=25+273.15,
-        t_hi=120+273.15,
-        h2=2545.87*1000,
-        s2=7.1307*1000):
+    def __init__(self,cycle,name=""):
 
         self.cycle = cycle  # should be an object of class cycle
 
-        self.fluid = fluid
+        self.fluid = cycle.fluid
 
         # note that 'x' and 'Q' both represent two-phase quality
         # set property name if specified
@@ -122,186 +52,36 @@ class State(object):
         if self.cycle:
             self.cycle.add_state(self)
 
-        # for brines, just set values to harcoded quantities
-        if fluid.count("INCOMP"):
-            print("this is brine!")
-            if self.cycle:
-                self.h = 491.6 * 1000 # J/kg
-                self.T = 120 + 273 # K
-                self.s = 1.492 * 1000 # J/kg.K
-                self.ef = self.flow_exergy()
-            else:
-                # this is the dead state brine
-                self.h = 61.05 * 1000 # J/kg
-                self.T = 15 + 273 # K
-                self.s = 0.2205 * 1000 # J/kg.K
-                self.ef = self.flow_exergy()
-            return
-
-        # make necessary conversions for CoolProp functions
-        (prop1, value1) = self.CP_convert(prop1,value1)
-        (prop2, value2) = self.CP_convert(prop2,value2)
-
         # set state properties
-        # note that pairs h, T aren't yet supported by CoolProp
-        #print(key1 + str(value1) + key2 + str(value2) + fluid)
-#         try:
-#             self._T = CP.PropsSI('T',key1,value1,key2,value2,fluid)
-#         except:
-#             print('Oops. Something happened when calling CoolProp for state ' + self.name)
-
-        self.T = CP.PropsSI('T',prop1,value1,prop2,value2,fluid)
-        self.p = CP.PropsSI('P',prop1,value1,prop2,value2,fluid)
-        self.d = CP.PropsSI('D',prop1,value1,prop2,value2,fluid)
+        self.T = None
+        self.p = None
+        self.d = None
         self.v = 1 / self.d
-        self.u = CP.PropsSI('U',prop1,value1,prop2,value2,fluid)
-        self.h = CP.PropsSI('H',prop1,value1,prop2,value2,fluid)
-
-
-        if self.name == '2s':
-            # it seems that CoolProp isn't interpolating correctly. We will do it ourselves
-            sf = CP.PropsSI('S','T',t_lo,'Q',0,fluid)/1000
-            sg = CP.PropsSI('S','T',t_lo,'Q',1,fluid)/1000
-            hf = CP.PropsSI('H','T',t_lo,'Q',0,fluid)/1000
-            hg = CP.PropsSI('H','T',t_lo,'Q',1,fluid)/1000
-            print("HELLO!!! this is State 2s")
-            print('hf= ',hf,'     hg=',hg)
-            print('sf= ',sf,'     sg=',sg)
-
-            # redefine state 2s
-            self.s = s2
-            self.x = (self.s/1000 - sf)/(sg - sf)
-            print("state ",self.name,' x = ',self.x)
-            self.h = self.x * (hg - hf) + hf
-            print("state ",self.name,' s = ',self.s)
-            self.ef = self.flow_exergy()
-            print("state ",self.name,' ef = ',self.ef)
-        elif self.name == '2':
-            # it seems that CoolProp isn't interpolating correctly. We will do it ourselves
-            sf = CP.PropsSI('S','T',t_lo,'Q',0,fluid)/1000
-            sg = CP.PropsSI('S','T',t_lo,'Q',1,fluid)/1000
-            hf = CP.PropsSI('H','T',t_lo,'Q',0,fluid)/1000
-            hg = CP.PropsSI('H','T',t_lo,'Q',1,fluid)/1000
-            print("HELLO!!! this is State 2")
-            print('hf= ',hf,'     hg=',hg)
-            print('sf= ',sf,'     sg=',sg)
-
-            self.h = h2
-            # redefine state 2
-            self.x = (self.h/1000 - hf)/(hg - hf)
-            print("state ",self.name,' x = ',self.x)
-            self.s = self.x * (sg - sf) + sf
-            print("state ",self.name,' s = ',self.s)
-            self.ef = self.flow_exergy()
-            print("state ",self.name,' ef = ',self.ef)
-        else:
-            self.s = CP.PropsSI('S',prop1,value1,prop2,value2,fluid)
-            self.x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
-            self.ef = self.flow_exergy()
-
-        self.vel = velocity
-        self.z = z     #height
-
-#         # determine phase of fluid and add description
-#         # get phase indecies from coolprop
-#         liq_idx = CP.get_phase_index('phase_liquid')
-#         twophase_idx = CP.get_phase_index('phase_twophase')
-#         vapor_idx = CP.get_phase_index('phase_gas')
-#         # find fluid phase using given properties
-#         # for brines, just set quality to None.
-#         if fluid.count("INCOMP"):
-#             #print("this is brine!")
-#             self._x = 'Liquid'  #
-#         else:
-#             #print('tcrit,(',fluid,')=,',CP.PropsSI('Tcrit',prop1,value1,prop2,value2,fluid))
-#             #print('pcrit,(',fluid,')=,',CP.PropsSI('Pcrit',prop1,value1,prop2,value2,fluid))
-#             phase = CP.PropsSI('Phase',prop1,value1,prop2,value2,fluid)
-#             #print('phase:',phase)
-#             if phase == twophase_idx:
-#                 # fluid is two phase. Find quality.
-#                 self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
-#             elif phase == liq_idx:
-#                 # fluid is subcooled. Use string description
-#                 self._x = 'Subcooled Liquid'
-#             elif phase == vapor_idx:
-#                 # fluid is superheated. Use string description
-#                 self._x = 'Superheated Vapor'
-#             else:
-#                 self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
+        self.u = None
+        self.h = None
+        self.s = None
+        self.ef = 0
+        self.x = None
         return
 
 class Process(object):
     '''A class that defines values for a process based on a
     state in and a state out. '''
 
-    def calc_exergy(self,state_in=None,state_out=None,env_vars=[]):
-        pass
-#         '''Calculate the exergy in, exergy out, and exergy destroyed for each process'''
-#         # if heat = 0
-#         if self.heat == 0:
-#             if self.
-#         # find difference in flow exergy
-#         (state_in.ef - state_out.ef)
-#         ''' Calculate the exergy in, exergy out, and exergy destruction of the process'''
-#         To = env_vars["To"] # environment temperature in Kelvin
-#         po = env_vars["po"] # environment pressure in Pa
-
     def exergy_destroyed(self):
         return self.cycle.dead.T*(self.state_out.s-self.state_in.s) # exergy destroyed
-
-    @property
-    def heat(self):
-        return self._heat
-
-    @property
-    def work(self):
-        return self._work
-
-    @property
-    def state_in(self):
-        return self._state_in
-
-    @property
-    def in_(self):
-        return self._state_in
-
-    @property
-    def state_out(self):
-        return self._state_out
-
-    @property
-    def out(self):
-        return self._state_out
-
-    # change in flow exergy
-    @property
-    def delta_ef(self):
-        return self._delta_ef
-
-    #     @property
-    #     def ex_d(self):
-    #         return self._ex_d
-
-    #     @property
-    #     def intrev(self):
-    #         return self._intrev
-
-    @property
-    def cycle(self):
-        return self._cycle
 
     def __repr__(self):
         return self.name
 
     def __init__(self,cycle,state_in,state_out,heat=0,work=0,name="",intrev=False):
-        self._cycle = cycle # this should be an object of class Cycle
-        self._heat = heat
-        self._work = work
-        self._state_in = state_in  # these are objects of class State
-        self._state_out = state_out
+        self.cycle = cycle # this should be an object of class Cycle
+        self.heat = heat
+        self.work = work
+        self.in_ = state_in  # these are objects of class State
+        self.out = state_out
         self.name = name
 
-        exergy = self.calc_exergy()
         # change in flow exergy
         self._delta_ef = (self.out.h - self.in_.h) - self.cycle.dead.T * (self.out.s - self.in_.s)
         # default these exergy process values to zero. Compute them ad-hoc
@@ -334,43 +114,20 @@ class Cycle(object):
     note: the user must enter at least one "high" value and one "low" value for either temperature, pressure, or mixed.
     Entering the dead state is optional but will default to T = 15 degC, P = 0.101325 MPa (1 atm) for the given fluid'''
 
-    @property
-    def prop_hi(self):
-        # return the dictionary
-        return self._cyc_prop_hi
-
-    @property
-    def prop_lo(self):
-        # return the dictionary
-        return self._cyc_prop_lo
-
-    @property
-    def fluid(self):
-        return self._fluid
-
-    @property
-    def dead(self):
-        #return dead state
-        return self._dead
-
     def __repr__(self):
         return self.name
 
     def add_proc(self,process):
-        self._proc_list.append(process)
+        self.proc_list.append(process)
 
     def get_procs(self):
-        return self._proc_list
+        return self.proc_list
 
     def add_state(self,state):
-        self._state_list.append(state)
+        self.state_list.append(state)
 
     def get_states(self):
-        return self._state_list
-
-    @property
-    def mdot(self):
-        return self._mdot
+        return self.state_list
 
     def compute_cycle_results(self):
         ''' Compute and store rankine cycle
@@ -384,52 +141,37 @@ class Cycle(object):
 
     def __init__(self,fluid,**kwargs):
         # unpack keyword arguments
-        p_hi = kwargs.pop('p_hi',None)
-        p_lo = kwargs.pop('p_lo',None)
-        T_hi = kwargs.pop('T_hi',None)
-        T_lo = kwargs.pop('T_lo',None)
         dead = kwargs.pop('dead',None)
         name = kwargs.pop('name',"")
         mdot = kwargs.pop('mdot',1)  #default is 1 kg/s
-        # check to see if at least one high and one low value are entered
-        if not((p_hi or T_hi) and (p_lo or T_lo)):
-            raise ValueError('Must enter one of each group (p_hi or T_h) and (p_lo and T_lo)')
-        # set low and high cycle properties
-        # high property
-        if T_hi:
-            cyc_prop_hi = {'T':T_hi + 273.15} # temperature must be saved in K
-        elif p_hi:
-            cyc_prop_hi = {'P':p_hi*10**6}  # pressure must be saved in Pa
-        # low property
-        if T_lo:
-            cyc_prop_lo = {'T':T_lo + 273.15} # temperature must be saved in K
-        elif p_lo:
-            cyc_prop_lo = {'P':p_lo*10**6}  # pressure must be saved in Pa
-        self._cyc_prop_hi = cyc_prop_hi
-        self._cyc_prop_lo = cyc_prop_lo
+
         # set fluid property
-        self._fluid = fluid
+        self.fluid = fluid
         # set dead state
         if not dead:
-            dead = State(None,fluid,'T',15+273,'P',101325,'Dead State')
-        self._dead = dead
+            dead = State(None,fluid,'Dead State')
+            dead.T = 15+273  #K
+            dead.p = 101325  #Pa
+            dead.h = CP.Props('H','T',dead.T,'P',dead.P,dead.fluid)
+            dead.s = CP.Props('S','T',dead.T,'P',dead.P,dead.fluid)
+        self.dead = dead
         # set cycle name
         self.name = name
         # initialize process list
-        self._proc_list = []
+        self.proc_list = []
         # initialize state list
-        self._state_list = []
+        self.state_list = []
         # set mass flow rate
-        self._mdot = mdot # in kg/s
+        self.mdot = mdot # in kg/s
 
         # initialize cycle results
         self.wnet = None
         self.qnet = None
-        self.thermal_eff = None
-        self.en_eff = self.thermal_eff
-        self.bwr = None
+        self.en_eff = None
         self.ex_eff = 0
+        self.bwr = None
 
+        return
 
 class Geotherm(object):
     '''This class describes the geothermal heating cycle of the power plant'''
@@ -437,30 +179,17 @@ class Geotherm(object):
     # should probably make this a subclass of Cycle later, and make a new
     # class called Rankine a subclass of Cycle also.
 
-    @property
-    def brine(self):
-        return self._brine
-
-    @property
-    def mdot(self):
-        return self._mdot
-
-    @property
-    def dead(self):
-        #return dead state
-        return self._dead
-
     def add_proc(self,process):
-        self._proc_list.append(process)
+        self.proc_list.append(process)
 
     def get_procs(self):
-        return self._proc_list
+        return self.proc_list
 
     def add_state(self,state):
-        self._state_list.append(state)
+        self.state_list.append(state)
 
     def get_states(self):
-        return self._state_list
+        return self.state_list
 
     def __init__(self,**kwargs):
         ''' Create an instance of a geothermal heating cycle object
@@ -497,6 +226,22 @@ class Geotherm(object):
                                )
 
         # create initial brine state
+        # for brines, just set values to harcoded quantities
+        if fluid.count("INCOMP"):
+            print("this is brine!")
+            if self.cycle:
+                self._h = 491.6 * 1000 # J/kg
+                self._T = 120 + 273 # K
+                self._s = 1.492 * 1000 # J/kg.K
+                self._ef = self.flow_exergy()
+            else:
+                # this is the dead state brine
+                self._h = 61.05 * 1000 # J/kg
+                self._T = 15 + 273 # K
+                self._s = 0.2205 * 1000 # J/kg.K
+                self._ef = self.flow_exergy()
+            return
+
         # default ground temperature is 120 deg C
         t = kwargs.pop('t_ground',120)
         # default ground pressure is 0.5 MPa (5 bar)
