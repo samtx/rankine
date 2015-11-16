@@ -113,7 +113,7 @@ class State(object):
         # note that 'x' and 'Q' both represent two-phase quality
         # set property name if specified
         self._name = name # 1, 2, 2s, 3, 4, 4s, 4b, etc.
-        
+
         # add state to cycle's state list if not dead state
         if self.cycle:
             self.cycle.add_state(self)
@@ -124,13 +124,16 @@ class State(object):
             if self.cycle:
                 self._h = 491.6 * 1000 # J/kg
                 self._T = 120 + 273 # K
+                self._s = 1.492 * 1000 # J/kg.K
+                self._ef = self.flow_exergy()
             else:
                 # this is the dead state brine
                 self._h = 61.05 * 1000 # J/kg
                 self._T = 15 + 273 # K
                 self._s = 0.2205 * 1000 # J/kg.K
+                self._ef = self.flow_exergy()
             return
-        
+
         # make necessary conversions for CoolProp functions
         (prop1, value1) = self.CP_convert(prop1,value1)
         (prop2, value2) = self.CP_convert(prop2,value2)
@@ -382,8 +385,9 @@ class Cycle(object):
         self.wnet = None
         self.qnet = None
         self.thermal_eff = None
+        self.en_eff = self.thermal_eff
         self.bwr = None
-        self.ex_eff = None
+        self.ex_eff = 0
 
 
 class Geotherm(object):
@@ -483,6 +487,14 @@ class Plant(object):
     def geo(self):
         return self._geo
 
+    @property
+    def en_eff(self):
+        return self._en_eff
+
+    @property
+    def ex_eff(self):
+        return self._ex_eff
+
     def calc_plant_effs(self):
         '''Once the geothermal and rankine cycles have been defined for the
         plant, calcuate the overall plant energetic and exergetic
@@ -505,7 +517,7 @@ class Plant(object):
         self._geo = geotherm
 
         # calculate and store plant efficiencies
-        (en_eff, ex_eff) = self.calc_plant_eff()
+        (en_eff, ex_eff) = self.calc_plant_effs()
         self._en_eff = en_eff   # plant energetic efficiency
         self._ex_eff = ex_eff   # plant exergetic efficiency
         return

@@ -32,9 +32,12 @@ def main():
     # print output to screen
     print_output_to_screen(cyc_props,p_list,s_list,props,s_list[0].cycle.dead)
 
-#     compute plant efficiencies
+    # compute plant efficiencies
     plant = compute_plant(rankine,geotherm)
-    
+
+    # print plant results to screen
+    print_plant_results(plant)
+
     return
 
 def should_quit(string):
@@ -57,10 +60,10 @@ def define_inputs():
     if fluid == 'eg_mode':
         # use example mode
         fluid = 'Water'
-        p_hi = 10.0
-        p_lo = 0.006
-        turb_eff = 0.80
-        pump_eff = 0.70
+        p_hi = 3.9
+        p_lo = 1.0
+        turb_eff = 0.85
+        pump_eff = 0.6
     else:
         (p_hi,p_lo) = select_pressures()
         (turb_eff,pump_eff) = select_efficiencies()
@@ -146,11 +149,11 @@ def compute_cycle(props):
     pump_eff = props['pump_eff']
 
     # initialize cycle
-    cyc = thermo.Cycle(fluid,p_hi=p_hi,p_lo=p_lo,name='Rankine')
+    cyc = thermo.Cycle(fluid,p_hi=p_hi,p_lo=p_lo,name='Rankine',mdot=0.43)
 
     # Define States
     # State 1, saturated vapor at high pressure
-    st_1 = thermo.State(cyc,fluid,'p',p_hi,'T',480+273,'1')
+    st_1 = thermo.State(cyc,fluid,'p',p_hi,'Q',1,'1')
 
     # State 2s, two-phase at low pressure with same entropy as state 1
     st_2s = thermo.State(cyc,fluid,'p',p_lo,'s',st_1.s,'2s')
@@ -204,9 +207,10 @@ def compute_cycle(props):
     pump.ex_eff = pump.delta_ef / pump.ex_in
 
     # Define cycle properties
-    cyc.wnet = turb.work + pump.work
-    cyc.qnet = boil.heat + cond.heat
-    cyc.thermal_eff = cyc.wnet / boil.heat
+    cyc.wnet = cyc.mdot * (turb.work + pump.work)
+    cyc.qnet = cyc.mdot * (boil.heat + cond.heat)
+    cyc.en_eff = cyc.wnet / boil.heat
+    cyc.thermal_eff = cyc.en_eff
     cyc.bwr = -pump.work / turb.work
 
     return cyc
@@ -340,7 +344,28 @@ def create_plot(p_list,s_list):
 
 def compute_plant(rank,geo):
     ''' Compute and return plant object from rankine cycle and geothermal cycle objects '''
-    pass
+    plant = thermo.Plant(rank,geo)
+    return plant
+
+def print_plant_results(plant):
+    print('\nPlant Efficiencies \n------------ ')
+#     headers = ['Working Fluid','Plant Energetic Eff.','Plant Exergetic Eff.','Cycle Energetic Eff.','Cycle Exergetic Eff.']
+#     t = PrettyTable(headers)
+#     for item in headers[1:]:
+#         t.align[item] = 'r'
+#         #t.float_format[item] = '0.2'
+    effs = [plant.en_eff,plant.ex_eff,plant.rank.en_eff,plant.rank.ex_eff]
+#     row = [plant.rank.fluid]
+#     row.append(effs)
+#     #for e in effs:
+#     #    row.append('{:.2}'.format(e))
+#     t.add_row(row)
+#     print(t, '\n')
+    print('plant en eff=',plant.en_eff)
+    print('plant ex eff=',plant.ex_eff)
+    print('cycle en eff=',plant.rank.en_eff)
+    print('cycle ex eff=',plant.rank.ex_eff)
+    return
 
 def get_sat_dome(fluid):
     pass
