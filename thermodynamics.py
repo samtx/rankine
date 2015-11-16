@@ -207,48 +207,33 @@ class Geotherm(object):
         # default brine fluid is 20% NaCl solution with water.
         # See http://www.coolprop.org/fluid_properties/Incompressibles.html for more
         # information on available brines
-        self._brine = "INCOMP::" + kwargs.pop('brine','ZM[.01]')  # ZM -> Zitrec M, Ethylene Glycol
+        self.brine = "INCOMP::" + kwargs.pop('brine','ZM[.01]')  # ZM -> Zitrec M, Ethylene Glycol
         # use MNA for sodium chloride aqueous mix
         # default mass flow rate is 1 kg/s
-        self._mdot = kwargs.pop('mdot',1)
+        self.mdot = kwargs.pop('mdot',1)
         # default name is 'Geothermal'
-        self._name = kwargs.pop('name','Geothermal')
+        self.name = kwargs.pop('name','Geothermal')
 
         # initialize process list
-        self._proc_list = []
+        self.proc_list = []
         # initialize state list
-        self._state_list = []
+        self.state_list = []
 
         # find brine dead state
-        self._dead = kwargs.pop('dead',
-                                State(None,self.brine,'T',15+273,
-                                      'P',101325,'Brine Dead State')
-                               )
+        self.dead = kwargs.pop('dead',None)
+        if not self.dead:
+            dead = State(None,self.brine,'Brine Dead State')
+            dead.h = 61.05 * 1000 # J/kg
+            dead.s = 0.2205 * 1000 # J/kg.K
+            dead.T = 15 + 273 # K
+            self.dead = dead
 
         # create initial brine state
-        # for brines, just set values to harcoded quantities
-        if fluid.count("INCOMP"):
-            print("this is brine!")
-            if self.cycle:
-                self._h = 491.6 * 1000 # J/kg
-                self._T = 120 + 273 # K
-                self._s = 1.492 * 1000 # J/kg.K
-                self._ef = self.flow_exergy()
-            else:
-                # this is the dead state brine
-                self._h = 61.05 * 1000 # J/kg
-                self._T = 15 + 273 # K
-                self._s = 0.2205 * 1000 # J/kg.K
-                self._ef = self.flow_exergy()
-            return
-
-        # default ground temperature is 120 deg C
-        t = kwargs.pop('t_ground',120)
-        # default ground pressure is 0.5 MPa (5 bar)
-        p = kwargs.pop('p_ground',0.5)
-        g1 = State(self,self.brine,'T',t+273,'P',p*(10**6),'Brine In')
-
-
+        g1 = State(self,self.brine,'Brine In')
+        g1.s = 1.492 * 1000 # J/kg.K
+        g1.h = 491.6 * 1000 # J/kg
+        g1.T = 120 + 273.15 # K
+        g1.flow_exergy()
 
         # state in
         self.in_ = g1
@@ -261,25 +246,6 @@ class Geotherm(object):
 class Plant(object):
     '''This class describes the whole geothermal power plant, including both
     the geothermal heat source and the organic Rankine cycle power generation '''
-
-
-    # get rankine cycle for plant
-    @property
-    def rank(self):
-        return self._rank
-
-    # get geothermal cycle for plant
-    @property
-    def geo(self):
-        return self._geo
-
-    @property
-    def en_eff(self):
-        return self._en_eff
-
-    @property
-    def ex_eff(self):
-        return self._ex_eff
 
     def calc_plant_effs(self):
         '''Once the geothermal and rankine cycles have been defined for the
@@ -297,13 +263,12 @@ class Plant(object):
         arguments:
             rankine (required) = an instance of object Cycle/Rankine for the organic Rankine cycle used in the plant
             geotherm (required) = the geothermal cycle used in the plant
-
             '''
-        self._rank = rankine
-        self._geo = geotherm
+        self.rank = rankine
+        self.geo = geotherm
 
         # calculate and store plant efficiencies
         (en_eff, ex_eff) = self.calc_plant_effs()
-        self._en_eff = en_eff   # plant energetic efficiency
-        self._ex_eff = ex_eff   # plant exergetic efficiency
+        self.en_eff = en_eff   # plant energetic efficiency
+        self.ex_eff = ex_eff   # plant exergetic efficiency
         return
