@@ -124,42 +124,53 @@ class State(object):
 #             self._T = CP.PropsSI('T',key1,value1,key2,value2,fluid)
 #         except:
 #             print('Oops. Something happened when calling CoolProp for state ' + self.name)
+
         self._T = CP.PropsSI('T',prop1,value1,prop2,value2,fluid)
         self._p = CP.PropsSI('P',prop1,value1,prop2,value2,fluid)
-        psat = CP.PropsSI('P','T',self.T,'Q',0.0,fluid) # saturation pressure at temperature T
-        if self.p < psat:
-            self._x = -1  # subcooled liquid
-        elif self.p > psat:
-            self._x = 2   # superheated vapor
-        else:
-            self._d = CP.PropsSI('D',prop1,value1,prop2,value2,fluid)
-            self._v = 1 / self.d
+        self._d = CP.PropsSI('D',prop1,value1,prop2,value2,fluid)
+        self._v = 1 / self.d
         self._u = CP.PropsSI('U',prop1,value1,prop2,value2,fluid)
         self._h = CP.PropsSI('H',prop1,value1,prop2,value2,fluid)
         self._s = CP.PropsSI('S',prop1,value1,prop2,value2,fluid)
-        self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
+
         self._ef = self.flow_exergy()
         self._vel = velocity
         self._z = z     #height
+
+        # determine phase of fluid and add description
+        # get phase indecies from coolprop
+        liq_idx = CP.get_phase_index('phase_liquid')
+        twophase_idx = CP.get_phase_index('phase_twophase')
+        vapor_idx = CP.get_phase_index('phase_gas')
+        # find fluid phase using given properties
+        # for brines, just set quality to None.
+        if fluid.count("INCOMP"):
+            print("this is brine!")
+            self._x = 'Liquid'  #
+        else:
+            print('tcrit,(',fluid,')=,',CP.PropsSI('Tcrit',prop1,value1,prop2,value2,fluid))
+            print('pcrit,(',fluid,')=,',CP.PropsSI('Pcrit',prop1,value1,prop2,value2,fluid))
+            phase = CP.PropsSI('Phase',prop1,value1,prop2,value2,fluid)
+
+            if phase == twophase_idx:
+                # fluid is two phase. Find quality.
+                self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
+            elif phase == liq_idx:
+                # fluid is subcooled. Use string description
+                self._x = 'Subcooled Liquid'
+            elif phase == vapor_idx:
+                # fluid is superheated. Use string description
+                self._x = 'Superheated Vapor'
+            else:
+                self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)
 
         # add state to cycle's state list if not dead state
         if self.cycle:
             self.cycle.add_state(self)
 
-        return
 
-#         # determine phase of fluid and add description
-#         if self.x == 1:
-#             phase = 'Sat Vapor'
-#         elif self.x == 0:
-#             phase = 'Sat Liquid'
-#         elif self.p < CP.PropsSI('P','P',self.p,'Q',0,fluid):
-#             phase = 'Sub-Cooled Liq'
-#         elif self.p > CP.PropsSI('P','P',self.p,'Q',1,fluid):
-#             phase = 'Superheated'
-#         else:
-#             phase = ""
-#         self._phase = phase
+
+        return
 
 class Process(object):
     '''A class that defines values for a process based on a
@@ -420,6 +431,12 @@ class Geotherm(object):
         # initialize state list
         self._state_list = []
 
+        # find brine dead state
+        self._dead = kwargs.pop('dead',
+                                State(None,self.brine,'T',15+273,
+                                      'P',101325,'Brine Dead State')
+                               )
+
         # create initial brine state
         # default ground temperature is 120 deg C
         t = kwargs.pop('t_ground',120)
@@ -427,10 +444,7 @@ class Geotherm(object):
         p = kwargs.pop('p_ground',0.5)
         g1 = State(self,self.brine,'T',t+273,'P',p*(10**6),'Brine In')
 
-        self._dead = kwargs.pop('dead',
-                                State(None,self.brine,'T',15+273,
-                                      'P',101325,'Brine Dead State')
-                               )
+
 
         # state in
         self.in_ = g1
