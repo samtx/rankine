@@ -151,7 +151,7 @@ class State(object):
             print('tcrit,(',fluid,')=,',CP.PropsSI('Tcrit',prop1,value1,prop2,value2,fluid))
             print('pcrit,(',fluid,')=,',CP.PropsSI('Pcrit',prop1,value1,prop2,value2,fluid))
             phase = CP.PropsSI('Phase',prop1,value1,prop2,value2,fluid)
-
+            print('phase:',phase)
             if phase == twophase_idx:
                 # fluid is two phase. Find quality.
                 self._x = CP.PropsSI('Q',prop1,value1,prop2,value2,fluid)

@@ -27,13 +27,13 @@ def main():
     p_list = rankine.get_procs()
 
 #     initialize geothermal cycle using defaults
-#     geotherm = thermo.Geotherm()
+    geotherm = thermo.Geotherm()
 
     # print output to screen
     print_output_to_screen(cyc_props,p_list,s_list,props,s_list[0].cycle.dead)
 
 #     compute plant efficiencies
-#     plant = compute_plant(rankine,geotherm)
+    plant = compute_plant(rankine,geotherm)
     
     return
 
