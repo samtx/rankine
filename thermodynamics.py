@@ -200,7 +200,7 @@ class Geotherm(object):
         # default brine fluid is 20% NaCl solution with water.
         # See http://www.coolprop.org/fluid_properties/Incompressibles.html for more
         # information on available brines
-        self.fluid = "INCOMP::" + kwargs.pop('brine','ZM[.01]')  # ZM -> Zitrec M, Ethylene Glycol
+        self.fluid = kwargs.pop('fluid','INCOMP::ZM[.01]')  # ZM -> Zitrec M, Ethylene Glycol
         # use MNA for sodium chloride aqueous mix
         # default mass flow rate is 1 kg/s
         self.mdot = kwargs.pop('mdot',1)
@@ -219,20 +219,27 @@ class Geotherm(object):
             dead.h = 61.05 * 1000 # J/kg
             dead.s = 0.2205 * 1000 # J/kg.K
             dead.T = 15 + 273 # K
+            dead.p = 101325 # Pa
             self.dead = dead
 
-        # create initial brine state
-        g1 = State(self,'Brine In')
-        g1.s = 1.492 * 1000 # J/kg.K
-        g1.h = 491.6 * 1000 # J/kg
-        g1.T = 120 + 273.15 # K
-        g1.flow_exergy()
 
         # state in
-        self.in_ = g1
-
+        self.in_ = None
         #state out
         self.out = None  # default
+
+        # initialize cycle results
+        self.wnet = 0.0
+        self.qnet = 0.0
+        self.en_eff = 0.0
+        self.bwr = 0.0
+
+        # initialize cycle exergy totals
+        self.ex_in = 0.0
+        self.ex_out = 0.0
+        self.delta_ef = 0.0
+        self.ex_d = 0.0
+        self.ex_eff = 0.0
 
         return
 
@@ -240,7 +247,7 @@ class Plant(object):
     '''This class describes the whole geothermal power plant, including both
     the geothermal heat source and the organic Rankine cycle power generation '''
 
-    
+
     def __init__(self,rankine,geotherm):
         ''' Create an instance of a geothermal Plant object
         arguments:
@@ -252,5 +259,5 @@ class Plant(object):
 
         self.en_eff = 0.0   # plant energetic efficiency
         self.ex_eff = 0.0   # plant exergetic efficiency
-        
+        self.cool_eff = 0.0 # plant cooling efficiency
         return

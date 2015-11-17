@@ -32,18 +32,11 @@ def main():
         s_list = rankine.get_states()
         p_list = rankine.get_procs()
 
-        # initialize geothermal cycle using defaults defined in object
-        geotherm = thermo.Geotherm()
-        print('Geothermal brine mass flow rate = {:>3.2f} kg/s'.format(geotherm.mdot))
+        # compute plant efficiencies
+        plant = compute_plant(rankine,props)
 
         # print output to screen
-        print_output_to_screen(rankine,props)
-
-        # compute plant efficiencies
-        plant = compute_plant(rankine,geotherm,props)
-
-        # print plant results to screen
-        print_plant_results(plant)
+        print_output_to_screen(plant,props)
 
     return
 
@@ -53,7 +46,6 @@ def compute_cycle(props):
     p_lo = props.get('p_lo',None)
     if p_hi: p_hi = p_hi * 10**6  #convert MPa to Pa
     if p_lo: p_lo = p_lo * 10**6  #convert MPa to Pa
-    print('p_hi=',p_hi)
     t_hi = props.get('t_hi',None)
     t_lo = props.get('t_lo',None)
     if t_hi: t_hi += 273.15  #convert deg C to K
@@ -219,13 +211,45 @@ def compute_cycle(props):
 
     return cyc
 
-def compute_plant(rank,geo,props):
+def compute_plant(rank,props):
     ''' Compute and return plant object from rankine cycle and geothermal cycle objects '''
     cool_eff = props.get('cool_eff',1.0) # cooling efficiency
+    # initialize geothermal cycle using defaults defined in object
+    fluid = 'Salt Water, 20% salinity'
+    # set dead state
+    dead = thermo.State(None,'Brine Dead State',fluid)
+    dead.h = 61.05 * 1000 # J/kg
+    dead.s = 0.2205 * 1000 # J/kg.K
+    dead.T = 15 + 273 # K
+    dead.p = 101325 # Pa
+    geo = thermo.Geotherm(fluid=fluid,dead=dead)
+    #   Find the mass flow rate of the brine based on cooling efficiency and
+    #   the heat gained by the boiler in the Rankine cycle.
+    # first, get the heat from the boiler process
+    heat = 0.0
+    for p in rank.get_procs():
+        if 'boil' in p.name.lower():
+            heat = p.heat
+
+    # create initial brine state
+    g1 = thermo.State(geo,'Brine In')
+    g1.s = 1.492 * 1000 # J/kg.K
+    g1.h = 491.6 * 1000 # J/kg
+    g1.T = 120 + 273.15 # K
+    g1.p = 5 * 10**5    # bars to Pa
+    g1.flow_exergy()
+    geo.in_ = g1
+
+    # set brine mass flow rate
+    geo.mdot = (rank.mdot * heat) / (cool_eff * (geo.in_.h - geo.dead.h))
+
+    # initialize plant object using rankine and geothermal cycles
     plant = thermo.Plant(rank,geo)
-    # calculate plant energetic efficiency
+    # set cooling efficiency
+    plant.cool_eff = cool_eff
+    #   Calculate plant energetic efficiency
     q_avail = geo.mdot * (geo.in_.h - geo.dead.h)
-    plant.en_eff = rank.mdot * rank.wnet / q_avail
+    plant.en_eff = (rank.mdot * rank.wnet) / q_avail
     # calculate plant exergetic efficiency
     plant.ex_eff = (rank.mdot * rank.wnet) / (geo.mdot * geo.in_.ef)
 
@@ -235,14 +259,18 @@ def compute_plant(rank,geo,props):
 # ------------------- Print output functions ---------------------------------
 ##############################################################################
 
-def print_output_to_screen(cycle,props):
+def print_output_to_screen(plant,props):
+    cycle = plant.rank
     print_user_values(props)
-    print('Rankine Cycle mass flow rate = {:>3.2f} kg/s'.format(cycle.mdot))
+    print('Rankine Cycle States and Processes    (Working Fluid: '+plant.rank.fluid+')')
     print_state_table(cycle)
     print_process_table(cycle)
     #print_exergy_table(cycle)
     #print_cycle_values(cycle)
     #create_plot(p_list,s_list)
+    print('\nGeothermal Cycle States and Processes    (Brine: '+plant.geo.fluid+')')
+    print_geo_tables(plant.geo)
+    print_plant_results(plant)
     return
 
 def print_user_values(props):
@@ -261,7 +289,8 @@ def print_user_values(props):
     if p_lo: print('Low Pressure:  {:>5.4f} MPa'.format(p_lo))
     if p_hi: print('High Pressure: {:>5.4f} MPa'.format(p_hi))
     print('Isentropic Turbine Efficiency: {:>2.1f}%'.format(props["turb_eff"]*100))
-    print('Isentropic Pump Efficiency:    {:>2.1f}%\n'.format(props["pump_eff"]*100))
+    print('Isentropic Pump Efficiency:    {:>2.1f}%'.format(props["pump_eff"]*100))
+    print('Plant Cooling Efficiency:      {:>2.1f}%\n'.format(props["cool_eff"]*100))
     return
 
 def print_state_table(cycle):
@@ -346,6 +375,59 @@ def print_exergy_table(cycle):
     print(t)
     return
 
+def print_geo_tables(cycle):
+    s_list = cycle.get_states()
+    s_list.append(cycle.dead)
+    headers = ['State','Press (kPa)','Temp (deg C)','Enthalpy (kW)','Entropy (kW/K)','Flow Ex (kW)','Quality']
+    t = PrettyTable(headers)
+    for item in headers[1:6]:
+        t.align[item] = 'r'
+    for item in headers[2:4]:
+        t.float_format[item] = '4.2'
+    t.float_format[headers[1]] = '4.3'
+    t.float_format[headers[4]] = '6.5'
+    t.float_format[headers[5]] = '4.2'
+    t.float_format[headers[6]] = '0.2'
+    t.padding_width = 1
+    for item in s_list:
+        #print('item.name = ',item.name)
+        t.add_row([item.name,
+                   item.p/1000,
+                   item.T-273,
+                   item.h/1000 * cycle.mdot,
+                   item.s/1000 * cycle.mdot,
+                   item.ef/1000 * cycle.mdot,
+                   item.x])
+    print(t)
+    p_list = cycle.get_procs()
+    if not p_list:
+        return  # don't print an empty process table
+    headers = ['Process','States','Heat (kW)','Work (kW)','Ex. In (kW)','Ex. Out (kW)','Delta Ef (kW)','Ex. Dest. (kW)','Ex. Eff.']
+    t = PrettyTable(headers)
+    for item in headers[2:]:
+        t.align[item] = 'r'
+        t.float_format[item] = '5.1'
+    for p in p_list:
+        t.add_row([p.name,p.in_.name+' -> '+p.out.name,
+                   p.heat/1000 * cycle.mdot,
+                   p.work/1000 * cycle.mdot,
+                   p.ex_in/1000 * cycle.mdot,
+                   p.ex_out/1000 * cycle.mdot,
+                   p.delta_ef/1000 * cycle.mdot,
+                   p.ex_d/1000 * cycle.mdot,
+                   '{:.1%}'.format(p.ex_eff)])
+    # add totals row
+#     t.add_row(['Net','',
+#                cycle.qnet/1000 * cycle.mdot,
+#                cycle.wnet/1000 * cycle.mdot,
+#                cycle.ex_in/1000 * cycle.mdot,
+#                cycle.ex_out/1000 * cycle.mdot,
+#                cycle.delta_ef/1000 * cycle.mdot,
+#                cycle.ex_d/1000 * cycle.mdot,
+#                '{:.1%}'.format(cycle.ex_eff)])
+    print(t)
+    return
+
 def print_cycle_values(cycle):
     print('\nCycle Values \n------------ ')
     print('thermal efficiency = {:2.1f}%'.format(cycle.en_eff*100))
@@ -397,10 +479,14 @@ def create_plot(p_list,s_list):
 
 def print_plant_results(plant):
     print('Plant Results \n------------------ ')
-    print('Plant thermal (energetic) eff: {:>6.1f}%'.format(plant.en_eff*100))
-    print('Plant exergetic efficiency   : {:>6.1f}%'.format(plant.ex_eff*100))
-    print('Rankine cycle thermal eff    : {:>6.1f}%'.format(plant.rank.en_eff*100))
-    print('Rankine cycle exergetic eff  : {:>6.1f}%'.format(plant.rank.ex_eff*100))
+    print('Rankine Cycle mass flow rate  =   {:>3.2f} kg/s'.format(plant.rank.mdot))
+    print('Geo. Brine mass flow rate     =   {:>3.2f} kg/s'.format(plant.geo.mdot))
+    print('Plant thermal (energetic) eff = {:>6.1f}%'.format(plant.en_eff*100))
+    print('Plant exergetic efficiency    = {:>6.1f}%'.format(plant.ex_eff*100))
+    print('(Rankine ex_eff)*(plant cool_eff) = {:>6.1f}%'.format(plant.rank.ex_eff*plant.cool_eff*100))
+    print('Rankine cycle thermal eff     = {:>6.1f}%'.format(plant.rank.en_eff*100))
+    print('Rankine cycle exergetic eff   = {:>6.1f}%'.format(plant.rank.ex_eff*100))
+    print('Rankine cycle back work ratio =  {:>6.2f}%'.format(plant.rank.bwr*100))
     return
 
 def get_sat_dome(fluid):
