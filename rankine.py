@@ -19,13 +19,14 @@ def main():
         #create dictionary of properties
         props = {}
         props["fluid"] = fluid
-        #props["p_hi"] = 8.0  #MPa
-        #props["p_lo"] = 8.0/1000 #MPa
-        props["t_hi"] = 295.16  # deg C
-        props["t_lo"] = 41.66 # deg C
-        props["turb_eff"] = .8
-        props["pump_eff"] = .75
+        props["p_hi"] = 10  #MPa
+        props["p_lo"] = 0.008 #MPa
+        props["t_hi"] = 480  # deg C
+        #props["t_lo"] = 10 # deg C
+        props["turb_eff"] = .80
+        props["pump_eff"] = .70
         props['cool_eff'] = .80 #cooling efficiency
+        props['superheat'] = True  # should we allow for superheating?
 
         # begin computing processess for rankine cycle
         rankine = compute_cycle(props)
@@ -52,6 +53,7 @@ def compute_cycle(props):
     if t_lo: t_lo += 273.15  #convert deg C to K
     turb_eff = props.get('turb_eff',1.0)
     pump_eff = props.get('pump_eff',1.0)
+    superheat = props.get('superheat',False)
 
     # set dead state
     dead = thermo.State(None,'Dead State',fluid)
@@ -66,10 +68,8 @@ def compute_cycle(props):
     # use pressures instead of temperatures when accessing CoolProp. So we
     # want to find the saturation pressures for the given temperatures and
     # fluid.
-    if t_hi:
+    if t_hi and (not superheat):
         p_hi = CP.PropsSI('P','T',t_hi,'Q',0,fluid)
-    else:
-        t_hi = CP.PropsSI('T','P',p_hi,'Q',0,fluid)
     if t_lo:
         p_lo = CP.PropsSI('P','T',t_lo,'Q',0,fluid)
     else:
@@ -79,10 +79,15 @@ def compute_cycle(props):
     st1 = thermo.State(cyc,'1')
     st1.T = t_hi
     st1.p = p_hi
-    st1.x = 1
-    st1.h = CP.PropsSI('H','P',p_hi,'Q',1,fluid)
-    st1.s = CP.PropsSI('S','P',p_hi,'Q',1,fluid)
-    st1.flow_exergy()
+    if superheat:
+        st1.s = CP.PropsSI('S','P',p_hi,'T',t_hi,fluid)
+        st1.h = CP.PropsSI('H','P',p_hi,'T',t_hi,fluid)
+        st1.x = 'Superheated'
+    else:
+        st1.x = 1
+        st1.s = CP.PropsSI('S','P',p_hi,'Q',1,fluid)
+        st1.h = CP.PropsSI('H','P',p_hi,'Q',1,fluid)
+        st1.flow_exergy()
 
     # State 2s, two-phase at low temperature with same entropy as state 1
     st2s = thermo.State(cyc,'2s')
@@ -107,7 +112,7 @@ def compute_cycle(props):
     st2.flow_exergy()
 
     #print('state 2 quality: ',st2.x)
-    if st2.x > 1:
+    if st2.x > 1 and (not superheat):
         print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
         sys.exit()
 
@@ -216,14 +221,14 @@ def compute_plant(rank,props):
     cool_eff = props.get('cool_eff',1.0) # cooling efficiency
     # initialize geothermal cycle using defaults defined in object
     fluid = 'Salt Water, 20% salinity'
-    # set dead state
+    # set brine dead state
     dead = thermo.State(None,'Brine Dead State',fluid)
     dead.h = 61.05 * 1000 # J/kg
     dead.s = 0.2205 * 1000 # J/kg.K
     dead.T = 15 + 273 # K
     dead.p = 101325 # Pa
     geo = thermo.Geotherm(fluid=fluid,dead=dead)
-    
+
     #   Find the mass flow rate of the brine based on cooling efficiency and
     #   the heat gained by the boiler in the Rankine cycle.
     # first, get the heat from the boiler process
