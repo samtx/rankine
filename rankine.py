@@ -29,8 +29,8 @@ def main():
 
         # begin computing processess for rankine cycle
         rankine = compute_cycle(props)
-        s_list = rankine.get_states()
-        p_list = rankine.get_procs()
+        #s_list = rankine.get_states()
+        #p_list = rankine.get_procs()
 
         # compute plant efficiencies
         plant = compute_plant(rankine,props)
@@ -223,6 +223,7 @@ def compute_plant(rank,props):
     dead.T = 15 + 273 # K
     dead.p = 101325 # Pa
     geo = thermo.Geotherm(fluid=fluid,dead=dead)
+    
     #   Find the mass flow rate of the brine based on cooling efficiency and
     #   the heat gained by the boiler in the Rankine cycle.
     # first, get the heat from the boiler process
@@ -230,7 +231,6 @@ def compute_plant(rank,props):
     for p in rank.get_procs():
         if 'boil' in p.name.lower():
             heat = p.heat
-
     # create initial brine state
     g1 = thermo.State(geo,'Brine In')
     g1.s = 1.492 * 1000 # J/kg.K
@@ -239,7 +239,6 @@ def compute_plant(rank,props):
     g1.p = 5 * 10**5    # bars to Pa
     g1.flow_exergy()
     geo.in_ = g1
-
     # set brine mass flow rate
     geo.mdot = (rank.mdot * heat) / (cool_eff * (geo.in_.h - geo.dead.h))
 
