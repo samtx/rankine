@@ -19,20 +19,16 @@ def main():
         #create dictionary of properties
         props = {}
         props["fluid"] = fluid
-        props["p_hi"] = 8  #MPa
-        props["p_lo"] = 0.008 #MPa
+        props["p_hi"] = 8.0  #MPa
+        props["p_lo"] = 8.0/1000 #MPa
         #props["t_hi"] = 295  # deg C
         #props["t_lo"] = 42 # deg C
-        props["turb_eff"] = 0.80
-        props["pump_eff"] = 0.75
+        props["turb_eff"] = .8
+        props["pump_eff"] = .75
+        props['cool_eff'] = .80 #cooling efficiency
 
         # begin computing processess for rankine cycle
         rankine = compute_cycle(props)
-        cyc_props = {}
-        cyc_props['wnet'] = rankine.wnet
-        cyc_props['qnet'] = rankine.qnet
-        cyc_props['thermal_eff'] = rankine.thermal_eff
-        cyc_props['bwr'] = rankine.bwr
         s_list = rankine.get_states()
         p_list = rankine.get_procs()
 
@@ -40,10 +36,10 @@ def main():
         geotherm = thermo.Geotherm()
 
         # print output to screen
-        print_output_to_screen(rankine,cyc_props,p_list,s_list,props,s_list[0].cycle.dead)
+        print_output_to_screen(rankine,props)
 
         # compute plant efficiencies
-        plant = compute_plant(rankine,geotherm)
+        plant = compute_plant(rankine,geotherm,props)
 
         # print plant results to screen
         print_plant_results(plant)
@@ -72,7 +68,7 @@ def compute_cycle(props):
     dead.s = CP.PropsSI('S','T',dead.T,'P',dead.p,dead.fluid)
 
     # initialize cycle
-    cyc = thermo.Cycle(fluid,name='Rankine',mdot=0.43,dead=dead)
+    cyc = thermo.Cycle(fluid,name='Rankine',mdot=1.0,dead=dead)
 
     # use pressures instead of temperatures when accessing CoolProp. So we
     # want to find the saturation pressures for the given temperatures and
@@ -222,18 +218,34 @@ def compute_cycle(props):
     cyc.wnet = cyc.mdot * (turb.work + pump.work)
     cyc.qnet = cyc.mdot * (boil.heat + cond.heat)
     cyc.en_eff = cyc.wnet / boil.heat
-    cyc.thermal_eff = cyc.en_eff
     cyc.bwr = -pump.work / turb.work
     cyc.ex_eff = cyc.ex_out / cyc.ex_in  # cycle exergetic eff
 
     return cyc
 
-def print_output_to_screen(cycle,cyc_props,p_list,s_list,props,dead):
+def compute_plant(rank,geo,props):
+    ''' Compute and return plant object from rankine cycle and geothermal cycle objects '''
+    cool_eff = props.get('cool_eff',1.0) # cooling efficiency
+    plant = thermo.Plant(rank,geo)
+    # calculate plant energetic efficiency
+    q_avail = geo.mdot * (geo.in_.h - geo.dead.h)
+    plant.en_eff = rank.mdot * rank.wnet / q_avail
+    # calculate plant exergetic efficiency
+    plant.ex_eff = (rank.mdot * rank.wnet) / (geo.mdot * geo.in_.ef)
+
+    return plant
+
+##############################################################################
+# ------------------- Print output functions ---------------------------------
+##############################################################################
+
+def print_output_to_screen(cycle,props):
     print_user_values(props)
+    print('Rankine Cycle mass flow rate = {:>3.2f} kg/s'.format(cycle.mdot))
     print_state_table(cycle)
-    print_process_table(cycle,cyc_props,p_list)
-    #print_exergy_table(p_list)
-    #print_cycle_values(cyc_props)
+    print_process_table(cycle)
+    print_exergy_table(cycle)
+    #print_cycle_values(cycle)
     #create_plot(p_list,s_list)
     return
 
@@ -259,13 +271,13 @@ def print_user_values(props):
 def print_state_table(cycle):
     s_list = cycle.get_states()
     s_list.append(cycle.dead)
-    headers = ['State','Press (kPa)','Temp (deg C)','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Flow Exergy (kJ/kg)','Quality']
+    headers = ['State','Press (kPa)','Temp (deg C)','Enthalpy (kW)','Entropy (kW/K)','Flow Ex (kW)','Quality']
     t = PrettyTable(headers)
     for item in headers[1:6]:
         t.align[item] = 'r'
     for item in headers[2:4]:
         t.float_format[item] = '4.2'
-    t.float_format[headers[1]] = '6.5'
+    t.float_format[headers[1]] = '4.3'
     t.float_format[headers[4]] = '6.5'
     t.float_format[headers[5]] = '4.2'
     t.float_format[headers[6]] = '0.2'
@@ -275,28 +287,35 @@ def print_state_table(cycle):
         t.add_row([item.name,
                    item.p/1000,
                    item.T-273,
-                   item.h/1000,
-                   item.s/1000,
-                   item.ef/1000,
+                   item.h/1000 * cycle.mdot,
+                   item.s/1000 * cycle.mdot,
+                   item.ef/1000 * cycle.mdot,
                    item.x])
-    print(t,'\n')
+    print(t)
     return
 
-def print_process_table(cycle,cyc_props,p_list):
+def print_process_table(cycle):
     p_list = cycle.get_procs()
-    headers = ['Process','States','Heat (kJ/kg)','Work (kJ/kg)']
+    headers = ['Process','States','Heat (kW)','Work (kW)']
     t = PrettyTable(headers)
     #t.set_style(MSWORD_FRIENDLY)
     for item in headers[2:]:
         t.align[item] = 'r'
         t.float_format[item] = '5.1'
     for p in p_list:
-        t.add_row([p.name,p.in_.name+' -> '+p.out.name,p.heat/1000,p.work/1000])
-    t.add_row(['Net','cycle',cycle.qnet/1000,cycle.wnet/1000])
-    print(t, '\n')
+        t.add_row([p.name,p.in_.name+' -> '+p.out.name,
+                   p.heat/1000 * cycle.mdot,
+                   p.work/1000 * cycle.mdot])
+    t.add_row(['Net','cycle',
+               cycle.qnet/1000 * cycle.mdot,
+               cycle.wnet/1000 * cycle.mdot])
+    print(t)
+    print('cycle therm eff = ',cycle.en_eff)
+    print('cycle ex eff = ',cycle.ex_eff)
     return
 
-def print_exergy_table(p_list):
+def print_exergy_table(cycle):
+    p_list = cycle.get_procs()
     headers = ['Process','States','Exergy In (kJ/kg)','Exergy Out (kJ/kg)','Delta Ef (kJ/kg)','Exergy Dest. (kJ/kg)','Exergetic Eff.']
     t = PrettyTable(headers)
     #t.set_style(PLAIN_COLUMNS)
@@ -320,13 +339,13 @@ def print_exergy_table(p_list):
     cyc_ex_eff = ex_totals[1]/ex_totals[0]  # (total ex_out)/(total ex_in)
     row.append('{:.1%}'.format(cyc_ex_eff))
     t.add_row(row)
-    print(t, '\n')
+    print(t)
     return
 
-def print_cycle_values(cyc_props):
+def print_cycle_values(cycle):
     print('\nCycle Values \n------------ ')
-    print('thermal efficiency = {:2.1f}%'.format(cyc_props["thermal_eff"]*100))
-    print('back work ratio = {:.3f}'.format(cyc_props["bwr"]))
+    print('thermal efficiency = {:2.1f}%'.format(cycle.en_eff*100))
+    print('back work ratio = {:.3f}'.format(cycle.bwr))
     return
 
 def create_plot(p_list,s_list):
@@ -371,11 +390,6 @@ def create_plot(p_list,s_list):
     filename = 'ts_plot.png'
     plt.savefig(filename) # save figure to directory
     return
-
-def compute_plant(rank,geo):
-    ''' Compute and return plant object from rankine cycle and geothermal cycle objects '''
-    plant = thermo.Plant(rank,geo)
-    return plant
 
 def print_plant_results(plant):
     print('\nPlant Efficiencies \n------------ ')

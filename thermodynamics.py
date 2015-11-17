@@ -132,16 +132,6 @@ class Cycle(object):
     def get_states(self):
         return self.state_list
 
-    def compute_cycle_results(self):
-        ''' Compute and store rankine cycle
-          wnet        = net work output
-          qnet        = net heat input
-          thermal_eff = thermal efficiency
-          bwr         = back work ratio
-          ex_eff      = exergetic efficiency
-          '''
-        return
-
     def __init__(self,fluid,**kwargs):
         # unpack keyword arguments
         dead = kwargs.pop('dead',None)
@@ -162,11 +152,11 @@ class Cycle(object):
         self.mdot = mdot # in kg/s
 
         # initialize cycle results
-        self.wnet = None
-        self.qnet = None
-        self.en_eff = None
-        self.bwr = None
-        
+        self.wnet = 0.0
+        self.qnet = 0.0
+        self.en_eff = 0.0
+        self.bwr = 0.0
+
         # initialize cycle exergy totals
         self.ex_in = 0.0
         self.ex_out = 0.0
@@ -250,17 +240,7 @@ class Plant(object):
     '''This class describes the whole geothermal power plant, including both
     the geothermal heat source and the organic Rankine cycle power generation '''
 
-    def calc_plant_effs(self):
-        '''Once the geothermal and rankine cycles have been defined for the
-        plant, calcuate the overall plant energetic and exergetic
-        efficiencies'''
-        # calculate plant energetic efficiency
-        q_avail = self.geo.mdot * (self.geo.in_.h - self.geo.dead.h)
-        en_eff = self.rank.wnet / q_avail
-        # calculate plant exergetic efficiency
-        ex_eff = self.rank.wnet / (self.geo.mdot * self.geo.in_.ef)
-        return (en_eff, ex_eff)
-
+    
     def __init__(self,rankine,geotherm):
         ''' Create an instance of a geothermal Plant object
         arguments:
@@ -270,8 +250,7 @@ class Plant(object):
         self.rank = rankine
         self.geo = geotherm
 
-        # calculate and store plant efficiencies
-        (en_eff, ex_eff) = self.calc_plant_effs()
-        self.en_eff = en_eff   # plant energetic efficiency
-        self.ex_eff = ex_eff   # plant exergetic efficiency
+        self.en_eff = 0.0   # plant energetic efficiency
+        self.ex_eff = 0.0   # plant exergetic efficiency
+        
         return
