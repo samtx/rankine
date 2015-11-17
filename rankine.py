@@ -139,18 +139,13 @@ def compute_cycle(props):
     st4s.s = st3.s
     st4s.p = p_hi
     st4s.T = CP.PropsSI('T','P',p_hi,'S',st4s.s,fluid)
-    #st4s.h = CP.PropsSI('H','P',p_hi,'S',st4s.s,fluid)
     st4s.x = 'subcooled'
     st4s.flow_exergy()
-
-
     # State 4
     st4 = thermo.State(cyc,'4')
     st4.h = st3.h - wp
     st4.T = CP.PropsSI('T','H',st4.h,'P',p_hi,fluid)
-    #st4.T = 0.0
     st4.s = CP.PropsSI('S','P',p_hi,'H',st4.h,fluid)
-    #st4.s = 0.0
     st4.p = p_hi
     st4.x = 'subcooled'
     st4.flow_exergy()
