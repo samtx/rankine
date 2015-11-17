@@ -32,8 +32,6 @@ def main():
 
         # begin computing processess for rankine cycle
         rankine = compute_cycle(props)
-        #s_list = rankine.get_states()
-        #p_list = rankine.get_procs()
 
         # compute plant efficiencies
         plant = compute_plant(rankine,props)
@@ -109,11 +107,18 @@ def compute_cycle(props):
 
     # State 2, two-phase at low pressure determined by turbine efficiency
     st2 = thermo.State(cyc,'2')
-    st2.h = turb_eff * (st2s.h - st1.h) + st1.h  #with an irreversible turbine
-    st2.x = (st2.h - hf) / (hg - hf)
-    st2.s = st2.x * (sg - sf) + sf
+    # if turb_eff = 1, then just copy values from state 2s
+    if turb_eff == 1:
+        st2.h = st2s.h
+        st2.T = st2s.T
+        st2.s = st2s.s
+        st2.x = st2s.x
+    else:
+        st2.h = turb_eff * (st2s.h - st1.h) + st1.h  #with an irreversible turbine
+        st2.x = (st2.h - hf) / (hg - hf)
+        st2.s = st2.x * (sg - sf) + sf
+        st2.T = CP.PropsSI('T','P',p_lo,'S',st2.s,fluid)
     st2.p = p_lo
-    st2.T = CP.PropsSI('T','P',p_lo,'S',st2.s,fluid)
     st2.flow_exergy()
 
     #print('state 2 quality: ',st2.x)
@@ -145,9 +150,23 @@ def compute_cycle(props):
     st4s.flow_exergy()
     # State 4
     st4 = thermo.State(cyc,'4')
-    st4.h = st3.h - wp
-    st4.T = CP.PropsSI('T','H',st4.h,'P',p_hi,fluid)
-    st4.s = CP.PropsSI('S','P',p_hi,'H',st4.h,fluid)
+    # if pump_eff = 1, then just copy values from state 4s
+    if pump_eff == 1:
+        st4.h = st4s.h
+        st4.T = st4s.T
+        st4.s = st4s.s
+    else:
+        st4.h = st3.h - wp
+        #   it appears that CoolProp is pulling properties for Temperature and entropy
+        #   for state 4 that are slightly lower than state 4s. These values should
+        #   be higher than those at state 4s.
+        #   Add logic to add a 0.1% increase in both values if they are lower.
+        st4.T = CP.PropsSI('T','H',st4.h,'P',p_hi,fluid)
+        if st4.T < st4s.T:
+            st4.T = st4s.T * 1.001  # add 0.1% increase
+        st4.s = CP.PropsSI('S','P',p_hi,'H',st4.h,fluid)
+        if st4.s < st4s.s:
+            st4.s = st4s.s * 1.001  # add 0.1% increase
     st4.p = p_hi
     st4.x = 'subcooled'
     st4.flow_exergy()
