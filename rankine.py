@@ -74,7 +74,6 @@ def compute_cycle(props):
     if t_hi and (not superheat):
         p_hi = CP.PropsSI('P','T',t_hi,'Q',0,fluid)
     elif (not t_hi) and (not superheat):
-        print('helloo!!')
         t_hi = CP.PropsSI('T','P',p_hi,'Q',0,fluid)
     if t_lo:
         p_lo = CP.PropsSI('P','T',t_lo,'Q',0,fluid)
