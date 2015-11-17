@@ -19,10 +19,10 @@ def main():
         #create dictionary of properties
         props = {}
         props["fluid"] = fluid
-        props["p_hi"] = 8.0  #MPa
-        props["p_lo"] = 8.0/1000 #MPa
-        #props["t_hi"] = 295  # deg C
-        #props["t_lo"] = 42 # deg C
+        #props["p_hi"] = 8.0  #MPa
+        #props["p_lo"] = 8.0/1000 #MPa
+        props["t_hi"] = 295.16  # deg C
+        props["t_lo"] = 41.66 # deg C
         props["turb_eff"] = .8
         props["pump_eff"] = .75
         props['cool_eff'] = .80 #cooling efficiency
@@ -34,6 +34,7 @@ def main():
 
         # initialize geothermal cycle using defaults defined in object
         geotherm = thermo.Geotherm()
+        print('Geothermal brine mass flow rate = {:>3.2f} kg/s'.format(geotherm.mdot))
 
         # print output to screen
         print_output_to_screen(rankine,props)
@@ -244,7 +245,7 @@ def print_output_to_screen(cycle,props):
     print('Rankine Cycle mass flow rate = {:>3.2f} kg/s'.format(cycle.mdot))
     print_state_table(cycle)
     print_process_table(cycle)
-    print_exergy_table(cycle)
+    #print_exergy_table(cycle)
     #print_cycle_values(cycle)
     #create_plot(p_list,s_list)
     return
@@ -296,7 +297,7 @@ def print_state_table(cycle):
 
 def print_process_table(cycle):
     p_list = cycle.get_procs()
-    headers = ['Process','States','Heat (kW)','Work (kW)']
+    headers = ['Process','States','Heat (kW)','Work (kW)','Ex. In (kW)','Ex. Out (kW)','Delta Ef (kW)','Ex. Dest. (kW)','Ex. Eff.']
     t = PrettyTable(headers)
     #t.set_style(MSWORD_FRIENDLY)
     for item in headers[2:]:
@@ -305,39 +306,47 @@ def print_process_table(cycle):
     for p in p_list:
         t.add_row([p.name,p.in_.name+' -> '+p.out.name,
                    p.heat/1000 * cycle.mdot,
-                   p.work/1000 * cycle.mdot])
-    t.add_row(['Net','cycle',
+                   p.work/1000 * cycle.mdot,
+                   p.ex_in/1000 * cycle.mdot,
+                   p.ex_out/1000 * cycle.mdot,
+                   p.delta_ef/1000 * cycle.mdot,
+                   p.ex_d/1000 * cycle.mdot,
+                   '{:.1%}'.format(p.ex_eff)])
+    # add totals row
+    t.add_row(['Net','',
                cycle.qnet/1000 * cycle.mdot,
-               cycle.wnet/1000 * cycle.mdot])
+               cycle.wnet/1000 * cycle.mdot,
+               cycle.ex_in/1000 * cycle.mdot,
+               cycle.ex_out/1000 * cycle.mdot,
+               cycle.delta_ef/1000 * cycle.mdot,
+               cycle.ex_d/1000 * cycle.mdot,
+               '{:.1%}'.format(cycle.ex_eff)])
     print(t)
-    print('cycle therm eff = ',cycle.en_eff)
-    print('cycle ex eff = ',cycle.ex_eff)
     return
 
 def print_exergy_table(cycle):
     p_list = cycle.get_procs()
-    headers = ['Process','States','Exergy In (kJ/kg)','Exergy Out (kJ/kg)','Delta Ef (kJ/kg)','Exergy Dest. (kJ/kg)','Exergetic Eff.']
+    headers = ['Process','States','Ex. In (kW)','Ex. Out (kW)','Delta Ef (kW)','Ex. Dest. (kW)','Ex. Eff.']
     t = PrettyTable(headers)
     #t.set_style(PLAIN_COLUMNS)
     for item in headers[2:6]:
         t.align[item] = 'r'
         t.float_format[item] = '5.1'
-    ex_totals = [0,0,0,0]
     for p in p_list:
-        row = [p.name,p.state_in.name+' -> '+p.state_out.name,p.ex_in/1000,p.ex_out/1000,p.delta_ef/1000,p.ex_d/1000,'{:.1%}'.format(p.ex_eff)]
+        row = [p.name,p.in_.name+' -> '+p.out.name,
+               p.ex_in/1000 * cycle.mdot,
+               p.ex_out/1000 * cycle.mdot,
+               p.delta_ef/1000 * cycle.mdot,
+               p.ex_d/1000 * cycle.mdot,
+               '{:.1%}'.format(p.ex_eff)]
         t.add_row(row)
-        # calculate exergy totals
-        idx = 0
-        for i in row[2:6]:
-            ex_totals[idx] += i
-            idx += 1
     # print net exergy row
-    row = ['Net','']
-    for i in ex_totals:
-        row.append(i)
-    # cycle exergetic efficiency
-    cyc_ex_eff = ex_totals[1]/ex_totals[0]  # (total ex_out)/(total ex_in)
-    row.append('{:.1%}'.format(cyc_ex_eff))
+    row = ['Net','',
+           cycle.ex_in/1000 * cycle.mdot,
+           cycle.ex_out/1000 * cycle.mdot,
+           cycle.delta_ef/1000 * cycle.mdot,
+           cycle.ex_d/1000 * cycle.mdot,
+           '{:.1%}'.format(cycle.ex_eff)]
     t.add_row(row)
     print(t)
     return
@@ -392,23 +401,11 @@ def create_plot(p_list,s_list):
     return
 
 def print_plant_results(plant):
-    print('\nPlant Efficiencies \n------------ ')
-#     headers = ['Working Fluid','Plant Energetic Eff.','Plant Exergetic Eff.','Cycle Energetic Eff.','Cycle Exergetic Eff.']
-#     t = PrettyTable(headers)
-#     for item in headers[1:]:
-#         t.align[item] = 'r'
-#         #t.float_format[item] = '0.2'
-    effs = [plant.en_eff,plant.ex_eff,plant.rank.en_eff,plant.rank.ex_eff]
-#     row = [plant.rank.fluid]
-#     row.append(effs)
-#     #for e in effs:
-#     #    row.append('{:.2}'.format(e))
-#     t.add_row(row)
-#     print(t, '\n')
-    print('plant en eff=',plant.en_eff)
-    print('plant ex eff=',plant.ex_eff)
-    print('cycle en eff=',plant.rank.en_eff)
-    print('cycle ex eff=',plant.rank.ex_eff)
+    print('Plant Results \n------------------ ')
+    print('Plant thermal (energetic) eff: {:>6.1f}%'.format(plant.en_eff*100))
+    print('Plant exergetic efficiency   : {:>6.1f}%'.format(plant.ex_eff*100))
+    print('Rankine cycle thermal eff    : {:>6.1f}%'.format(plant.rank.en_eff*100))
+    print('Rankine cycle exergetic eff  : {:>6.1f}%'.format(plant.rank.ex_eff*100))
     return
 
 def get_sat_dome(fluid):
