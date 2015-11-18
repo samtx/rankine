@@ -16,7 +16,7 @@ def main():
 
 
     fluid_list = ['Water']
-    
+
     for fluid in fluid_list:
         #create dictionary of properties
         props = {}
@@ -25,7 +25,7 @@ def main():
         props["p_lo"] = 0.008 #MPa
         #props["t_hi"] = 480  # deg C
         #props["t_lo"] = 10 # deg C
-        props["turb_eff"] = 1
+        props["turb_eff"] = .5
         props["pump_eff"] = 1
         props['cool_eff'] = .80 #cooling efficiency
         props['superheat'] = False  # should we allow for superheating?
@@ -316,7 +316,7 @@ def print_output_to_screen(plant,props):
 
     #print_exergy_table(cycle)
     #print_cycle_values(cycle)
-    #create_plot(p_list,s_list)
+    create_plot(cycle)
     print('\nGeothermal Cycle States and Processes    (Brine: '+plant.geo.fluid+')')
 
     print_geo_tables(plant.geo,in_kW)
@@ -486,7 +486,9 @@ def print_cycle_values(cycle):
     print('back work ratio = {:.3f}'.format(cycle.bwr))
     return
 
-def create_plot(p_list,s_list):
+def create_plot(cycle):
+    p_list = cycle.get_procs()
+    s_list = cycle.get_states()
     # unpack states
     st_1 = s_list[0]
     st_2s = s_list[1]
@@ -515,15 +517,15 @@ def create_plot(p_list,s_list):
 
     # Draw T-s plot
     plt.clf()
-#     plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
+    plt.plot(s_pts,T_pts,'b')#,sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
     plt.plot(s_dash_12,T_dash_12,'b--',s_dash_34,T_dash_34,'b--')
-    plt.annotate("1.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
-    plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
-    plt.annotate("3.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+25 ), arrowprops=dict(facecolor = 'red', shrink=0.05),)
-    plt.annotate("4.", xy = (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
+    plt.annotate("2s.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
+    plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'green', shrink=0.05),)
+    plt.annotate("1.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
+    plt.annotate("3.", xy = (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
     plt.suptitle("Rankine Cycle T-s Diagram")
-    plt.xlabel("Entropy (kJ/kg.K)")
-    plt.ylabel("Temperature (deg C)")
+    plt.xlabel("Entropy (J/kg.K)")
+    plt.ylabel("Temperature (deg K)")
     # Save plot
     filename = 'ts_plot.png'
     plt.savefig(filename) # save figure to directory
