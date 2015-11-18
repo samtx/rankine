@@ -15,22 +15,22 @@ import CoolProp.CoolProp as CP
 def main():
 
 
-    fluid_list = ['Water']
+    fluid_list = ['Isobutane']
 
     for fluid in fluid_list:
         #create dictionary of properties
         props = {}
         props["fluid"] = fluid
-        props["p_hi"] = 8  #MPa
-        props["p_lo"] = 0.008 #MPa
+        props["p_hi"] = 1.15  #MPa
+        props["p_lo"] = .6 #MPa
         #props["t_hi"] = 480  # deg C
         #props["t_lo"] = 10 # deg C
-        props["turb_eff"] = .5
-        props["pump_eff"] = 1
-        props['cool_eff'] = .80 #cooling efficiency
+        props["turb_eff"] = .8
+        props["pump_eff"] = .75
+        props['cool_eff'] = .30 #cooling efficiency
         props['superheat'] = False  # should we allow for superheating?
         props['in_kW'] = False # print results in kW instead of kJ/kg?
-        props['cycle_mdot'] = 1.0   # mass flow rate of rankine cycle working fluid in kg/s
+        props['cycle_mdot'] = 5.0   # mass flow rate of rankine cycle working fluid in kg/s
 
         # begin computing processess for rankine cycle
         rankine = compute_cycle(props)
@@ -135,7 +135,7 @@ def compute_cycle(props):
     #print('state 2 quality: ',st2.x)
     if st2.x > 1 and (not superheat):
         print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
-        sys.exit()
+        #sys.exit()
 
     # State 3, saturated liquid at low pressure
     st3 = thermo.State(cyc,'3')
