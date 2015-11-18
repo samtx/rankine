@@ -14,9 +14,7 @@ import CoolProp.CoolProp as CP
 
 def main():
 
-
     fluid_list = ['Water']
-
     for fluid in fluid_list:
         #create dictionary of properties
         props = {}
@@ -25,7 +23,7 @@ def main():
         props["p_lo"] = 0.008 #MPa
         #props["t_hi"] = 480  # deg C
         #props["t_lo"] = 10 # deg C
-        props["turb_eff"] = .5
+        props["turb_eff"] = 1
         props["pump_eff"] = 1
         props['cool_eff'] = .80 #cooling efficiency
         props['superheat'] = False  # should we allow for superheating?
@@ -34,7 +32,6 @@ def main():
 
         # begin computing processess for rankine cycle
         rankine = compute_cycle(props)
-
 
         # compute plant efficiencies
         plant = compute_plant(rankine,props)
@@ -56,10 +53,8 @@ def compute_cycle(props):
     if t_lo: t_lo += 273.15  #convert deg C to K
     turb_eff = props.get('turb_eff',1.0)
     pump_eff = props.get('pump_eff',1.0)
-
     superheat = props.get('superheat',False)
     mdot = props.get('cycle_mdot',1.0)
-
 
     # set dead state
     dead = thermo.State(None,'Dead State',fluid)
@@ -68,16 +63,12 @@ def compute_cycle(props):
     dead.h = CP.PropsSI('H','T',dead.T,'P',dead.p,dead.fluid)
     dead.s = CP.PropsSI('S','T',dead.T,'P',dead.p,dead.fluid)
 
-
     # initialize cycle
     cyc = thermo.Cycle(fluid,name='Rankine',mdot=mdot,dead=dead)
-
 
     # use pressures instead of temperatures when accessing CoolProp. So we
     # want to find the saturation pressures for the given temperatures and
     # fluid.
-
-
     if t_hi and (not superheat):
         p_hi = CP.PropsSI('P','T',t_hi,'Q',0,fluid)
     elif (not t_hi) and (not superheat):
@@ -91,7 +82,6 @@ def compute_cycle(props):
     st1 = thermo.State(cyc,'1')
     st1.T = t_hi
     st1.p = p_hi
-
     if superheat:
         st1.s = CP.PropsSI('S','P',p_hi,'T',t_hi,fluid)
         st1.h = CP.PropsSI('H','P',p_hi,'T',t_hi,fluid)
@@ -117,7 +107,6 @@ def compute_cycle(props):
 
     # State 2, two-phase at low pressure determined by turbine efficiency
     st2 = thermo.State(cyc,'2')
-
     # if turb_eff = 1, then just copy values from state 2s
     if turb_eff == 1:
         st2.h = st2s.h
@@ -161,7 +150,6 @@ def compute_cycle(props):
     st4s.flow_exergy()
     # State 4
     st4 = thermo.State(cyc,'4')
-
     # if pump_eff = 1, then just copy values from state 4s
     if pump_eff == 1:
         st4.h = st4s.h
@@ -179,7 +167,6 @@ def compute_cycle(props):
         st4.s = CP.PropsSI('S','P',p_hi,'H',st4.h,fluid)
         if st4.s < st4s.s:
             st4.s = st4s.s * 1.001  # add 0.1% increase
-
     st4.p = p_hi
     st4.x = 'subcooled'
     st4.flow_exergy()
@@ -258,7 +245,6 @@ def compute_plant(rank,props):
     cool_eff = props.get('cool_eff',1.0) # cooling efficiency
     # initialize geothermal cycle using defaults defined in object
     fluid = 'Salt Water, 20% salinity'
-
     # set brine dead state
     dead = thermo.State(None,'Brine Dead State',fluid)
     dead.h = 61.05 * 1000 # J/kg
@@ -274,7 +260,6 @@ def compute_plant(rank,props):
     for p in rank.get_procs():
         if 'boil' in p.name.lower():
             heat = p.heat
-
     # create initial brine state
     g1 = thermo.State(geo,'Brine In')
     g1.s = 1.492 * 1000 # J/kg.K
@@ -283,9 +268,6 @@ def compute_plant(rank,props):
     g1.p = 5 * 10**5    # bars to Pa
     g1.flow_exergy()
     geo.in_ = g1
-
-
-
     # set brine mass flow rate
     geo.mdot = (rank.mdot * heat) / (cool_eff * (geo.in_.h - geo.dead.h))
 
@@ -307,20 +289,16 @@ def compute_plant(rank,props):
 
 def print_output_to_screen(plant,props):
     cycle = plant.rank
-
     in_kW = props.get('in_kW',False)
     print_user_values(props)
     print('Rankine Cycle States and Processes    (Working Fluid: '+plant.rank.fluid+')')
     print_state_table(cycle,in_kW)
     print_process_table(cycle,in_kW)
-
     #print_exergy_table(cycle)
     #print_cycle_values(cycle)
-    create_plot(cycle)
+    #create_plot(p_list,s_list)
     print('\nGeothermal Cycle States and Processes    (Brine: '+plant.geo.fluid+')')
-
     print_geo_tables(plant.geo,in_kW)
-
     print_plant_results(plant)
     return
 
@@ -344,7 +322,6 @@ def print_user_values(props):
     print('Plant Cooling Efficiency:      {:>2.1f}%\n'.format(props["cool_eff"]*100))
     return
 
-
 def print_state_table(cycle,in_kW=False):
     s_list = cycle.get_states()
     s_list.append(cycle.dead)
@@ -362,12 +339,10 @@ def print_state_table(cycle,in_kW=False):
     t.float_format[headers[5]] = '4.2'
     t.float_format[headers[6]] = '0.2'
     t.padding_width = 1
-
     if in_kW:
         mdot = cycle.mdot
     else:
         mdot = 1.0
-
     for item in s_list:
         #print('item.name = ',item.name)
         t.add_row([item.name,
@@ -376,7 +351,6 @@ def print_state_table(cycle,in_kW=False):
                    item.h/1000 * mdot,
                    item.s/1000 * mdot,
                    item.ef/1000 * mdot,
-
                    item.x])
     print(t)
     return
@@ -486,9 +460,7 @@ def print_cycle_values(cycle):
     print('back work ratio = {:.3f}'.format(cycle.bwr))
     return
 
-def create_plot(cycle):
-    p_list = cycle.get_procs()
-    s_list = cycle.get_states()
+def create_plot(p_list,s_list):
     # unpack states
     st_1 = s_list[0]
     st_2s = s_list[1]
@@ -517,15 +489,15 @@ def create_plot(cycle):
 
     # Draw T-s plot
     plt.clf()
-    plt.plot(s_pts,T_pts,'b')#,sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
+#     plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
     plt.plot(s_dash_12,T_dash_12,'b--',s_dash_34,T_dash_34,'b--')
-    plt.annotate("2s.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
-    plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'green', shrink=0.05),)
-    plt.annotate("1.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
-    plt.annotate("3.", xy = (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
+    plt.annotate("1.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
+    plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
+    plt.annotate("3.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+25 ), arrowprops=dict(facecolor = 'red', shrink=0.05),)
+    plt.annotate("4.", xy = (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
     plt.suptitle("Rankine Cycle T-s Diagram")
-    plt.xlabel("Entropy (J/kg.K)")
-    plt.ylabel("Temperature (deg K)")
+    plt.xlabel("Entropy (kJ/kg.K)")
+    plt.ylabel("Temperature (deg C)")
     # Save plot
     filename = 'ts_plot.png'
     plt.savefig(filename) # save figure to directory
@@ -561,114 +533,32 @@ def get_sat_dome(fluid):
 #     return spts,tpts
 
 
-##############################################################################
-# ----------------------- User Input Functions -------------------------------
-##############################################################################
-
-def should_quit(string):
-    exit_cmds = ['quit','exit','q','x','e','stop']
-    if (string.lower() in exit_cmds):
-        sys.exit() # gracefully exit program
-
-def try_float(string):
-    loop_again = False
-    try:
-        number = float(string)
-    except ValueError:
-        print('Please enter a number or Q to quit')
-        number = ""
-        loop_again = True
-    return number,loop_again
-
-def define_inputs():
-    fluid = select_fluid()
-    if fluid == 'eg_mode':
-        # use example mode
-        fluid = 'Water'
-        p_hi = 3.9  # MPa
-        p_lo = 1.0  # MPa
-        t_hi = 120  # deg C
-        t_lo = 25   # deg C
-        turb_eff = 0.85
-        pump_eff = 0.6
-    else:
-        (p_hi,p_lo) = select_pressures()
-        (turb_eff,pump_eff) = select_efficiencies()
-    #create dictionary of properties
-    props = {}
-    props["fluid"] = fluid
-    props["p_hi"] = p_hi
-    props["p_lo"] = p_lo
-    props["t_hi"] = t_hi
-    props["t_lo"] = t_lo
-    props["turb_eff"] = turb_eff
-    props["pump_eff"] = pump_eff
-    return props
-
-def select_fluid():
-    while True:
-        print("Select a working fluid from the following options: ")
-        fluid_list = ["Water","Ethane","n-Propane","R22","R134a","R236EA","CarbonDioxide","n-Pentane","IsoButene"]
-        for i in range(9):
-            print(" {}. {}".format(i+1,fluid_list[i]) )
-        fluid = raw_input(": ")
-        should_quit(fluid)
-        if fluid == '0':  #example problem
-            fluid = 'eg_mode'
-            break
-        elif fluid.isdigit() and fluid not in range(0,len(fluid_list)):
-            fluid = fluid_list[int(fluid)-1] #use num to pick fluid string
-            break
-        elif fluid in fluid_list: # if they just typed it exactly, case-sensitive
-            break
-        else: print("Invalid input: Please Select Again. Enter Q to quit.\n")
-    return fluid
-
-def select_pressures():
-    p_hi = enter_pressure('high')
-    p_lo = enter_pressure('low')
-    return p_hi,p_lo
-
-def enter_pressure(which_p):
-    if which_p == 'high': machine = 'boiler'
-    if which_p == 'low': machine = 'condenser'
-    while True:
-        p = raw_input("Enter the desired " + which_p + " pressure (" + machine + " pressure) in MPa: ")
-        should_quit(p)
-        p,loop_again = try_float(p)
-        if loop_again: continue  # must be a positive real number
-        if p < 0:
-            print("Can't have a negative pressure.")
-            continue
-        return p
-
-def select_efficiencies():
-    turb_eff = enter_efficiencies('turbine')
-    pump_eff = enter_efficiencies('pump')
-    return turb_eff,pump_eff
-
-def enter_efficiencies(which_eff):
-    while True:
-        eff = raw_input("Enter the " + which_eff + " efficiency in %. Default is 100%: ").strip('%')
-        should_quit(eff)
-        if eff == "":
-            eff = 1.0  # default if nothing is entered
-            break
-        (eff,loop_again) = try_float(eff)
-        if loop_again: continue
-        if eff == 0:
-            print("Can't have 0% " + which_eff + " efficiency")
-            continue
-        if eff < 0:
-            print("Can't have negative " + which_eff + " efficiency")
-            continue
-        elif eff > 100:
-            print("Can't have over 100% " + which_eff + " efficiency")
-            continue
-        elif eff > 1.0:
-            eff = eff/100 # convert to decimal if entered in percent
-        break
-    return eff
+# def print_exergy_table(cycle):
+#     p_list = cycle.get_procs()
+#     headers = ['Process','States','Ex. In (kW)','Ex. Out (kW)','Delta Ef (kW)','Ex. Dest. (kW)','Ex. Eff.']
+#     t = PrettyTable(headers)
+#     #t.set_style(PLAIN_COLUMNS)
+#     for item in headers[2:6]:
+#         t.align[item] = 'r'
+#         t.float_format[item] = '5.1'
+#     for p in p_list:
+#         row = [p.name,p.in_.name+' -> '+p.out.name,
+#                p.ex_in/1000 * cycle.mdot,
+#                p.ex_out/1000 * cycle.mdot,
+#                p.delta_ef/1000 * cycle.mdot,
+#                p.ex_d/1000 * cycle.mdot,
+#                '{:.1%}'.format(p.ex_eff)]
+#         t.add_row(row)
+#     # print net exergy row
+#     row = ['Net','',
+#            cycle.ex_in/1000 * cycle.mdot,
+#            cycle.ex_out/1000 * cycle.mdot,
+#            cycle.delta_ef/1000 * cycle.mdot,
+#            cycle.ex_d/1000 * cycle.mdot,
+#            '{:.1%}'.format(cycle.ex_eff)]
+#     t.add_row(row)
+#     print(t)
+#     return
 
 if __name__ == '__main__':
     main()
