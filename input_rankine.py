@@ -157,8 +157,8 @@ def enter_efficiencies(which_eff):
 
 
 def select_other_options(props):
-    props["superheat"] = enter_tf("Allow the turbine to accept superheated vapor?")
-    props["in_kW"] = enter_tf('Print results tables in kW instead of kJ/kg?')
+    props["superheat"] = enter_tf("Allow the turbine to accept superheated vapor? ")
+    props["in_kW"] = enter_tf('Print results tables in kW instead of kJ/kg? ')
     props['cycle_mdot'] = enter_cycle_mdot()
     return
 
@@ -190,7 +190,7 @@ def enter_cycle_mdot():
         if mdot == "":
             # default to 1 kg/s if left blank
             mdot = 1.0
-            break   
+            break
         (mdot,loop_again) = try_float(mdot)
         if loop_again: continue
         if mdot <= 0:

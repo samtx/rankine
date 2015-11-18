@@ -315,7 +315,10 @@ def print_output_to_screen(plant,props):
     #print_cycle_values(cycle)
     #create_plot(p_list,s_list)
     print('\nGeothermal Cycle States and Processes    (Brine: '+plant.geo.fluid+')')
-    print_geo_tables(plant.geo,in_kW)
+    print_state_table(plant.geo,in_kW)
+    if plant.geo.get_procs():
+        # only print process table for brine if processes have been defined.
+        print_process_table(plant.geo.in_kW)
     print_plant_results(plant)
     return
 
@@ -343,15 +346,15 @@ def print_state_table(cycle,in_kW=False):
     s_list = cycle.get_states()
     s_list.append(cycle.dead)
     if in_kW:
-        headers = ['State','Press (kPa)','Temp (deg C)','Enthalpy (kW)','Entropy (kW/K)','Flow Ex (kW)','Quality']
+        headers = ['State','P(kPa)','T(deg C)','H(kW)','S(kW/K)','Ef(kW)','x']
     else:
-        headers = ['State','Press (kPa)','Temp (deg C)','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Flow Ex (kJ/kg)','Quality']
+        headers = ['State','P(kPa)','T(deg C)','h(kJ/kg)','s(kJ/kg.K)','ef(kJ/kg)','x']
     t = PrettyTable(headers)
     for item in headers[1:6]:
         t.align[item] = 'r'
     for item in headers[2:4]:
         t.float_format[item] = '4.2'
-    t.float_format[headers[1]] = '4.3'
+    t.float_format[headers[1]] = '5.0'
     t.float_format[headers[4]] = '6.5'
     t.float_format[headers[5]] = '4.2'
     t.float_format[headers[6]] = '0.2'
@@ -375,9 +378,9 @@ def print_state_table(cycle,in_kW=False):
 def print_process_table(cycle,in_kW=False):
     p_list = cycle.get_procs()
     if in_kW:
-        headers = ['Process','States','Heat (kW)','Work (kW)','Ex. In (kW)','Ex. Out (kW)','Delta Ef (kW)','Ex. Dest. (kW)','Ex. Eff.']
+        headers = ['Proc','State','Q(kW)','W(kW)','Ex.In(kW)','Ex.Out(kW)','Delt.Ef(kW)','Ex.D(kW)','Ex.Eff.']
     else:
-        headers = ['Process','States','Heat (kJ/kg)','Work (kJ/kg)','Ex. In (kJ/kg)','Ex. Out (kJ/kg)','Delta Ef (kJ/kg)','Ex. Dest. (kJ/kg)','Ex. Eff.']
+        headers = ['Proc','State','Q(kJ/kg)','W(kJ/kg)','Ex.In(kJ/kg)','Ex.Out(kJ/kg)','delt.ef(kJ/kg)','Ex.D(kJ/kg)','Ex.Eff.']
     t = PrettyTable(headers)
     #t.set_style(MSWORD_FRIENDLY)
     for item in headers[2:]:
@@ -412,9 +415,9 @@ def print_geo_tables(cycle,in_kW):
     s_list = cycle.get_states()
     s_list.append(cycle.dead)
     if in_kW:
-        headers = ['State','Press (kPa)','Temp (deg C)','Enthalpy (kW)','Entropy (kW/K)','Flow Ex (kW)','Quality']
+        headers = ['State','P(kPa)','T(deg C)','H(kW)','S(kW/K)','Ef(kW)','x']
     else:
-        headers = ['State','Press (kPa)','Temp (deg C)','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Flow Ex (kJ/kg)','Quality']
+        headers = ['State','P(kPa)','T(deg C)','h(kJ/kg)','s(kJ/kg.K)','ef(kJ/kg)','x']
     t = PrettyTable(headers)
     for item in headers[1:6]:
         t.align[item] = 'r'
