@@ -7,6 +7,7 @@ import sys
 def main():
 
     # have the user define inputs
+    props = {}
     props = define_inputs()
 
     # begin computing processess for rankine cycle
@@ -186,7 +187,10 @@ def is_true(string):
 def enter_cycle_mdot():
     while True:
         mdot = raw_input('Enter the mass flow rate in kg/s of the working fluid in the Rankine cycle: ')
-        if mdot == "": break   # skip question if left blank
+        if mdot == "":
+            # default to 1 kg/s if left blank
+            mdot = 1.0
+            break   
         (mdot,loop_again) = try_float(mdot)
         if loop_again: continue
         if mdot <= 0:
