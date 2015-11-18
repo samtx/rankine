@@ -195,21 +195,5 @@ def enter_cycle_mdot():
         break
     return mdot
 
-
-def enter_temperature(which_t):
-    if which_t == 'high': machine = 'boiler'
-    if which_t == 'low': machine = 'condenser'
-    while True:
-        p = raw_input("Enter the desired " + which_t + " temperature (" + machine + " temp) in deg C: ")
-        should_quit(p)
-        if p == "": break   # skip question if left blank
-        p,loop_again = try_float(p)
-        if loop_again: continue  # must be a positive real number
-        if p < 0:
-            print("Can't have a negative temperature.")
-            continue
-        return p
-
-
 if __name__ == '__main__':
     main()
