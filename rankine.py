@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import sys
 from prettytable import PrettyTable, MSWORD_FRIENDLY, PLAIN_COLUMNS #for output formatting
 import CoolProp.CoolProp as CP
+from numbers import Number
 
 ######################################
 
@@ -66,6 +67,21 @@ def compute_cycle(props):
     # initialize cycle
     cyc = thermo.Cycle(fluid,name='Rankine',mdot=mdot,dead=dead)
 
+    # check to see if enough pressures and temperatures were entered
+    if superheat and not(
+        p_hi and
+        isinstance(t_hi, Number)):
+        print('\nERROR\nIf you are superheating the fluid, specify both a high pressure and high temperature for the cycle')
+        sys.exit()
+    # check to see if one high and one low value were entered
+    elif not superheat:
+        if not (p_hi or isinstance(t_hi,Number)):
+            print('\nERROR\nYou must enter at least one high value (temperature or pressure) for the cycle')
+            sys.exit()
+        elif not (p_lo or isinstance(t_lo,Number)):
+            print('\nERROR\nYou must enter one low value (temperature or pressure) for the cycle.')
+            sys.exit()
+
     # use pressures instead of temperatures when accessing CoolProp. So we
     # want to find the saturation pressures for the given temperatures and
     # fluid.
@@ -77,6 +93,7 @@ def compute_cycle(props):
         p_lo = CP.PropsSI('P','T',t_lo,'Q',0,fluid)
     else:
         t_lo = CP.PropsSI('T','P',p_lo,'Q',0,fluid)
+
     # Define States
     # State 1, saturated vapor at high temperature
     st1 = thermo.State(cyc,'1')

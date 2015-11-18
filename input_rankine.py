@@ -1,12 +1,24 @@
 # Rankine cycle program with user input
 
 from __future__ import print_function
-import rankine
+import rankine as rk
+import sys
 
 def main():
 
+    # have the user define inputs
+    props = define_inputs()
 
-return
+    # begin computing processess for rankine cycle
+    rankine = rk.compute_cycle(props)
+
+    # compute plant efficiencies
+    plant = rk.compute_plant(rankine,props)
+
+    # print output to screen
+    rk.print_output_to_screen(plant,props)
+
+    return
 
 
 
@@ -30,6 +42,22 @@ def try_float(string):
         loop_again = True
     return number,loop_again
 
+
+#     done1 = False
+#     done2 = False
+#     done3 = False
+#     done4 = False
+#     done5 = False
+#     done6 = False
+#     done7 = False
+#     done8 = False
+#     props = {}
+#     while True:
+#          if not done1:
+#                 if not select_fluid(props):
+#                     continue
+#                 else:
+#                     done1 = True
 def define_inputs():
     props = {}
     select_fluid(props)
@@ -59,7 +87,7 @@ def select_fluid(props):
     props["fluid"] = fluid
     return
 
-def select_pressures():
+def select_pressures(props):
     props["p_hi"] = enter_pressure('high')
     props["p_lo"] = enter_pressure('low')
     return
@@ -70,6 +98,7 @@ def enter_pressure(which_p):
     while True:
         p = raw_input("Enter the desired " + which_p + " pressure (" + machine + " pressure) in MPa: ")
         should_quit(p)
+        if p == "": break   # skip question if left blank
         p,loop_again = try_float(p)
         if loop_again: continue  # must be a positive real number
         if p < 0:
@@ -77,7 +106,7 @@ def enter_pressure(which_p):
             continue
         return p
 
-def select_temperatures():
+def select_temperatures(props):
     props["t_hi"] = enter_temperature('high')
     props["t_lo"] = enter_temperature('low')
     return
@@ -88,6 +117,7 @@ def enter_temperature(which_t):
     while True:
         p = raw_input("Enter the desired " + which_t + " temperature (" + machine + " temp) in deg C: ")
         should_quit(p)
+        if p == "": break   # skip question if left blank
         p,loop_again = try_float(p)
         if loop_again: continue  # must be a positive real number
         if p < 0:
@@ -95,7 +125,7 @@ def enter_temperature(which_t):
             continue
         return p
 
-def select_efficiencies():
+def select_efficiencies(props):
     props["turb_eff"] = enter_efficiencies('turbine')
     props["pump_eff"] = enter_efficiencies('pump')
     props["cool_eff"] = enter_efficiencies('plant cooling')
@@ -125,7 +155,7 @@ def enter_efficiencies(which_eff):
     return eff
 
 
-def select_other_options():
+def select_other_options(props):
     props["superheat"] = enter_tf("Allow the turbine to accept superheated vapor?")
     props["in_kW"] = enter_tf('Print results tables in kW instead of kJ/kg?')
     props['cycle_mdot'] = enter_cycle_mdot()
@@ -135,6 +165,8 @@ def enter_tf(string):
     while True:
         p = raw_input(string)
         should_quit(p)
+        if p == "":
+            return False  # enter false if question if left blank
         (ans,loop_again) = is_true(p)
         if not loop_again:
             return ans
@@ -154,8 +186,12 @@ def is_true(string):
 def enter_cycle_mdot():
     while True:
         p = raw_input('Enter the mass flow rate in kg/s of the working fluid in the Rankine cycle: ')
+        if p == "": break   # skip question if left blank
         (p,loop_again) = try_float(p)
         if loop_again: continue
+        if p <= 0:
+            print("Must have a mass flow rate > 0")
+            continue
     return
 
 
@@ -165,6 +201,7 @@ def enter_temperature(which_t):
     while True:
         p = raw_input("Enter the desired " + which_t + " temperature (" + machine + " temp) in deg C: ")
         should_quit(p)
+        if p == "": break   # skip question if left blank
         p,loop_again = try_float(p)
         if loop_again: continue  # must be a positive real number
         if p < 0:
