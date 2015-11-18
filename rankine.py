@@ -14,23 +14,27 @@ import CoolProp.CoolProp as CP
 
 def main():
 
-    fluid_list = ['Isobutane']
+
+    fluid_list = ['Water']
+    
     for fluid in fluid_list:
         #create dictionary of properties
         props = {}
         props["fluid"] = fluid
-        #props["p_hi"] = 8.0  #MPa
-        #props["p_lo"] = 8.0/1000 #MPa
-        props["t_hi"] = 2  # deg C
-        props["t_lo"] = -50 # deg C
-        props["turb_eff"] = 1.
-        props["pump_eff"] = .75
-        props['cool_eff'] = .50 #cooling efficiency
+        props["p_hi"] = 8  #MPa
+        props["p_lo"] = 0.008 #MPa
+        #props["t_hi"] = 480  # deg C
+        #props["t_lo"] = 10 # deg C
+        props["turb_eff"] = 1
+        props["pump_eff"] = 1
+        props['cool_eff'] = .80 #cooling efficiency
+        props['superheat'] = False  # should we allow for superheating?
+        props['in_kW'] = False # print results in kW instead of kJ/kg?
+        props['cycle_mdot'] = 1.0   # mass flow rate of rankine cycle working fluid in kg/s
 
         # begin computing processess for rankine cycle
         rankine = compute_cycle(props)
-        s_list = rankine.get_states()
-        p_list = rankine.get_procs()
+
 
         # compute plant efficiencies
         plant = compute_plant(rankine,props)
@@ -53,6 +57,10 @@ def compute_cycle(props):
     turb_eff = props.get('turb_eff',1.0)
     pump_eff = props.get('pump_eff',1.0)
 
+    superheat = props.get('superheat',False)
+    mdot = props.get('cycle_mdot',1.0)
+
+
     # set dead state
     dead = thermo.State(None,'Dead State',fluid)
     dead.T = 15+273  #K
@@ -60,15 +68,19 @@ def compute_cycle(props):
     dead.h = CP.PropsSI('H','T',dead.T,'P',dead.p,dead.fluid)
     dead.s = CP.PropsSI('S','T',dead.T,'P',dead.p,dead.fluid)
 
-    # initialize cycle mass flow rate of WF
-    cyc = thermo.Cycle(fluid,name='Rankine',mdot=3.7,dead=dead)
+
+    # initialize cycle
+    cyc = thermo.Cycle(fluid,name='Rankine',mdot=mdot,dead=dead)
+
 
     # use pressures instead of temperatures when accessing CoolProp. So we
     # want to find the saturation pressures for the given temperatures and
     # fluid.
-    if t_hi:
+
+
+    if t_hi and (not superheat):
         p_hi = CP.PropsSI('P','T',t_hi,'Q',0,fluid)
-    else:
+    elif (not t_hi) and (not superheat):
         t_hi = CP.PropsSI('T','P',p_hi,'Q',0,fluid)
     if t_lo:
         p_lo = CP.PropsSI('P','T',t_lo,'Q',0,fluid)
@@ -79,10 +91,16 @@ def compute_cycle(props):
     st1 = thermo.State(cyc,'1')
     st1.T = t_hi
     st1.p = p_hi
-    st1.x = 1
-    st1.h = CP.PropsSI('H','P',p_hi,'Q',1,fluid)
-    st1.s = CP.PropsSI('S','P',p_hi,'Q',1,fluid)
-    st1.flow_exergy()
+
+    if superheat:
+        st1.s = CP.PropsSI('S','P',p_hi,'T',t_hi,fluid)
+        st1.h = CP.PropsSI('H','P',p_hi,'T',t_hi,fluid)
+        st1.x = 'Superheated'
+    else:
+        st1.x = 1
+        st1.s = CP.PropsSI('S','P',p_hi,'Q',1,fluid)
+        st1.h = CP.PropsSI('H','P',p_hi,'Q',1,fluid)
+        st1.flow_exergy()
 
     # State 2s, two-phase at low temperature with same entropy as state 1
     st2s = thermo.State(cyc,'2s')
@@ -99,15 +117,23 @@ def compute_cycle(props):
 
     # State 2, two-phase at low pressure determined by turbine efficiency
     st2 = thermo.State(cyc,'2')
-    st2.h = turb_eff * (st2s.h - st1.h) + st1.h  #with an irreversible turbine
-    st2.x = (st2.h - hf) / (hg - hf)
-    st2.s = st2.x * (sg - sf) + sf
+
+    # if turb_eff = 1, then just copy values from state 2s
+    if turb_eff == 1:
+        st2.h = st2s.h
+        st2.T = st2s.T
+        st2.s = st2s.s
+        st2.x = st2s.x
+    else:
+        st2.h = turb_eff * (st2s.h - st1.h) + st1.h  #with an irreversible turbine
+        st2.x = (st2.h - hf) / (hg - hf)
+        st2.s = st2.x * (sg - sf) + sf
+        st2.T = CP.PropsSI('T','P',p_lo,'S',st2.s,fluid)
     st2.p = p_lo
-    st2.T = CP.PropsSI('T','P',p_lo,'S',st2.s,fluid)
     st2.flow_exergy()
 
     #print('state 2 quality: ',st2.x)
-    if st2.x > 1:
+    if st2.x > 1 and (not superheat):
         print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
         sys.exit()
 
@@ -135,9 +161,25 @@ def compute_cycle(props):
     st4s.flow_exergy()
     # State 4
     st4 = thermo.State(cyc,'4')
-    st4.h = st3.h - wp
-    st4.T = CP.PropsSI('T','H',st4.h,'P',p_hi,fluid)
-    st4.s = CP.PropsSI('S','P',p_hi,'H',st4.h,fluid)
+
+    # if pump_eff = 1, then just copy values from state 4s
+    if pump_eff == 1:
+        st4.h = st4s.h
+        st4.T = st4s.T
+        st4.s = st4s.s
+    else:
+        st4.h = st3.h - wp
+        #   it appears that CoolProp is pulling properties for Temperature and entropy
+        #   for state 4 that are slightly lower than state 4s. These values should
+        #   be higher than those at state 4s.
+        #   Add logic to add a 0.1% increase in both values if they are lower.
+        st4.T = CP.PropsSI('T','H',st4.h,'P',p_hi,fluid)
+        if st4.T < st4s.T:
+            st4.T = st4s.T * 1.001  # add 0.1% increase
+        st4.s = CP.PropsSI('S','P',p_hi,'H',st4.h,fluid)
+        if st4.s < st4s.s:
+            st4.s = st4s.s * 1.001  # add 0.1% increase
+
     st4.p = p_hi
     st4.x = 'subcooled'
     st4.flow_exergy()
@@ -216,13 +258,15 @@ def compute_plant(rank,props):
     cool_eff = props.get('cool_eff',1.0) # cooling efficiency
     # initialize geothermal cycle using defaults defined in object
     fluid = 'Salt Water, 20% salinity'
-    # set dead state
+
+    # set brine dead state
     dead = thermo.State(None,'Brine Dead State',fluid)
     dead.h = 61.05 * 1000 # J/kg
     dead.s = 0.2205 * 1000 # J/kg.K
     dead.T = 15 + 273 # K
     dead.p = 101325 # Pa
     geo = thermo.Geotherm(fluid=fluid,dead=dead)
+
     #   Find the mass flow rate of the brine based on cooling efficiency and
     #   the heat gained by the boiler in the Rankine cycle.
     # first, get the heat from the boiler process
@@ -239,6 +283,8 @@ def compute_plant(rank,props):
     g1.p = 5 * 10**5    # bars to Pa
     g1.flow_exergy()
     geo.in_ = g1
+
+
 
     # set brine mass flow rate
     geo.mdot = (rank.mdot * heat) / (cool_eff * (geo.in_.h - geo.dead.h))
@@ -261,15 +307,20 @@ def compute_plant(rank,props):
 
 def print_output_to_screen(plant,props):
     cycle = plant.rank
+
+    in_kW = props.get('in_kW',False)
     print_user_values(props)
     print('Rankine Cycle States and Processes    (Working Fluid: '+plant.rank.fluid+')')
-    print_state_table(cycle)
-    print_process_table(cycle)
+    print_state_table(cycle,in_kW)
+    print_process_table(cycle,in_kW)
+
     #print_exergy_table(cycle)
     #print_cycle_values(cycle)
     #create_plot(p_list,s_list)
     print('\nGeothermal Cycle States and Processes    (Brine: '+plant.geo.fluid+')')
-    print_geo_tables(plant.geo)
+
+    print_geo_tables(plant.geo,in_kW)
+
     print_plant_results(plant)
     return
 
@@ -293,10 +344,14 @@ def print_user_values(props):
     print('Plant Cooling Efficiency:      {:>2.1f}%\n'.format(props["cool_eff"]*100))
     return
 
-def print_state_table(cycle):
+
+def print_state_table(cycle,in_kW=False):
     s_list = cycle.get_states()
     s_list.append(cycle.dead)
-    headers = ['State','Press (kPa)','Temp (deg C)','Enthalpy (kW)','Entropy (kW/K)','Flow Ex (kW)','Quality']
+    if in_kW:
+        headers = ['State','Press (kPa)','Temp (deg C)','Enthalpy (kW)','Entropy (kW/K)','Flow Ex (kW)','Quality']
+    else:
+        headers = ['State','Press (kPa)','Temp (deg C)','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Flow Ex (kJ/kg)','Quality']
     t = PrettyTable(headers)
     for item in headers[1:6]:
         t.align[item] = 'r'
@@ -307,78 +362,68 @@ def print_state_table(cycle):
     t.float_format[headers[5]] = '4.2'
     t.float_format[headers[6]] = '0.2'
     t.padding_width = 1
+
+    if in_kW:
+        mdot = cycle.mdot
+    else:
+        mdot = 1.0
+
     for item in s_list:
         #print('item.name = ',item.name)
         t.add_row([item.name,
                    item.p/1000,
                    item.T-273,
-                   item.h/1000 * cycle.mdot,
-                   item.s/1000 * cycle.mdot,
-                   item.ef/1000 * cycle.mdot,
+                   item.h/1000 * mdot,
+                   item.s/1000 * mdot,
+                   item.ef/1000 * mdot,
+
                    item.x])
     print(t)
     return
 
-def print_process_table(cycle):
+def print_process_table(cycle,in_kW=False):
     p_list = cycle.get_procs()
-    headers = ['Process','States','Heat (kW)','Work (kW)','Ex. In (kW)','Ex. Out (kW)','Delta Ef (kW)','Ex. Dest. (kW)','Ex. Eff.']
+    if in_kW:
+        headers = ['Process','States','Heat (kW)','Work (kW)','Ex. In (kW)','Ex. Out (kW)','Delta Ef (kW)','Ex. Dest. (kW)','Ex. Eff.']
+    else:
+        headers = ['Process','States','Heat (kJ/kg)','Work (kJ/kg)','Ex. In (kJ/kg)','Ex. Out (kJ/kg)','Delta Ef (kJ/kg)','Ex. Dest. (kJ/kg)','Ex. Eff.']
     t = PrettyTable(headers)
     #t.set_style(MSWORD_FRIENDLY)
     for item in headers[2:]:
         t.align[item] = 'r'
         t.float_format[item] = '5.1'
+    if in_kW:
+        mdot = cycle.mdot
+    else:
+        mdot = 1.0
     for p in p_list:
         t.add_row([p.name,p.in_.name+' -> '+p.out.name,
-                   p.heat/1000 * cycle.mdot,
-                   p.work/1000 * cycle.mdot,
-                   p.ex_in/1000 * cycle.mdot,
-                   p.ex_out/1000 * cycle.mdot,
-                   p.delta_ef/1000 * cycle.mdot,
-                   p.ex_d/1000 * cycle.mdot,
+                   p.heat/1000 * mdot,
+                   p.work/1000 * mdot,
+                   p.ex_in/1000 * mdot,
+                   p.ex_out/1000 * mdot,
+                   p.delta_ef/1000 * mdot,
+                   p.ex_d/1000 * mdot,
                    '{:.1%}'.format(p.ex_eff)])
     # add totals row
     t.add_row(['Net','',
-               cycle.qnet/1000 * cycle.mdot,
-               cycle.wnet/1000 * cycle.mdot,
-               cycle.ex_in/1000 * cycle.mdot,
-               cycle.ex_out/1000 * cycle.mdot,
-               cycle.delta_ef/1000 * cycle.mdot,
-               cycle.ex_d/1000 * cycle.mdot,
+               cycle.qnet/1000 * mdot,
+               cycle.wnet/1000 * mdot,
+               cycle.ex_in/1000 * mdot,
+               cycle.ex_out/1000 * mdot,
+               cycle.delta_ef/1000 * mdot,
+               cycle.ex_d/1000 * mdot,
                '{:.1%}'.format(cycle.ex_eff)])
     print(t)
     return
 
-def print_exergy_table(cycle):
-    p_list = cycle.get_procs()
-    headers = ['Process','States','Ex. In (kW)','Ex. Out (kW)','Delta Ef (kW)','Ex. Dest. (kW)','Ex. Eff.']
-    t = PrettyTable(headers)
-    #t.set_style(PLAIN_COLUMNS)
-    for item in headers[2:6]:
-        t.align[item] = 'r'
-        t.float_format[item] = '5.1'
-    for p in p_list:
-        row = [p.name,p.in_.name+' -> '+p.out.name,
-               p.ex_in/1000 * cycle.mdot,
-               p.ex_out/1000 * cycle.mdot,
-               p.delta_ef/1000 * cycle.mdot,
-               p.ex_d/1000 * cycle.mdot,
-               '{:.1%}'.format(p.ex_eff)]
-        t.add_row(row)
-    # print net exergy row
-    row = ['Net','',
-           cycle.ex_in/1000 * cycle.mdot,
-           cycle.ex_out/1000 * cycle.mdot,
-           cycle.delta_ef/1000 * cycle.mdot,
-           cycle.ex_d/1000 * cycle.mdot,
-           '{:.1%}'.format(cycle.ex_eff)]
-    t.add_row(row)
-    print(t)
-    return
-
-def print_geo_tables(cycle):
+def print_geo_tables(cycle,in_kW):
     s_list = cycle.get_states()
     s_list.append(cycle.dead)
-    headers = ['State','Press (kPa)','Temp (deg C)','Enthalpy (kW)','Entropy (kW/K)','Flow Ex (kW)','Quality']
+    if in_kW:
+        headers = ['State','Press (kPa)','Temp (deg C)','Enthalpy (kW)','Entropy (kW/K)','Flow Ex (kW)','Quality']
+    else:
+        headers = ['State','Press (kPa)','Temp (deg C)','Enthalpy (kJ/kg)','Entropy (kJ/kg.K)','Flow Ex (kJ/kg)','Quality']
     t = PrettyTable(headers)
     for item in headers[1:6]:
         t.align[item] = 'r'
@@ -389,41 +434,48 @@ def print_geo_tables(cycle):
     t.float_format[headers[5]] = '4.2'
     t.float_format[headers[6]] = '0.2'
     t.padding_width = 1
+    if in_kW:
+        mdot = cycle.mdot
+    else:
+        mdot = 1.0
     for item in s_list:
         #print('item.name = ',item.name)
         t.add_row([item.name,
                    item.p/1000,
                    item.T-273,
-                   item.h/1000 * cycle.mdot,
-                   item.s/1000 * cycle.mdot,
-                   item.ef/1000 * cycle.mdot,
+                   item.h/1000 * mdot,
+                   item.s/1000 * mdot,
+                   item.ef/1000 * mdot,
                    item.x])
     print(t)
     p_list = cycle.get_procs()
     if not p_list:
         return  # don't print an empty process table
-    headers = ['Process','States','Heat (kW)','Work (kW)','Ex. In (kW)','Ex. Out (kW)','Delta Ef (kW)','Ex. Dest. (kW)','Ex. Eff.']
+    if in_kW:
+        headers = ['Process','States','Heat (kW)','Work (kW)','Ex. In (kW)','Ex. Out (kW)','Delta Ef (kW)','Ex. Dest. (kW)','Ex. Eff.']
+    else:
+        headers = ['Process','States','Heat (kJ/kg)','Work (kJ/kg)','Ex. In (kJ/kg)','Ex. Out (kJ/kg)','Delta Ef (kJ/kg)','Ex. Dest. (kJ/kg)','Ex. Eff.']
     t = PrettyTable(headers)
     for item in headers[2:]:
         t.align[item] = 'r'
         t.float_format[item] = '5.1'
     for p in p_list:
         t.add_row([p.name,p.in_.name+' -> '+p.out.name,
-                   p.heat/1000 * cycle.mdot,
-                   p.work/1000 * cycle.mdot,
-                   p.ex_in/1000 * cycle.mdot,
-                   p.ex_out/1000 * cycle.mdot,
-                   p.delta_ef/1000 * cycle.mdot,
-                   p.ex_d/1000 * cycle.mdot,
+                   p.heat/1000 * mdot,
+                   p.work/1000 * mdot,
+                   p.ex_in/1000 * mdot,
+                   p.ex_out/1000 * mdot,
+                   p.delta_ef/1000 * mdot,
+                   p.ex_d/1000 * mdot,
                    '{:.1%}'.format(p.ex_eff)])
     # add totals row
 #     t.add_row(['Net','',
-#                cycle.qnet/1000 * cycle.mdot,
-#                cycle.wnet/1000 * cycle.mdot,
-#                cycle.ex_in/1000 * cycle.mdot,
-#                cycle.ex_out/1000 * cycle.mdot,
-#                cycle.delta_ef/1000 * cycle.mdot,
-#                cycle.ex_d/1000 * cycle.mdot,
+#                cycle.qnet/1000 * mdot,
+#                cycle.wnet/1000 * mdot,
+#                cycle.ex_in/1000 * mdot,
+#                cycle.ex_out/1000 * mdot,
+#                cycle.delta_ef/1000 * mdot,
+#                cycle.ex_d/1000 * mdot,
 #                '{:.1%}'.format(cycle.ex_eff)])
     print(t)
     return
@@ -505,10 +557,6 @@ def get_sat_dome(fluid):
 #         spts.append(s)
 #         tpts.append(T-273) # save in celcius
 #     return spts,tpts
-
-
-
-
 
 
 ##############################################################################
