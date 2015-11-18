@@ -185,14 +185,15 @@ def is_true(string):
 
 def enter_cycle_mdot():
     while True:
-        p = raw_input('Enter the mass flow rate in kg/s of the working fluid in the Rankine cycle: ')
-        if p == "": break   # skip question if left blank
-        (p,loop_again) = try_float(p)
+        mdot = raw_input('Enter the mass flow rate in kg/s of the working fluid in the Rankine cycle: ')
+        if mdot == "": break   # skip question if left blank
+        (mdot,loop_again) = try_float(mdot)
         if loop_again: continue
-        if p <= 0:
+        if mdot <= 0:
             print("Must have a mass flow rate > 0")
             continue
-    return
+        break
+    return mdot
 
 
 def enter_temperature(which_t):
