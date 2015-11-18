@@ -1,13 +1,19 @@
 # Rankine cycle program with user input
 
+from __future__ import print_function
+import rankine
+
 def main():
 
 
 return
 
+
+
 ##############################################################################
 # ----------------------- User Input Functions -------------------------------
 ##############################################################################
+
 
 def should_quit(string):
     exit_cmds = ['quit','exit','q','x','e','stop']
@@ -25,31 +31,15 @@ def try_float(string):
     return number,loop_again
 
 def define_inputs():
-    fluid = select_fluid()
-    if fluid == 'eg_mode':
-        # use example mode
-        fluid = 'Water'
-        p_hi = 3.9  # MPa
-        p_lo = 1.0  # MPa
-        t_hi = 120  # deg C
-        t_lo = 25   # deg C
-        turb_eff = 0.85
-        pump_eff = 0.6
-    else:
-        (p_hi,p_lo) = select_pressures()
-        (turb_eff,pump_eff) = select_efficiencies()
-    #create dictionary of properties
     props = {}
-    props["fluid"] = fluid
-    props["p_hi"] = p_hi
-    props["p_lo"] = p_lo
-    props["t_hi"] = t_hi
-    props["t_lo"] = t_lo
-    props["turb_eff"] = turb_eff
-    props["pump_eff"] = pump_eff
+    select_fluid(props)
+    select_pressures(props)
+    select_temperatures(props)
+    select_efficiencies(props)
+    select_other_options(props)
     return props
 
-def select_fluid():
+def select_fluid(props):
     while True:
         print("Select a working fluid from the following options: ")
         fluid_list = ["Water","Ethane","n-Propane","R22","R134a","R236EA","CarbonDioxide","n-Pentane","IsoButene"]
@@ -66,12 +56,13 @@ def select_fluid():
         elif fluid in fluid_list: # if they just typed it exactly, case-sensitive
             break
         else: print("Invalid input: Please Select Again. Enter Q to quit.\n")
-    return fluid
+    props["fluid"] = fluid
+    return
 
 def select_pressures():
-    p_hi = enter_pressure('high')
-    p_lo = enter_pressure('low')
-    return p_hi,p_lo
+    props["p_hi"] = enter_pressure('high')
+    props["p_lo"] = enter_pressure('low')
+    return
 
 def enter_pressure(which_p):
     if which_p == 'high': machine = 'boiler'
@@ -86,10 +77,29 @@ def enter_pressure(which_p):
             continue
         return p
 
+def select_temperatures():
+    props["t_hi"] = enter_temperature('high')
+    props["t_lo"] = enter_temperature('low')
+    return
+
+def enter_temperature(which_t):
+    if which_t == 'high': machine = 'boiler'
+    if which_t == 'low': machine = 'condenser'
+    while True:
+        p = raw_input("Enter the desired " + which_t + " temperature (" + machine + " temp) in deg C: ")
+        should_quit(p)
+        p,loop_again = try_float(p)
+        if loop_again: continue  # must be a positive real number
+        if p < 0:
+            print("Can't have a negative temperature.")
+            continue
+        return p
+
 def select_efficiencies():
-    turb_eff = enter_efficiencies('turbine')
-    pump_eff = enter_efficiencies('pump')
-    return turb_eff,pump_eff
+    props["turb_eff"] = enter_efficiencies('turbine')
+    props["pump_eff"] = enter_efficiencies('pump')
+    props["cool_eff"] = enter_efficiencies('plant cooling')
+    return
 
 def enter_efficiencies(which_eff):
     while True:
@@ -115,6 +125,52 @@ def enter_efficiencies(which_eff):
     return eff
 
 
+def select_other_options():
+    props["superheat"] = enter_tf("Allow the turbine to accept superheated vapor?")
+    props["in_kW"] = enter_tf('Print results tables in kW instead of kJ/kg?')
+    props['cycle_mdot'] = enter_cycle_mdot()
+    return
+
+def enter_tf(string):
+    while True:
+        p = raw_input(string)
+        should_quit(p)
+        (ans,loop_again) = is_true(p)
+        if not loop_again:
+            return ans
+
+def is_true(string):
+    loop_again = True
+    true_cmds = ['yes','y','true']
+    false_cmds = ['no','n','false']
+    if (string.lower() in true_cmds):
+        loop_again = False
+        answer = True
+    elif (string.lower() in false_cmds):
+        loop_again = False
+        answer = False
+    return (answer,loop_again)
+
+def enter_cycle_mdot():
+    while True:
+        p = raw_input('Enter the mass flow rate in kg/s of the working fluid in the Rankine cycle: ')
+        (p,loop_again) = try_float(p)
+        if loop_again: continue
+    return
+
+
+def enter_temperature(which_t):
+    if which_t == 'high': machine = 'boiler'
+    if which_t == 'low': machine = 'condenser'
+    while True:
+        p = raw_input("Enter the desired " + which_t + " temperature (" + machine + " temp) in deg C: ")
+        should_quit(p)
+        p,loop_again = try_float(p)
+        if loop_again: continue  # must be a positive real number
+        if p < 0:
+            print("Can't have a negative temperature.")
+            continue
+        return p
 
 
 if __name__ == '__main__':
