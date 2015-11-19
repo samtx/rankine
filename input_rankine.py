@@ -61,6 +61,8 @@ def try_float(string):
 #                     done1 = True
 def define_inputs():
     props = {}
+    print("Enter options for the Organic Rankine Cycle." +
+          "\nUse 'Q' to quit, use <enter> to skip question")
     select_fluid(props)
     select_pressures(props)
     select_temperatures(props)
@@ -97,7 +99,7 @@ def enter_pressure(which_p):
     if which_p == 'high': machine = 'boiler'
     if which_p == 'low': machine = 'condenser'
     while True:
-        p = raw_input("Enter the desired " + which_p + " pressure (" + machine + " pressure) in MPa: ")
+        p = raw_input("Enter the desired " + which_p + " pressure (" + machine + " pressure). (MPa)... ")
         should_quit(p)
         if p == "": break   # skip question if left blank
         p,loop_again = try_float(p)
@@ -116,7 +118,7 @@ def enter_temperature(which_t):
     if which_t == 'high': machine = 'boiler'
     if which_t == 'low': machine = 'condenser'
     while True:
-        p = raw_input("Enter the desired " + which_t + " temperature (" + machine + " temp) in deg C: ")
+        p = raw_input("Enter the desired " + which_t + " temperature (" + machine + " temp). (deg C)... ")
         should_quit(p)
         if p == "": break   # skip question if left blank
         p,loop_again = try_float(p)
@@ -134,7 +136,7 @@ def select_efficiencies(props):
 
 def enter_efficiencies(which_eff):
     while True:
-        eff = raw_input("Enter the " + which_eff + " efficiency in %. Default is 100%: ").strip('%')
+        eff = raw_input("Enter the " + which_eff + " efficiency in percent, default is 100. (%)... ").strip('%')
         should_quit(eff)
         if eff == "":
             eff = 1.0  # default if nothing is entered
@@ -157,8 +159,8 @@ def enter_efficiencies(which_eff):
 
 
 def select_other_options(props):
-    props["superheat"] = enter_tf("Allow the turbine to accept superheated vapor? ")
-    props["in_kW"] = enter_tf('Print results tables in kW instead of kJ/kg? ')
+    props["superheat"] = enter_tf("Allow the turbine to accept superheated vapor? (y/n)... ")
+    props["in_kW"] = enter_tf('Print results tables in kW instead of kJ/kg? (y/n)...  ')
     props['cycle_mdot'] = enter_cycle_mdot()
     return
 
@@ -186,7 +188,7 @@ def is_true(string):
 
 def enter_cycle_mdot():
     while True:
-        mdot = raw_input('Enter the mass flow rate in kg/s of the working fluid in the Rankine cycle: ')
+        mdot = raw_input('Enter the mass flow rate of the working fluid in the Rankine cycle. (kg/s)... ')
         if mdot == "":
             # default to 1 kg/s if left blank
             mdot = 1.0

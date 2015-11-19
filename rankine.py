@@ -163,7 +163,7 @@ def compute_cycle(props):
     st4s.s = st3.s
     st4s.p = p_hi
     st4s.T = CP.PropsSI('T','P',p_hi,'S',st4s.s,fluid)
-    st4s.x = 'subcooled'
+    st4s.x = 'sub'
     st4s.flow_exergy()
     # State 4
     st4 = thermo.State(cyc,'4')
@@ -185,7 +185,7 @@ def compute_cycle(props):
         if st4.s < st4s.s:
             st4.s = st4s.s * 1.001  # add 0.1% increase
     st4.p = p_hi
-    st4.x = 'subcooled'
+    st4.x = 'sub'
     st4.flow_exergy()
     # find State 4b, high pressure saturated liquid
     st4b = thermo.State(cyc,'4b')
@@ -263,7 +263,7 @@ def compute_plant(rank,props):
     # initialize geothermal cycle using defaults defined in object
     fluid = 'Salt Water, 20% salinity'
     # set brine dead state
-    dead = thermo.State(None,'Brine Dead State',fluid)
+    dead = thermo.State(None,'Br.Dead',fluid)
     dead.h = 61.05 * 1000 # J/kg
     dead.s = 0.2205 * 1000 # J/kg.K
     dead.T = 15 + 273 # K
@@ -278,7 +278,7 @@ def compute_plant(rank,props):
         if 'boil' in p.name.lower():
             heat = p.heat
     # create initial brine state
-    g1 = thermo.State(geo,'Brine In')
+    g1 = thermo.State(geo,'Br.In')
     g1.s = 1.492 * 1000 # J/kg.K
     g1.h = 491.6 * 1000 # J/kg
     g1.T = 120 + 273.15 # K
@@ -305,13 +305,12 @@ def compute_plant(rank,props):
 ##############################################################################
 
 def print_output_to_screen(plant,props):
-    cycle = plant.rank
     in_kW = props.get('in_kW',False)
     print_user_values(props)
     print('Rankine Cycle States and Processes    (Working Fluid: '+plant.rank.fluid+')')
-    print_state_table(cycle,in_kW)
-    print_process_table(cycle,in_kW)
-    #print_exergy_table(cycle)
+    print_state_table(plant.rank,in_kW)
+    print_process_table(plant.rank,in_kW)
+    print_exergy_table(plant.rank,in_kW)
     #print_cycle_values(cycle)
     #create_plot(p_list,s_list)
     print('\nGeothermal Cycle States and Processes    (Brine: '+plant.geo.fluid+')')
@@ -319,6 +318,7 @@ def print_output_to_screen(plant,props):
     if plant.geo.get_procs():
         # only print process table for brine if processes have been defined.
         print_process_table(plant.geo.in_kW)
+        print_exergy_table(plant.geo,in_kW)
     print_plant_results(plant)
     return
 
@@ -365,7 +365,7 @@ def print_state_table(cycle,in_kW=False):
         mdot = 1.0
     for item in s_list:
         #print('item.name = ',item.name)
-        t.add_row([item.name,
+        t.add_row([item.name[:6],
                    item.p/1000,
                    item.T-273,
                    item.h/1000 * mdot,
@@ -378,9 +378,9 @@ def print_state_table(cycle,in_kW=False):
 def print_process_table(cycle,in_kW=False):
     p_list = cycle.get_procs()
     if in_kW:
-        headers = ['Proc','State','Q(kW)','W(kW)','Ex.In(kW)','Ex.Out(kW)','Delt.Ef(kW)','Ex.D(kW)','Ex.Eff.']
+        headers = ['Proc','State','Q(kW)','W(kW)'],
     else:
-        headers = ['Proc','State','Q(kJ/kg)','W(kJ/kg)','Ex.In(kJ/kg)','Ex.Out(kJ/kg)','delt.ef(kJ/kg)','Ex.D(kJ/kg)','Ex.Eff.']
+        headers = ['Proc','State','Q(kJ/kg)','W(kJ/kg)']
     t = PrettyTable(headers)
     #t.set_style(MSWORD_FRIENDLY)
     for item in headers[2:]:
@@ -391,9 +391,33 @@ def print_process_table(cycle,in_kW=False):
     else:
         mdot = 1.0
     for p in p_list:
-        t.add_row([p.name,p.in_.name+' -> '+p.out.name,
+        t.add_row([p.name[:4],p.in_.name[:5]+' -> '+p.out.name[:5],
                    p.heat/1000 * mdot,
-                   p.work/1000 * mdot,
+                   p.work/1000 * mdot])
+    # add totals row
+    t.add_row(['Net','',
+               cycle.qnet/1000 * mdot,
+               cycle.wnet/1000 * mdot])
+    print(t)
+    return
+
+def print_exergy_table(cycle,in_kW):
+    p_list = cycle.get_procs()
+    if in_kW:
+        headers = ['Proc','State','Ex.In(kW)','Ex.Out(kW)','Delt.Ef(kW)','Ex.D(kW)','Ex.Eff.']
+    else:
+        headers = ['Proc','State','Ex.In(kJ/kg)','Ex.Out(kJ/kg)','delt.ef(kJ/kg)','Ex.D(kJ/kg)','Ex.Eff.']
+    t = PrettyTable(headers)
+    #t.set_style(MSWORD_FRIENDLY)
+    for item in headers[2:]:
+        t.align[item] = 'r'
+        t.float_format[item] = '5.1'
+    if in_kW:
+        mdot = cycle.mdot
+    else:
+        mdot = 1.0
+    for p in p_list:
+        t.add_row([p.name[:4],p.in_.name[:5]+'->'+p.out.name[:5],
                    p.ex_in/1000 * mdot,
                    p.ex_out/1000 * mdot,
                    p.delta_ef/1000 * mdot,
@@ -401,8 +425,6 @@ def print_process_table(cycle,in_kW=False):
                    '{:.1%}'.format(p.ex_eff)])
     # add totals row
     t.add_row(['Net','',
-               cycle.qnet/1000 * mdot,
-               cycle.wnet/1000 * mdot,
                cycle.ex_in/1000 * mdot,
                cycle.ex_out/1000 * mdot,
                cycle.delta_ef/1000 * mdot,
@@ -411,68 +433,69 @@ def print_process_table(cycle,in_kW=False):
     print(t)
     return
 
-def print_geo_tables(cycle,in_kW):
-    s_list = cycle.get_states()
-    s_list.append(cycle.dead)
-    if in_kW:
-        headers = ['State','P(kPa)','T(deg C)','H(kW)','S(kW/K)','Ef(kW)','x']
-    else:
-        headers = ['State','P(kPa)','T(deg C)','h(kJ/kg)','s(kJ/kg.K)','ef(kJ/kg)','x']
-    t = PrettyTable(headers)
-    for item in headers[1:6]:
-        t.align[item] = 'r'
-    for item in headers[2:4]:
-        t.float_format[item] = '4.2'
-    t.float_format[headers[1]] = '4.3'
-    t.float_format[headers[4]] = '6.5'
-    t.float_format[headers[5]] = '4.2'
-    t.float_format[headers[6]] = '0.2'
-    t.padding_width = 1
-    if in_kW:
-        mdot = cycle.mdot
-    else:
-        mdot = 1.0
-    for item in s_list:
-        #print('item.name = ',item.name)
-        t.add_row([item.name,
-                   item.p/1000,
-                   item.T-273,
-                   item.h/1000 * mdot,
-                   item.s/1000 * mdot,
-                   item.ef/1000 * mdot,
-                   item.x])
-    print(t)
-    p_list = cycle.get_procs()
-    if not p_list:
-        return  # don't print an empty process table
-    if in_kW:
-        headers = ['Process','States','Heat (kW)','Work (kW)','Ex. In (kW)','Ex. Out (kW)','Delta Ef (kW)','Ex. Dest. (kW)','Ex. Eff.']
-    else:
-        headers = ['Process','States','Heat (kJ/kg)','Work (kJ/kg)','Ex. In (kJ/kg)','Ex. Out (kJ/kg)','Delta Ef (kJ/kg)','Ex. Dest. (kJ/kg)','Ex. Eff.']
-    t = PrettyTable(headers)
-    for item in headers[2:]:
-        t.align[item] = 'r'
-        t.float_format[item] = '5.1'
-    for p in p_list:
-        t.add_row([p.name,p.in_.name+' -> '+p.out.name,
-                   p.heat/1000 * mdot,
-                   p.work/1000 * mdot,
-                   p.ex_in/1000 * mdot,
-                   p.ex_out/1000 * mdot,
-                   p.delta_ef/1000 * mdot,
-                   p.ex_d/1000 * mdot,
-                   '{:.1%}'.format(p.ex_eff)])
-    # add totals row
-#     t.add_row(['Net','',
-#                cycle.qnet/1000 * mdot,
-#                cycle.wnet/1000 * mdot,
-#                cycle.ex_in/1000 * mdot,
-#                cycle.ex_out/1000 * mdot,
-#                cycle.delta_ef/1000 * mdot,
-#                cycle.ex_d/1000 * mdot,
-#                '{:.1%}'.format(cycle.ex_eff)])
-    print(t)
-    return
+# def print_geo_tables(cycle,in_kW):
+#     s_list = cycle.get_states()
+#     s_list.append(cycle.dead)
+#     if in_kW:
+#         headers = ['State','P(kPa)','T(deg C)','H(kW)','S(kW/K)','Ef(kW)','x']
+#     else:
+#         headers = ['State','P(kPa)','T(deg C)','h(kJ/kg)','s(kJ/kg.K)','ef(kJ/kg)','x']
+#     t = PrettyTable(headers)
+#     for item in headers[1:6]:
+#         t.align[item] = 'r'
+#     for item in headers[2:4]:
+#         t.float_format[item] = '4.2'
+#     t.float_format[headers[1]] = '4.3'
+#     t.float_format[headers[4]] = '6.5'
+#     t.float_format[headers[5]] = '4.2'
+#     t.float_format[headers[6]] = '0.2'
+#     t.padding_width = 1
+#     if in_kW:
+#         mdot = cycle.mdot
+#     else:
+#         mdot = 1.0
+#     for item in s_list:
+#         #print('item.name = ',item.name)
+#         t.add_row([item.name,
+#                    item.p/1000,
+#                    item.T-273,
+#                    item.h/1000 * mdot,
+#                    item.s/1000 * mdot,
+#                    item.ef/1000 * mdot,
+#                    item.x])
+#     print(t)
+#     p_list = cycle.get_procs()
+#     if not p_list:
+#         return  # don't print an empty process table
+#     if in_kW:
+#         headers = ['Process','States','Heat (kW)','Work (kW)'],
+#         ['Ex. In (kW)','Ex. Out (kW)','Delta Ef (kW)','Ex. Dest. (kW)','Ex. Eff.']
+#     else:
+#         headers = ['Process','States','Heat (kJ/kg)','Work (kJ/kg)','Ex. In (kJ/kg)','Ex. Out (kJ/kg)','Delta Ef (kJ/kg)','Ex. Dest. (kJ/kg)','Ex. Eff.']
+#     t = PrettyTable(headers)
+#     for item in headers[2:]:
+#         t.align[item] = 'r'
+#         t.float_format[item] = '5.1'
+#     for p in p_list:
+#         t.add_row([p.name,p.in_.name+' -> '+p.out.name,
+#                    p.heat/1000 * mdot,
+#                    p.work/1000 * mdot,
+#                    p.ex_in/1000 * mdot,
+#                    p.ex_out/1000 * mdot,
+#                    p.delta_ef/1000 * mdot,
+#                    p.ex_d/1000 * mdot,
+#                    '{:.1%}'.format(p.ex_eff)])
+#     # add totals row
+# #     t.add_row(['Net','',
+# #                cycle.qnet/1000 * mdot,
+# #                cycle.wnet/1000 * mdot,
+# #                cycle.ex_in/1000 * mdot,
+# #                cycle.ex_out/1000 * mdot,
+# #                cycle.delta_ef/1000 * mdot,
+# #                cycle.ex_d/1000 * mdot,
+# #                '{:.1%}'.format(cycle.ex_eff)])
+#     print(t)
+#     return
 
 def print_cycle_values(cycle):
     print('\nCycle Values \n------------ ')
