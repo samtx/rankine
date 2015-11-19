@@ -15,6 +15,11 @@ from numbers import Number
 
 def main():
 
+    # The list of pure and pseudo-pure fluids that CoolProp supports can
+    # be found here: 
+    # http://www.coolprop.org/fluid_properties/PurePseudoPure.html#list-of-fluids
+    
+    
     fluid_list = ['Water']
     for fluid in fluid_list:
         #create dictionary of properties
