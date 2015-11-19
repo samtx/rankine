@@ -73,8 +73,17 @@ def define_inputs():
 def select_fluid(props):
     while True:
         print("Select a working fluid from the following options: ")
-        fluid_list = ["Water","Ethane","n-Propane","R22","R134a","R236EA","CarbonDioxide","n-Pentane","IsoButene"]
-        for i in range(9):
+        fluid_list = ["Water",
+                      "Ethane",
+                      "n-Propane",
+                      "R22",
+                      "R134a",
+                      "R236EA",
+                      "CarbonDioxide",
+                      "n-Pentane",
+                      "IsoButene",
+                      "Ammonia"]
+        for i in range(len(fluid_list)):
             print(" {}. {}".format(i+1,fluid_list[i]) )
         fluid = raw_input(": ")
         should_quit(fluid)
