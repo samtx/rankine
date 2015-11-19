@@ -16,10 +16,10 @@ from numbers import Number
 def main():
 
     # The list of pure and pseudo-pure fluids that CoolProp supports can
-    # be found here: 
+    # be found here:
     # http://www.coolprop.org/fluid_properties/PurePseudoPure.html#list-of-fluids
-    
-    
+
+
     fluid_list = ['Water']
     for fluid in fluid_list:
         #create dictionary of properties
@@ -383,7 +383,7 @@ def print_state_table(cycle,in_kW=False):
 def print_process_table(cycle,in_kW=False):
     p_list = cycle.get_procs()
     if in_kW:
-        headers = ['Proc','State','Q(kW)','W(kW)'],
+        headers = ['Proc','State','Q(kW)','W(kW)']
     else:
         headers = ['Proc','State','Q(kJ/kg)','W(kJ/kg)']
     t = PrettyTable(headers)
