@@ -81,7 +81,7 @@ def select_fluid(props):
                       "R236EA",
                       "CarbonDioxide",
                       "n-Pentane",
-                      "IsoButane"
+                      "IsoButane",
                       "n-Butane",
                       "Ammonia"]
         for i in range(len(fluid_list)):
