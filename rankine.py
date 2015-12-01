@@ -148,6 +148,20 @@ def compute_cycle(props):
         print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
         sys.exit()
 
+    # State 2b, saturated vapor at low pressure
+    # --- if necessary: state 2 is superheated and we need the saturated vapor
+    #     state for graphing purposes
+    if superheat:
+        sat_vap_enth = CP.PropsSI('H','P',p_lo,'Q',1,fluid)
+        if st2.h > sat_vap_enth:
+            # then state 2 is superheated. Find state 2b
+            st2b = thermo.State(cyc,'2b')
+            st2b.T = t_lo
+            st2b.p = p_lo
+            st2b.x = 1.0
+            st2b.s = CP.PropsSI('S','P',p_lo,'Q',st2b.x,fluid)
+            st2b.h = CP.PropsSI('H','P',p_lo,'Q',st2b.x,fluid)
+            st2b.flow_exergy()
     # State 3, saturated liquid at low pressure
     st3 = thermo.State(cyc,'3')
     st3.T = t_lo
