@@ -15,6 +15,11 @@ from numbers import Number
 
 def main():
 
+    # The list of pure and pseudo-pure fluids that CoolProp supports can
+    # be found here:
+    # http://www.coolprop.org/fluid_properties/PurePseudoPure.html#list-of-fluids
+
+
     fluid_list = ['Water']
     for fluid in fluid_list:
         #create dictionary of properties
@@ -102,7 +107,7 @@ def compute_cycle(props):
     if superheat:
         st1.s = CP.PropsSI('S','P',p_hi,'T',t_hi,fluid)
         st1.h = CP.PropsSI('H','P',p_hi,'T',t_hi,fluid)
-        st1.x = 'Superheated'
+        st1.x = 'super'
     else:
         st1.x = 1
         st1.s = CP.PropsSI('S','P',p_hi,'Q',1,fluid)
@@ -143,6 +148,20 @@ def compute_cycle(props):
         print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
         sys.exit()
 
+    # State 2b, saturated vapor at low pressure
+    # --- if necessary: state 2 is superheated and we need the saturated vapor
+    #     state for graphing purposes
+    if superheat:
+        sat_vap_enth = CP.PropsSI('H','P',p_lo,'Q',1,fluid)
+        if st2.h > sat_vap_enth:
+            # then state 2 is superheated. Find state 2b
+            st2b = thermo.State(cyc,'2b')
+            st2b.T = t_lo
+            st2b.p = p_lo
+            st2b.x = 1.0
+            st2b.s = CP.PropsSI('S','P',p_lo,'Q',st2b.x,fluid)
+            st2b.h = CP.PropsSI('H','P',p_lo,'Q',st2b.x,fluid)
+            st2b.flow_exergy()
     # State 3, saturated liquid at low pressure
     st3 = thermo.State(cyc,'3')
     st3.T = t_lo
@@ -378,7 +397,7 @@ def print_state_table(cycle,in_kW=False):
 def print_process_table(cycle,in_kW=False):
     p_list = cycle.get_procs()
     if in_kW:
-        headers = ['Proc','State','Q(kW)','W(kW)'],
+        headers = ['Proc','State','Q(kW)','W(kW)']
     else:
         headers = ['Proc','State','Q(kJ/kg)','W(kJ/kg)']
     t = PrettyTable(headers)
@@ -552,6 +571,7 @@ def print_plant_results(plant):
     print('Geo. Brine mass flow rate     =   {:>3.2f} kg/s'.format(plant.geo.mdot))
     print('Plant thermal (energetic) eff = {:>6.1f}%'.format(plant.en_eff*100))
     print('Plant exergetic efficiency    = {:>6.1f}%'.format(plant.ex_eff*100))
+    print('Plant cooling eff. (user specified) = {:>6.1f}%'.format(plant.cool_eff*100))
     print('(Rankine ex_eff)*(plant cool_eff) = {:>6.1f}%'.format(plant.rank.ex_eff*plant.cool_eff*100))
     print('Rankine cycle thermal eff     = {:>6.1f}%'.format(plant.rank.en_eff*100))
     print('Rankine cycle exergetic eff   = {:>6.1f}%'.format(plant.rank.ex_eff*100))
