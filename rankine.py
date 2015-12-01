@@ -107,7 +107,7 @@ def compute_cycle(props):
     if superheat:
         st1.s = CP.PropsSI('S','P',p_hi,'T',t_hi,fluid)
         st1.h = CP.PropsSI('H','P',p_hi,'T',t_hi,fluid)
-        st1.x = 'Superheated'
+        st1.x = 'super'
     else:
         st1.x = 1
         st1.s = CP.PropsSI('S','P',p_hi,'Q',1,fluid)
