@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import sys
 from prettytable import PrettyTable, MSWORD_FRIENDLY, PLAIN_COLUMNS #for output formatting
 import CoolProp.CoolProp as CP
+# from CoolProp.Plots import PropsPlot
 from numbers import Number
 
 ######################################
@@ -560,7 +561,7 @@ def create_plot(cycle, props):
     pump = p_list[2]
     boil = p_list[3]
     #get the points to plot the saturation dome
-    (dspts,dtpts) = get_sat_dome(cycle, props)
+    (dspts,dtpts) = get_sat_dome(cycle)
 
 
     s_dash_12 = [st_1.s, st_2.s]
@@ -573,6 +574,7 @@ def create_plot(cycle, props):
     plt.clf()
     plt.plot(s_pts,T_pts, 'b')
     plt.plot(s_dash_12,T_dash_12,'g--',s_dash_34,T_dash_34,'g--')
+    PropsPlot(cycle.fluid,'Ts',units="KSI")
     #plotting the vapor dome...hopefully
     #plt.plot(dspts,dtpts, 'r--')
 
@@ -606,25 +608,38 @@ def print_plant_results(plant):
     print('Rankine cycle back work ratio =  {:>6.2f}%'.format(plant.rank.bwr*100))
     return
 
-def get_sat_dome(cycle, props):
-    s_list = cycle.get_states()
-    smax = s_list[1] #entropy at state 2
-    smin = s_list[5] #entropy at state 4
+def get_sat_dome(cycle):
+    fluid = cycle.fluid
+    slist = cycle.get_states()
+    # find min temp to use for dome
+    t_state_min = 300  # default room temp in K
+    for state in slist:
+        t_state_min = min(state.T,t_state_min)
+    tmin = max(CP.PropsSI('TMIN',fluid),t_state_min-50) # add 50 deg cushion
+    smax = CP.PropsSI('S','T',tmin,'Q',1,fluid)  # max entropy for dome
+    tcrit = CP.PropsSI('TCRIT',fluid)  # critical temp for fluid
+    pcrit = CP.PropsSI('PCRIT',fluid)  # critical pressure for fluid
     tpts = []
     spts = []
-    fluid = 'Water'
-    #fluid = props.get('fluid',None)
-    step = 100
-    quality = 0
-    crit_pt = 4300 #entropy at the cp in J/Kg*K
-    s = smin.s
-    while s <= smax.s:
-      if s > crit_pt:
-        quality = 1
-      T = CP.PropsSI('T','S',s,'Q',quality,fluid)
-      spts.append(s)
-      tpts.append(T) #saves in Kelvin
-      s += step
+    t = tmin  # initial temp for dome
+    s = CP.PropsSI('S','T',tmin,'Q',0,fluid) # initial entropy for dome
+    ds = 0.001  # entropy step size
+    while t < tcrit:
+        spts.append(s)
+        tpts.append(t)
+        t = CP.PropsSI('T','S',s,'Q',0,fluid)
+        s += ds
+    s = CP.PropsSI('S','T',tcrit,'P',pcrit,fluid) # critical entropy
+    spts.append(s)
+    tpts.append(tcrit)
+    s += ds
+    t = CP.PropsSI('T','S',s,'Q',1,fluid) # initial temp as sat vapor
+    while s < smax:
+        spts.append(s)
+        tpts.append(t)
+        t = CP.PropsSI('T','S',s,'Q',1,fluid)
+        s += ds
+
     return spts, tpts
 
 # def print_exergy_table(cycle):
