@@ -20,19 +20,19 @@ def main():
     # http://www.coolprop.org/fluid_properties/PurePseudoPure.html#list-of-fluids
 
 
-    fluid_list = ['Water']
+    fluid_list = ['Ammonia']
     for fluid in fluid_list:
         #create dictionary of properties
         props = {}
         props["fluid"] = fluid
-        props["p_hi"] = 8  #MPa
-        props["p_lo"] = 0.008 #MPa
-        #props["t_hi"] = 480  # deg C
+        props["p_hi"] = 10  #MPa
+        props["p_lo"] = 1 #MPa
+        props["t_hi"] = 135  # deg C
         #props["t_lo"] = 10 # deg C
-        props["turb_eff"] = 1
-        props["pump_eff"] = 1
-        props['cool_eff'] = .80 #cooling efficiency
-        props['superheat'] = False  # should we allow for superheating?
+        props["turb_eff"] = 0.8
+        props["pump_eff"] = 0.8
+        props['cool_eff'] = .25 #cooling efficiency
+        props['superheat'] = True  # should we allow for superheating?
         props['in_kW'] = False # print results in kW instead of kJ/kg?
         props['cycle_mdot'] = 1.0   # mass flow rate of rankine cycle working fluid in kg/s
 
@@ -151,6 +151,7 @@ def compute_cycle(props):
     # State 2b, saturated vapor at low pressure
     # --- if necessary: state 2 is superheated and we need the saturated vapor
     #     state for graphing purposes
+
     if superheat:
         sat_vap_enth = CP.PropsSI('H','P',p_lo,'Q',1,fluid)
         if st2.h > sat_vap_enth:
@@ -331,7 +332,8 @@ def print_output_to_screen(plant,props):
     print_process_table(plant.rank,in_kW)
     print_exergy_table(plant.rank,in_kW)
     #print_cycle_values(cycle)
-    #create_plot(p_list,s_list)
+    #create_plot(plant,props)
+    create_plot(plant.rank, props)
     print('\nGeothermal Cycle States and Processes    (Brine: '+plant.geo.fluid+')')
     print_state_table(plant.geo,in_kW)
     if plant.geo.get_procs():
@@ -522,44 +524,72 @@ def print_cycle_values(cycle):
     print('back work ratio = {:.3f}'.format(cycle.bwr))
     return
 
-def create_plot(p_list,s_list):
-    # unpack states
-    st_1 = s_list[0]
-    st_2s = s_list[1]
-    st_2 = s_list[2]
-    st_3 = s_list[3]
-    st_4s = s_list[4]
-    st_4 = s_list[5]
-    st_4b = s_list[6]
+def create_plot(cycle, props):
+    p_list = cycle.get_states()
+    s_list = cycle.get_states()
+    #T_pts = []
+    #s_pts = []
+    print (s_list)
+    print (s_list[3].name)
+
+
+    #Check to see if the system is superheated
+    superheat = s_list[3].name
+    if superheat == '2b':
+      st_1 = s_list[0]
+      st_2s = s_list[1]
+      st_2 = s_list[2]
+      st_2b= s_list[3]
+      st_3 = s_list[4]
+      st_4s = s_list[5]
+      st_4 = s_list[6]
+      st_4b = s_list[7]
+      T_pts = [st_1.T, st_2s.T, st_2.T, st_2b.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
+      s_pts = [st_1.s, st_2s.s, st_2.s, st_2b.T, st_3.s, st_4s.s, st_4b.s, st_1.s]
+    else:
+      st_1 = s_list[0]
+      st_2s = s_list[1]
+      st_2 = s_list[2]
+      st_3 = s_list[3]
+      st_4s = s_list[4]
+      st_4 = s_list[5]
+      st_4b = s_list[6]
+      T_pts = [st_1.T, st_2s.T, st_2.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
+      s_pts = [st_1.s, st_2s.s, st_2.s, st_3.s, st_4s.s, st_4b.s, st_1.s]
 
     # unpack processes
     turb = p_list[0]
     cond = p_list[1]
     pump = p_list[2]
     boil = p_list[3]
-
-#    (spts,tpts) = get_sat_dome(cyc.fluid)
+#   (spts,tpts) = get_sat_dome(cyc.fluid)
 
     # note: use h4, s4 to fix the state to find T4
-    T_pts = [st_1.T, st_2s.T, st_2.T, st_2s.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
-    s_pts = [st_1.s, st_2s.s, st_2.s, st_2s.s, st_3.s, st_4s.s, st_4b.s, st_1.s]
+    #T_pts = [st_1.T, st_2s.T, st_2.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
+    #s_pts = [st_1.s, st_2s.s, st_2.s, st_3.s, st_4s.s, st_4b.s, st_1.s]
+    #T_pts = [st_1.T, st_2s.T, st_2.T,  st_4s.T, st_4b.T, st_1.T] # solid lines
+    #s_pts = [st_1.s, st_2s.s, st_2.s, st_4s.s, st_4b.s, st_1.s]
 
     s_dash_12 = [st_1.s, st_2.s]
     T_dash_12 = [st_1.T, st_2.T]
     s_dash_34 = [st_3.s, st_4.s]
     T_dash_34 = [st_3.T, st_4.T]
+    #s_super
 
     # Draw T-s plot
     plt.clf()
-#     plt.plot(s_pts,T_pts,'b',sfsat_pts,Tsat_pts,'g--',sgsat_pts,Tsat_pts,'g--')
-    plt.plot(s_dash_12,T_dash_12,'b--',s_dash_34,T_dash_34,'b--')
-    plt.annotate("1.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
+    plt.plot(s_pts,T_pts, 'b')
+    plt.plot(s_dash_12,T_dash_12,'g--',s_dash_34,T_dash_34,'g--')
+    plt.annotate("1.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+20 ), arrowprops=dict(facecolor = 'yellow', shrink=0.05),)
+    plt.annotate("2s.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
     plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
-    plt.annotate("3.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+25 ), arrowprops=dict(facecolor = 'red', shrink=0.05),)
-    plt.annotate("4.", xy = (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
+    plt.annotate("3.", xy = (s_pts[3],T_pts[3]) , xytext = (s_pts[3] - 800,T_pts[3] ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
+    plt.annotate("4./4s.", xy =  (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+30 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
+    #plt.annotate("4s.", xy = (s_dash_34[1],T_dash_34[1]) , xytext = (s_dash_34[1] + 500, T_dash_34[1] + 2 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
+
     plt.suptitle("Rankine Cycle T-s Diagram")
-    plt.xlabel("Entropy (kJ/kg.K)")
-    plt.ylabel("Temperature (deg C)")
+    plt.xlabel("Entropy (J/kg.K)")
+    plt.ylabel("Temperature (deg K)")
     # Save plot
     filename = 'ts_plot.png'
     plt.savefig(filename) # save figure to directory
