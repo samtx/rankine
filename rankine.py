@@ -20,19 +20,19 @@ def main():
     # http://www.coolprop.org/fluid_properties/PurePseudoPure.html#list-of-fluids
 
 
-    fluid_list = ['Ammonia']
+    fluid_list = ['Water']
     for fluid in fluid_list:
         #create dictionary of properties
         props = {}
         props["fluid"] = fluid
-        props["p_hi"] = 10  #MPa
-        props["p_lo"] = 1 #MPa
-        props["t_hi"] = 135  # deg C
+        props["p_hi"] = 8  #MPa
+        props["p_lo"] = 0.08 #MPa
+        #props["t_hi"] =  135# deg C
         #props["t_lo"] = 10 # deg C
         props["turb_eff"] = 0.8
         props["pump_eff"] = 0.8
         props['cool_eff'] = .25 #cooling efficiency
-        props['superheat'] = True  # should we allow for superheating?
+        props['superheat'] = False # should we allow for superheating?
         props['in_kW'] = False # print results in kW instead of kJ/kg?
         props['cycle_mdot'] = 1.0   # mass flow rate of rankine cycle working fluid in kg/s
 
@@ -331,8 +331,6 @@ def print_output_to_screen(plant,props):
     print_state_table(plant.rank,in_kW)
     print_process_table(plant.rank,in_kW)
     print_exergy_table(plant.rank,in_kW)
-    #print_cycle_values(cycle)
-    #create_plot(plant,props)
     create_plot(plant.rank, props)
     print('\nGeothermal Cycle States and Processes    (Brine: '+plant.geo.fluid+')')
     print_state_table(plant.geo,in_kW)
@@ -527,10 +525,9 @@ def print_cycle_values(cycle):
 def create_plot(cycle, props):
     p_list = cycle.get_states()
     s_list = cycle.get_states()
-    #T_pts = []
-    #s_pts = []
-    print (s_list)
-    print (s_list[3].name)
+
+    #print (s_list)
+    #print (s_list[3].name)
 
 
     #Check to see if the system is superheated
@@ -562,13 +559,9 @@ def create_plot(cycle, props):
     cond = p_list[1]
     pump = p_list[2]
     boil = p_list[3]
-#   (spts,tpts) = get_sat_dome(cyc.fluid)
+    #get the points to plot the saturation dome
+    (dspts,dtpts) = get_sat_dome(cycle, props)
 
-    # note: use h4, s4 to fix the state to find T4
-    #T_pts = [st_1.T, st_2s.T, st_2.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
-    #s_pts = [st_1.s, st_2s.s, st_2.s, st_3.s, st_4s.s, st_4b.s, st_1.s]
-    #T_pts = [st_1.T, st_2s.T, st_2.T,  st_4s.T, st_4b.T, st_1.T] # solid lines
-    #s_pts = [st_1.s, st_2s.s, st_2.s, st_4s.s, st_4b.s, st_1.s]
 
     s_dash_12 = [st_1.s, st_2.s]
     T_dash_12 = [st_1.T, st_2.T]
@@ -580,12 +573,17 @@ def create_plot(cycle, props):
     plt.clf()
     plt.plot(s_pts,T_pts, 'b')
     plt.plot(s_dash_12,T_dash_12,'g--',s_dash_34,T_dash_34,'g--')
-    plt.annotate("1.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+20 ), arrowprops=dict(facecolor = 'yellow', shrink=0.05),)
+    #plotting the vapor dome...hopefully
+    #plt.plot(dspts,dtpts, 'r--')
+
+    plt.annotate("1.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+20 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
     plt.annotate("2s.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
-    plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
-    plt.annotate("3.", xy = (s_pts[3],T_pts[3]) , xytext = (s_pts[3] - 800,T_pts[3] ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
-    plt.annotate("4./4s.", xy =  (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+30 ), arrowprops=dict(facecolor = 'blue', shrink=0.05),)
-    #plt.annotate("4s.", xy = (s_dash_34[1],T_dash_34[1]) , xytext = (s_dash_34[1] + 500, T_dash_34[1] + 2 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
+    plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
+    plt.annotate("3.", xy = (s_pts[3],T_pts[3]) , xytext = (s_pts[3] - 800,T_pts[3] ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
+    plt.annotate("4./4s.", xy =  (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+30 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
+    #plt.annotate("b.", xy =  (s_pts[5],T_pts[5]) , xytext = (s_pts[5] + 2,T_pts[5]+30 ), arrowprops=dict(facecolor = 'red', shrink=0.05),)
+
+    #plt.annotate("4b.", xy = (s_dash_34[1],T_dash_34[1]) , xytext = (s_dash_34[1] + 500, T_dash_34[1] + 2 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
 
     plt.suptitle("Rankine Cycle T-s Diagram")
     plt.xlabel("Entropy (J/kg.K)")
@@ -608,23 +606,26 @@ def print_plant_results(plant):
     print('Rankine cycle back work ratio =  {:>6.2f}%'.format(plant.rank.bwr*100))
     return
 
-def get_sat_dome(fluid):
-    pass
-#     smin = ?
-#     smax = ?
-#     step = ?
-#     quality = 0
-#     tpts = []
-#     spts = []
-#     crit_pt = thermo.State(None,fluid, critical) point?asdlkfjasd;lkf100 #something
-#     for s in range(s_min:step:s_max):
-#         if s > crit_pt.s:
-#             quality = 1
-#         T = CP.PropsSI('T','S',s,'Q',quality,fluid)
-#         spts.append(s)
-#         tpts.append(T-273) # save in celcius
-#     return spts,tpts
-
+def get_sat_dome(cycle, props):
+    s_list = cycle.get_states()
+    smax = s_list[1] #entropy at state 2
+    smin = s_list[5] #entropy at state 4
+    tpts = []
+    spts = []
+    fluid = 'Water'
+    #fluid = props.get('fluid',None)
+    step = 100
+    quality = 0
+    crit_pt = 4300 #entropy at the cp in J/Kg*K
+    s = smin.s
+    while s <= smax.s:
+      if s > crit_pt:
+        quality = 1
+      T = CP.PropsSI('T','S',s,'Q',quality,fluid)
+      spts.append(s)
+      tpts.append(T) #saves in Kelvin
+      s += step
+    return spts, tpts
 
 # def print_exergy_table(cycle):
 #     p_list = cycle.get_procs()
