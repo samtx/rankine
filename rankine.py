@@ -577,8 +577,8 @@ def create_plot(cycle, props):
     #PropsPlot(cycle.fluid,'Ts',units="KSI")
     #plotting the vapor dome...hopefully
     plt.plot(dspts,dtpts, 'r--')
-    for x in range(5,1,-1):
-        print('s={:>4.1f}%'.format(dspts[-x]),'  t={:>3.1f}%'.format(dtpts[-x]))
+#     for x in range(5,1,-1):
+#         print('s={:>4.1f}%'.format(dspts[-x]),'  t={:>3.1f}%'.format(dtpts[-x]))
     plt.annotate("1.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+20 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
     plt.annotate("2s.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
     plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
@@ -614,19 +614,16 @@ def get_sat_dome(cycle):
     slist = cycle.get_states()
     # find min temp to use for dome
     t_state_min = 300  # default room temp in K
-    print('slist:',slist)
+    #print('slist:',slist)
     for state in slist[:-1]:
-        print('state.T:',state.T)
+        #print('state.T:',state.T)
         t_state_min = min([state.T,t_state_min])
     t_fluid_min = CP.PropsSI('TMIN',fluid)
-    print('t_fluid_min:',t_fluid_min)
-    print('t_state_min:',t_state_min)
+    #print('t_fluid_min:',t_fluid_min)
+    #print('t_state_min:',t_state_min)
     tmin = max([t_fluid_min,t_state_min-10]) # add 10 deg cushion
-    smax = CP.PropsSI('S','T',tmin,'Q',1,fluid)  # max entropy for dome
     tcrit = CP.PropsSI('TCRIT',fluid)  # critical temp for fluid
-    pcrit = CP.PropsSI('PCRIT',fluid)  # critical pressure for fluid
-    scrit = CP.PropsSI('S','T',tcrit-0.01,'Q',0,fluid) # critical entropy
-    print('tcrit=',tcrit,' pcrit=',pcrit,' scrit=',scrit)
+    #print('tcrit=',tcrit,' pcrit=',pcrit,' scrit=',scrit)
     liq_pts = []
     vap_pts = []
     tpts = []
@@ -635,7 +632,7 @@ def get_sat_dome(cycle):
     # for temps from tmin to tmax, find entropy at both sat liq and sat vap.
     t = tmin  # initial temp for dome
     dt = 1.0
-    print('tmin:',tmin)
+    #print('tmin:',tmin)
     while t < tcrit:
         s = CP.PropsSI('S','T',t,'Q',0,fluid)
         liq_pts.append((s,t))
@@ -649,23 +646,6 @@ def get_sat_dome(cycle):
     for item in vap_pts[::-1]:
         spts.append(item[0])
         tpts.append(item[1])
-#     s = CP.PropsSI('S','T',tmin,'Q',0,fluid) # initial entropy for dome
-#     ds = 10 # entropy step size, in J/kg
-#     while s < scrit:
-#         spts.append(s)
-#         tpts.append(t)
-#         t = CP.PropsSI('T','S',s,'Q',0,fluid)
-#         s += ds
-#     spts.append(scrit)
-#     tpts.append(tcrit)
-#     s += ds
-#     t = CP.PropsSI('T','S',s,'Q',1,fluid) # initial temp as sat vapor
-#     while s < smax:
-#         spts.append(s)
-#         tpts.append(t)
-#         t = CP.PropsSI('T','S',s,'Q',1,fluid)
-#         s += ds
-
     return spts, tpts
 
 if __name__ == '__main__':
