@@ -20,21 +20,21 @@ def main():
     # http://www.coolprop.org/fluid_properties/PurePseudoPure.html#list-of-fluids
 
 
-    fluid_list = ['n-Butane']
+    fluid_list = ['Water']
     for fluid in fluid_list:
         #create dictionary of properties
         props = {}
         props["fluid"] = fluid
-        props["p_hi"] = 3  #MPa
-        props["p_lo"] = 0.3 #MPa
-        props["t_hi"] =  140# deg C
+        props["p_hi"] = 8  #MPa
+        props["p_lo"] = 0.08 #MPa
+        #props["t_hi"] =  1# deg C
         #props["t_lo"] = 10 # deg C
         props["turb_eff"] = 0.8
         props["pump_eff"] = 0.8
         props['cool_eff'] = .25 #cooling efficiency
-        props['superheat'] = True # should we allow for superheating?
+        props['superheat'] = False # should we allow for superheating?
         props['in_kW'] = False # print results in kW instead of kJ/kg?
-        props['cycle_mdot'] = 3.14   # mass flow rate of rankine cycle working fluid in kg/s
+        props['cycle_mdot'] = 1   # mass flow rate of rankine cycle working fluid in kg/s
 
         # begin computing processess for rankine cycle
         rankine = compute_cycle(props)
@@ -607,6 +607,8 @@ def print_plant_results(plant):
     return
 
 def get_sat_dome(cycle, props):
+  
+    
     s_list = cycle.get_states()
     smax = s_list[1] #entropy at state 2
     smin = s_list[5] #entropy at state 4
