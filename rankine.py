@@ -577,7 +577,8 @@ def create_plot(cycle, props):
     #PropsPlot(cycle.fluid,'Ts',units="KSI")
     #plotting the vapor dome...hopefully
     plt.plot(dspts,dtpts, 'r--')
-
+    for x in range(5,1,-1):
+        print('s={:>4.1f}%'.format(dspts[-x]),'  t={:>3.1f}%'.format(dtpts[-x]))
     plt.annotate("1.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+20 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
     plt.annotate("2s.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
     plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
@@ -645,7 +646,7 @@ def get_sat_dome(cycle):
     for item in liq_pts:
         spts.append(item[0])
         tpts.append(item[1])
-    for item in vap_pts:
+    for item in vap_pts[::-1]:
         spts.append(item[0])
         tpts.append(item[1])
 #     s = CP.PropsSI('S','T',tmin,'Q',0,fluid) # initial entropy for dome
