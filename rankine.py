@@ -634,7 +634,6 @@ def print_plant_results(plant):
     print('Plant thermal (energetic) eff = {:>6.1f}%'.format(plant.en_eff*100))
     print('Plant exergetic efficiency    = {:>6.1f}%'.format(plant.ex_eff*100))
     print('Plant cooling eff. (user specified) = {:>6.1f}%'.format(plant.cool_eff*100))
-    print('(Rankine ex_eff)*(plant cool_eff) = {:>6.1f}%'.format(plant.rank.ex_eff*plant.cool_eff*100))
     print('Rankine cycle thermal eff     = {:>6.1f}%'.format(plant.rank.en_eff*100))
     print('Rankine cycle exergetic eff   = {:>6.1f}%'.format(plant.rank.ex_eff*100))
     print('Rankine cycle back work ratio =  {:>6.2f}%'.format(plant.rank.bwr*100))
