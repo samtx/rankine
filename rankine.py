@@ -648,22 +648,6 @@ def get_sat_dome(cycle):
     for item in vap_pts:
         spts.append(item[0])
         tpts.append(item[1])
-#     s = CP.PropsSI('S','T',tmin,'Q',0,fluid) # initial entropy for dome
-#     ds = 10 # entropy step size, in J/kg
-#     while s < scrit:
-#         spts.append(s)
-#         tpts.append(t)
-#         t = CP.PropsSI('T','S',s,'Q',0,fluid)
-#         s += ds
-#     spts.append(scrit)
-#     tpts.append(tcrit)
-#     s += ds
-#     t = CP.PropsSI('T','S',s,'Q',1,fluid) # initial temp as sat vapor
-#     while s < smax:
-#         spts.append(s)
-#         tpts.append(t)
-#         t = CP.PropsSI('T','S',s,'Q',1,fluid)
-#         s += ds
 
     return spts, tpts
 
