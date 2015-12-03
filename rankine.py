@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import sys
 from prettytable import PrettyTable, MSWORD_FRIENDLY, PLAIN_COLUMNS #for output formatting
 import CoolProp.CoolProp as CP
+# from CoolProp.Plots import PropsPlot
 from numbers import Number
 
 ######################################
@@ -560,7 +561,8 @@ def create_plot(cycle, props):
     pump = p_list[2]
     boil = p_list[3]
     #get the points to plot the saturation dome
-    #(dspts,dtpts) = get_sat_dome(cycle, props)
+
+    (dspts,dtpts) = get_sat_dome(cycle)
 
 
     s_dash_12 = [st_1.s, st_2.s]
@@ -573,9 +575,11 @@ def create_plot(cycle, props):
     plt.clf()
     plt.plot(s_pts,T_pts, 'b')
     plt.plot(s_dash_12,T_dash_12,'g--',s_dash_34,T_dash_34,'g--')
+    #PropsPlot(cycle.fluid,'Ts',units="KSI")
     #plotting the vapor dome...hopefully
-    #plt.plot(dspts,dtpts, 'r--')
-
+    plt.plot(dspts,dtpts, 'r--')
+#     for x in range(5,1,-1):
+#         print('s={:>4.1f}%'.format(dspts[-x]),'  t={:>3.1f}%'.format(dtpts[-x]))
     plt.annotate("1.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+20 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
     plt.annotate("2s.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
     plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
@@ -606,54 +610,45 @@ def print_plant_results(plant):
     print('Rankine cycle back work ratio =  {:>6.2f}%'.format(plant.rank.bwr*100))
     return
 
-def get_sat_dome(cycle, props):
-  
-    
-    s_list = cycle.get_states()
-    smax = s_list[1] #entropy at state 2
-    smin = s_list[5] #entropy at state 4
+
+def get_sat_dome(cycle):
+    fluid = cycle.fluid
+    slist = cycle.get_states()
+    # find min temp to use for dome
+    t_state_min = 300  # default room temp in K
+    #print('slist:',slist)
+    for state in slist[:-1]:
+        #print('state.T:',state.T)
+        t_state_min = min([state.T,t_state_min])
+    t_fluid_min = CP.PropsSI('TMIN',fluid)
+    #print('t_fluid_min:',t_fluid_min)
+    #print('t_state_min:',t_state_min)
+    tmin = max([t_fluid_min,t_state_min-10]) # add 10 deg cushion
+    tcrit = CP.PropsSI('TCRIT',fluid)  # critical temp for fluid
+    #print('tcrit=',tcrit,' pcrit=',pcrit,' scrit=',scrit)
+    liq_pts = []
+    vap_pts = []
     tpts = []
     spts = []
-    fluid = props.get('fluid',None)
-    step = 100
-    quality = 0
-    crit_pt = 4300 #entropy at the cp in J/Kg*K
-    s = smin.s
-    while s <= smax.s:
-      if s > crit_pt:
-        quality = 1
-      T = CP.PropsSI('T','S',s,'Q',quality,fluid)
-      spts.append(s)
-      tpts.append(T) #saves in Kelvin
-      s += step
-    return spts, tpts
 
-# def print_exergy_table(cycle):
-#     p_list = cycle.get_procs()
-#     headers = ['Process','States','Ex. In (kW)','Ex. Out (kW)','Delta Ef (kW)','Ex. Dest. (kW)','Ex. Eff.']
-#     t = PrettyTable(headers)
-#     #t.set_style(PLAIN_COLUMNS)
-#     for item in headers[2:6]:
-#         t.align[item] = 'r'
-#         t.float_format[item] = '5.1'
-#     for p in p_list:
-#         row = [p.name,p.in_.name+' -> '+p.out.name,
-#                p.ex_in/1000 * cycle.mdot,
-#                p.ex_out/1000 * cycle.mdot,
-#                p.delta_ef/1000 * cycle.mdot,
-#                p.ex_d/1000 * cycle.mdot,
-#                '{:.1%}'.format(p.ex_eff)]
-#         t.add_row(row)
-#     # print net exergy row
-#     row = ['Net','',
-#            cycle.ex_in/1000 * cycle.mdot,
-#            cycle.ex_out/1000 * cycle.mdot,
-#            cycle.delta_ef/1000 * cycle.mdot,
-#            cycle.ex_d/1000 * cycle.mdot,
-#            '{:.1%}'.format(cycle.ex_eff)]
-#     t.add_row(row)
-#     print(t)
-#     return
+    # for temps from tmin to tmax, find entropy at both sat liq and sat vap.
+    t = tmin  # initial temp for dome
+    dt = 1.0
+    #print('tmin:',tmin)
+    while t < tcrit:
+        s = CP.PropsSI('S','T',t,'Q',0,fluid)
+        liq_pts.append((s,t))
+        s = CP.PropsSI('S','T',t,'Q',1,fluid)
+        vap_pts.append((s,t))
+        t += dt
+    # now, unravel the liq_pts and vap_pts tuples to make the spts and tpts lists
+    for item in liq_pts:
+        spts.append(item[0])
+        tpts.append(item[1])
+    for item in vap_pts[::-1]:
+        spts.append(item[0])
+        tpts.append(item[1])
+    return spts, tpts
 
 if __name__ == '__main__':
     main()
