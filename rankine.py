@@ -20,21 +20,21 @@ def main():
     # http://www.coolprop.org/fluid_properties/PurePseudoPure.html#list-of-fluids
 
 
-    fluid_list = ['Water']
+    fluid_list = ['n-Butane']
     for fluid in fluid_list:
         #create dictionary of properties
         props = {}
         props["fluid"] = fluid
-        props["p_hi"] = 8  #MPa
-        props["p_lo"] = 0.08 #MPa
-        #props["t_hi"] =  135# deg C
+        props["p_hi"] = 3  #MPa
+        props["p_lo"] = 0.3 #MPa
+        props["t_hi"] =  140# deg C
         #props["t_lo"] = 10 # deg C
         props["turb_eff"] = 0.8
         props["pump_eff"] = 0.8
         props['cool_eff'] = .25 #cooling efficiency
-        props['superheat'] = False # should we allow for superheating?
+        props['superheat'] = True # should we allow for superheating?
         props['in_kW'] = False # print results in kW instead of kJ/kg?
-        props['cycle_mdot'] = 1.0   # mass flow rate of rankine cycle working fluid in kg/s
+        props['cycle_mdot'] = 3.14   # mass flow rate of rankine cycle working fluid in kg/s
 
         # begin computing processess for rankine cycle
         rankine = compute_cycle(props)
@@ -560,7 +560,7 @@ def create_plot(cycle, props):
     pump = p_list[2]
     boil = p_list[3]
     #get the points to plot the saturation dome
-    (dspts,dtpts) = get_sat_dome(cycle, props)
+    #(dspts,dtpts) = get_sat_dome(cycle, props)
 
 
     s_dash_12 = [st_1.s, st_2.s]
@@ -612,8 +612,7 @@ def get_sat_dome(cycle, props):
     smin = s_list[5] #entropy at state 4
     tpts = []
     spts = []
-    fluid = 'Water'
-    #fluid = props.get('fluid',None)
+    fluid = props.get('fluid',None)
     step = 100
     quality = 0
     crit_pt = 4300 #entropy at the cp in J/Kg*K
