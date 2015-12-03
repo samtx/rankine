@@ -270,8 +270,8 @@ def compute_cycle(props):
     cyc.delta_ef += pump.delta_ef
 
     # Define cycle properties
-    cyc.wnet = cyc.mdot * (turb.work + pump.work)
-    cyc.qnet = cyc.mdot * (boil.heat + cond.heat)
+    cyc.wnet = turb.work + pump.work
+    cyc.qnet = boil.heat + cond.heat
     cyc.en_eff = cyc.wnet / boil.heat
     cyc.bwr = -pump.work / turb.work
     cyc.ex_eff = cyc.ex_out / cyc.ex_in  # cycle exergetic eff
