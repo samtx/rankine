@@ -21,21 +21,21 @@ def main():
     # http://www.coolprop.org/fluid_properties/PurePseudoPure.html#list-of-fluids
 
 
-    fluid_list = ['Water']
+    fluid_list = ['n-Butane']
     for fluid in fluid_list:
         #create dictionary of properties
         props = {}
         props["fluid"] = fluid
-        props["p_hi"] = 8  #MPa
-        props["p_lo"] = 0.08 #MPa
-        #props["t_hi"] =  1# deg C
+        props["p_hi"] = 3.5  #MPa
+        props["p_lo"] = 0.3 #MPa
+        props["t_hi"] =  148# deg C
         #props["t_lo"] = 10 # deg C
         props["turb_eff"] = 0.8
-        props["pump_eff"] = 0.8
+        props["pump_eff"] = 0.75
         props['cool_eff'] = .25 #cooling efficiency
-        props['superheat'] = False # should we allow for superheating?
+        props['superheat'] =  True # should we allow for superheating?
         props['in_kW'] = False # print results in kW instead of kJ/kg?
-        props['cycle_mdot'] = 1   # mass flow rate of rankine cycle working fluid in kg/s
+        props['cycle_mdot'] = 3.14   # mass flow rate of rankine cycle working fluid in kg/s
 
         # begin computing processess for rankine cycle
         rankine = compute_cycle(props)
@@ -152,18 +152,27 @@ def compute_cycle(props):
     # State 2b, saturated vapor at low pressure
     # --- if necessary: state 2 is superheated and we need the saturated vapor
     #     state for graphing purposes
-
     if superheat:
-        sat_vap_enth = CP.PropsSI('H','P',p_lo,'Q',1,fluid)
-        if st2.h > sat_vap_enth:
-            # then state 2 is superheated. Find state 2b
-            st2b = thermo.State(cyc,'2b')
-            st2b.T = t_lo
-            st2b.p = p_lo
-            st2b.x = 1.0
-            st2b.s = CP.PropsSI('S','P',p_lo,'Q',st2b.x,fluid)
-            st2b.h = CP.PropsSI('H','P',p_lo,'Q',st2b.x,fluid)
-            st2b.flow_exergy()
+      # then state 2 is superheated. Find state 2b
+      st2b = thermo.State(cyc,'2b')
+      st2b.T = t_lo
+      st2b.p = p_lo
+      st2b.x = 1.0
+      st2b.s = CP.PropsSI('S','T',t_lo,'Q',st2b.x,fluid)
+      print ('Entropy at state 2b:', st2b.s)
+      st2b.h = CP.PropsSI('H','P',p_lo,'Q',st2b.x,fluid)
+      st2b.flow_exergy()
+#     if superheat:
+#         sat_vap_enth = CP.PropsSI('H','P',p_lo,'Q',1,fluid)
+#         if st2.h > sat_vap_enth:
+#             # then state 2 is superheated. Find state 2b
+#             st2b = thermo.State(cyc,'2b')
+#             st2b.T = t_lo
+#             st2b.p = p_lo
+#             st2b.x = 1.0
+#             st2b.s = CP.PropsSI('S','P',p_lo,'Q',st2b.x,fluid)
+#             st2b.h = CP.PropsSI('H','P',p_lo,'Q',st2b.x,fluid)
+#             st2b.flow_exergy()
     # State 3, saturated liquid at low pressure
     st3 = thermo.State(cyc,'3')
     st3.T = t_lo
@@ -214,7 +223,7 @@ def compute_cycle(props):
     st4b.T = t_hi
     st4b.x = 0.0
     st4b.h = CP.PropsSI('H','P',p_hi,'Q',st4b.x,fluid)
-    st4b.s = CP.PropsSI('S','P',p_hi,'Q',st4b.x,fluid)
+    st4b.s = CP.PropsSI('S','T',t_hi,'Q',st4b.x,fluid)
     st4b.flow_exergy()
 
     # Define processes
@@ -526,13 +535,24 @@ def print_cycle_values(cycle):
 def create_plot(cycle, props):
     p_list = cycle.get_states()
     s_list = cycle.get_states()
+    superheat = s_list[3].name
+    fluid = cycle.fluid
 
-    #print (s_list)
-    #print (s_list[3].name)
-
+#     print (s_list)
+#     print (s_list[3].name)
+#     st_1 = s_list[0]
+#     st_2s = s_list[1]
+#     st_2 = s_list[2]
+#     st_2b= s_list[3]
+#     st_3 = s_list[4]
+#     st_4s = s_list[5]
+#     st_4 = s_list[6]
+#     st_4b = s_list[7]
+#     T_pts = [st_1.T, st_2s.T, st_2.T, st_2b.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
+#     s_pts = [st_1.s, st_2s.s, st_2.s, st_2b.s, st_3.s, st_4s.s, st_4b.s, st_1.s]
 
     #Check to see if the system is superheated
-    superheat = s_list[3].name
+
     if superheat == '2b':
       st_1 = s_list[0]
       st_2s = s_list[1]
@@ -543,7 +563,7 @@ def create_plot(cycle, props):
       st_4 = s_list[6]
       st_4b = s_list[7]
       T_pts = [st_1.T, st_2s.T, st_2.T, st_2b.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
-      s_pts = [st_1.s, st_2s.s, st_2.s, st_2b.T, st_3.s, st_4s.s, st_4b.s, st_1.s]
+      s_pts = [st_1.s, st_2s.s, st_2.s, st_2b.s, st_3.s, st_4s.s, st_4b.s, st_1.s]
     else:
       st_1 = s_list[0]
       st_2s = s_list[1]
@@ -578,18 +598,28 @@ def create_plot(cycle, props):
     #PropsPlot(cycle.fluid,'Ts',units="KSI")
     #plotting the vapor dome...hopefully
     plt.plot(dspts,dtpts, 'r--')
-#     for x in range(5,1,-1):
-#         print('s={:>4.1f}%'.format(dspts[-x]),'  t={:>3.1f}%'.format(dtpts[-x]))
-    plt.annotate("1.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+20 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
-    plt.annotate("2s.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
-    plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
-    plt.annotate("3.", xy = (s_pts[3],T_pts[3]) , xytext = (s_pts[3] - 800,T_pts[3] ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
-    plt.annotate("4./4s.", xy =  (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+30 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
-    #plt.annotate("b.", xy =  (s_pts[5],T_pts[5]) , xytext = (s_pts[5] + 2,T_pts[5]+30 ), arrowprops=dict(facecolor = 'red', shrink=0.05),)
+    #appropriate point labels for the plot
+    if superheat == '2b':
+      #points for a superheated fluid
+      plt.annotate("1.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+20 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
+      plt.annotate("2s.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
+      plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
+      plt.annotate("3.", xy = (s_pts[4],T_pts[4]) , xytext = (s_pts[4] - 800,T_pts[4] ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
+      plt.annotate("4./4s.", xy =  (s_pts[5],T_pts[5]) , xytext = (s_pts[5] + 2,T_pts[5]+30 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
+      #plt.annotate("2B", xy =  (s_pts[3],T_pts[3]) , xytext = (s_pts[3] + 2,T_pts[3]+30 ), arrowprops=dict(facecolor = 'red', shrink=0.05),)
+    else:
+    #points for no superheated fluid
+      plt.annotate("1.", xy = (s_pts[0],T_pts[0]) , xytext = (s_pts[0] + 2,T_pts[0]+20 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
+      plt.annotate("2s.", xy = (s_pts[1],T_pts[1]) , xytext = (s_pts[1] + 2,T_pts[1]+25 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
+      plt.annotate("2.", xy = (s_pts[2],T_pts[2]) , xytext = (s_pts[2] + 2,T_pts[2]+25 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
+      plt.annotate("3.", xy = (s_pts[3],T_pts[3]) , xytext = (s_pts[3] - 800,T_pts[3] ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
+      plt.annotate("4./4s.", xy =  (s_pts[4],T_pts[4]) , xytext = (s_pts[4] + 2,T_pts[4]+30 ), arrowprops=dict(facecolor = 'magenta', shrink=0.05),)
+      #plt.annotate("b.", xy =  (s_pts[5],T_pts[5]) , xytext = (s_pts[5] + 2,T_pts[5]+30 ), arrowprops=dict(facecolor = 'red', shrink=0.05),)
 
     #plt.annotate("4b.", xy = (s_dash_34[1],T_dash_34[1]) , xytext = (s_dash_34[1] + 500, T_dash_34[1] + 2 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
-
-    plt.suptitle("Rankine Cycle T-s Diagram")
+    title_txt = 'Rankine Cycle T-S Diagram: ' + fluid
+    print (title_txt)
+    plt.suptitle(title_txt)
     plt.xlabel("Entropy (J/kg.K)")
     plt.ylabel("Temperature (deg K)")
     # Save plot
