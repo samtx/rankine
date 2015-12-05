@@ -93,6 +93,7 @@ class Process(object):
         self.ex_in = 0     # exergy input
         self.ex_out = 0    # exergy output
         self.ex_eff = 1.0  # exergetic efficiency
+        self.ex_bal = 0    # exergy balance = ex_in - ex_out - delta_ef - ex_d = 0
 
         # is the process internally reversible?
         self.intrev = intrev  # True/False

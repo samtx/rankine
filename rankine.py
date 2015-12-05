@@ -239,6 +239,7 @@ def compute_cycle(props):
     boil.ex_d = 0
     boil.ex_out = 0
     boil.ex_eff = 1
+    boil.ex_bal = boil.ex_in - boil.ex_out - boil.delta_ef - boil.ex_d
     # add results to cycle exergy totals
     cyc.ex_in += boil.ex_in
     cyc.ex_d += boil.ex_d
@@ -250,6 +251,7 @@ def compute_cycle(props):
     turb.ex_d = turb.cycle.dead.T * (turb.out.s - turb.in_.s)
     turb.ex_out = turb.work
     turb.ex_eff = turb.ex_out / -turb.delta_ef
+    turb.ex_bal = turb.ex_in - turb.ex_out - turb.delta_ef - turb.ex_d
     # add results to cycle exergy totals
     cyc.ex_in += turb.ex_in
     cyc.ex_d += turb.ex_d
@@ -261,6 +263,7 @@ def compute_cycle(props):
     cond.ex_d = 0
     cond.ex_out = -cond.delta_ef
     cond.ex_eff = 1
+    cond.ex_bal = cond.ex_in - cond.ex_out - cond.delta_ef - cond.ex_d
     # add results to cycle exergy totals
     cyc.ex_in += cond.ex_in
     cyc.ex_d += cond.ex_d
@@ -272,6 +275,7 @@ def compute_cycle(props):
     pump.ex_in = -pump.work
     pump.ex_d = pump.cycle.dead.T * (pump.out.s - pump.in_.s)
     pump.ex_eff = pump.delta_ef / pump.ex_in
+    pump.ex_bal = pump.ex_in - pump.ex_out - pump.delta_ef - pump.ex_d
     # add results to cycle exergy totals
     cyc.ex_in += pump.ex_in
     cyc.ex_d += pump.ex_d
@@ -433,9 +437,9 @@ def print_process_table(cycle,in_kW=False):
 def print_exergy_table(cycle,in_kW):
     p_list = cycle.get_procs()
     if in_kW:
-        headers = ['Proc','State','Ex.In(kW)','Ex.Out(kW)','Delt.Ef(kW)','Ex.D(kW)','Ex.Eff.']
+        headers = ['Proc','State','Ex.In(kW)','Ex.Out(kW)','Delt.Ef(kW)','Ex.D(kW)','Ex.Eff.','Ex.Bal']
     else:
-        headers = ['Proc','State','Ex.In(kJ/kg)','Ex.Out(kJ/kg)','delt.ef(kJ/kg)','Ex.D(kJ/kg)','Ex.Eff.']
+        headers = ['Proc','State','Ex.In(kJ/kg)','Ex.Out(kJ/kg)','delt.ef(kJ/kg)','Ex.D(kJ/kg)','Ex.Eff.','Ex.Bal']
     t = PrettyTable(headers)
     #t.set_style(MSWORD_FRIENDLY)
     for item in headers[2:]:
@@ -451,14 +455,16 @@ def print_exergy_table(cycle,in_kW):
                    p.ex_out/1000 * mdot,
                    p.delta_ef/1000 * mdot,
                    p.ex_d/1000 * mdot,
-                   '{:.1%}'.format(p.ex_eff)])
+                   '{:.1%}'.format(p.ex_eff),
+                   p.ex_bal/1000 * mdot])
     # add totals row
     t.add_row(['Net','',
                cycle.ex_in/1000 * mdot,
                cycle.ex_out/1000 * mdot,
                cycle.delta_ef/1000 * mdot,
                cycle.ex_d/1000 * mdot,
-               '{:.1%}'.format(cycle.ex_eff)])
+               '{:.1%}'.format(cycle.ex_eff),
+               'n/a'])
     print(t)
     return
 
