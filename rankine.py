@@ -283,7 +283,7 @@ def compute_cycle(props):
     cyc.qnet = boil.heat + cond.heat
     cyc.en_eff = cyc.wnet / boil.heat
     cyc.bwr = -pump.work / turb.work
-    cyc.ex_eff = cyc.ex_out / cyc.ex_in  # cycle exergetic eff
+    cyc.ex_eff = cyc.wnet / boil.delta_ef  # cycle exergetic eff
 
     return cyc
 
