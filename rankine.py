@@ -31,7 +31,7 @@ def main():
         props["turb_eff"] = 0.8
         props["pump_eff"] = 0.75
         props['cool_eff'] = .25 #cooling efficiency
-        props['superheat'] =  True # should we allow for superheating?
+        props['superheat'] =  False # should we allow for superheating?
         props['in_kW'] = False # print results in kW instead of kJ/kg?
         props['cycle_mdot'] = 3.14   # mass flow rate of rankine cycle working fluid in kg/s
 
@@ -101,16 +101,21 @@ def compute_cycle(props):
     # Define States
     # State 1, saturated vapor at high temperature
     st1 = thermo.State(cyc,'1')
-    st1.T = t_hi
+    h_sat = CP.PropsSI('H','P',p_hi,'Q',1,fluid) #enthalpy at sat vapor
     st1.p = p_hi
     if superheat:
         st1.s = CP.PropsSI('S','P',p_hi,'T',t_hi,fluid)
         st1.h = CP.PropsSI('H','P',p_hi,'T',t_hi,fluid)
-        st1.x = 'super'
+        st1.T = t_hi
+        if st1.h > h_sat:
+            st1.x = 'super'
+        else:
+            st1.x = CP.PropsSI('Q','P',p_hi,'T',t_hi,fluid)
     else:
         st1.x = 1
         st1.s = CP.PropsSI('S','P',p_hi,'Q',1,fluid)
-        st1.h = CP.PropsSI('H','P',p_hi,'Q',1,fluid)
+        st1.h = h_sat
+        st1.T = CP.PropsSI('T','P',p_hi,'Q',1,fluid)
         st1.flow_exergy()
 
     # State 2s, two-phase at low temperature with same entropy as state 1
@@ -159,7 +164,7 @@ def compute_cycle(props):
         st2b.s = CP.PropsSI('S','T',t_lo,'Q',st2b.x,fluid)
         st2b.h = h2b
         st2b.flow_exergy()
-        
+
     # State 3, saturated liquid at low pressure
     st3 = thermo.State(cyc,'3')
     st3.T = t_lo
@@ -212,6 +217,15 @@ def compute_cycle(props):
     st4b.h = CP.PropsSI('H','P',p_hi,'Q',st4b.x,fluid)
     st4b.s = CP.PropsSI('S','T',t_hi,'Q',st4b.x,fluid)
     st4b.flow_exergy()
+
+    # State 4c for graphing purposes. Sat vapor at p_hi
+    if st1.x == 'super':
+        st4c = thermo.State(cyc,'4c')
+        st4c.T = CP.PropsSI('T','P',p_hi,'Q',1,fluid)
+        st4c.s = CP.PropsSI('S','P',p_hi,'Q',1,fluid)
+        st4c.h = CP.PropsSI('H','P',p_hi,'Q',1,fluid)
+        st4c.p = p_hi
+        st4c.x = 1
 
     # Define processes
     # Find work and heat for each process
