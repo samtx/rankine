@@ -142,35 +142,24 @@ def compute_cycle(props):
     st2.p = p_lo
     st2.flow_exergy()
 
-    #print('state 2 quality: ',st2.x)
-    if st2.x > 1 and (not superheat):
-        print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
-        sys.exit()
+#     #print('state 2 quality: ',st2.x)
+#     if st2.x > 1 and (not superheat):
+#         print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
+#         sys.exit()
 
     # State 2b, saturated vapor at low pressure
-    # --- if necessary: state 2 is superheated and we need the saturated vapor
-    #     state for graphing purposes
-    if superheat:
-      # then state 2 is superheated. Find state 2b
-      st2b = thermo.State(cyc,'2b')
-      st2b.T = t_lo
-      st2b.p = p_lo
-      st2b.x = 1.0
-      st2b.s = CP.PropsSI('S','T',t_lo,'Q',st2b.x,fluid)
-      print ('Entropy at state 2b:', st2b.s)
-      st2b.h = CP.PropsSI('H','P',p_lo,'Q',st2b.x,fluid)
-      st2b.flow_exergy()
-#     if superheat:
-#         sat_vap_enth = CP.PropsSI('H','P',p_lo,'Q',1,fluid)
-#         if st2.h > sat_vap_enth:
-#             # then state 2 is superheated. Find state 2b
-#             st2b = thermo.State(cyc,'2b')
-#             st2b.T = t_lo
-#             st2b.p = p_lo
-#             st2b.x = 1.0
-#             st2b.s = CP.PropsSI('S','P',p_lo,'Q',st2b.x,fluid)
-#             st2b.h = CP.PropsSI('H','P',p_lo,'Q',st2b.x,fluid)
-#             st2b.flow_exergy()
+    # --- if necessary: state 2 is superheated and we need the sat vapor state for graphing purposes
+    h2b = CP.PropsSI('H','P',p_lo,'Q',1.0,fluid)  #sat vapor enthalpy
+    if st2.h > h2b:
+        # then state 2 is superheated. Find state 2b
+        st2b = thermo.State(cyc,'2b')
+        st2b.T = t_lo
+        st2b.p = p_lo
+        st2b.x = 1.0
+        st2b.s = CP.PropsSI('S','T',t_lo,'Q',st2b.x,fluid)
+        st2b.h = h2b
+        st2b.flow_exergy()
+        
     # State 3, saturated liquid at low pressure
     st3 = thermo.State(cyc,'3')
     st3.T = t_lo
