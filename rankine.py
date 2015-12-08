@@ -1,15 +1,13 @@
-# Model the Rankine Cycle
+# Model the Rankine Cycle with Geothermal Brine Heat Source
 
 from __future__ import print_function
 import thermodynamics as thermo  # custom thermo state class in thermodynamics.py
 import matplotlib   # for pretty pictures
 matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of using X windows
 import matplotlib.pyplot as plt
-#import os           # for file system utilities
 import sys
 from prettytable import PrettyTable, MSWORD_FRIENDLY, PLAIN_COLUMNS #for output formatting
 import CoolProp.CoolProp as CP
-# from CoolProp.Plots import PropsPlot
 from numbers import Number
 
 ######################################
@@ -468,70 +466,6 @@ def print_exergy_table(cycle,in_kW):
     print(t)
     return
 
-# def print_geo_tables(cycle,in_kW):
-#     s_list = cycle.get_states()
-#     s_list.append(cycle.dead)
-#     if in_kW:
-#         headers = ['State','P(kPa)','T(deg C)','H(kW)','S(kW/K)','Ef(kW)','x']
-#     else:
-#         headers = ['State','P(kPa)','T(deg C)','h(kJ/kg)','s(kJ/kg.K)','ef(kJ/kg)','x']
-#     t = PrettyTable(headers)
-#     for item in headers[1:6]:
-#         t.align[item] = 'r'
-#     for item in headers[2:4]:
-#         t.float_format[item] = '4.2'
-#     t.float_format[headers[1]] = '4.3'
-#     t.float_format[headers[4]] = '6.5'
-#     t.float_format[headers[5]] = '4.2'
-#     t.float_format[headers[6]] = '0.2'
-#     t.padding_width = 1
-#     if in_kW:
-#         mdot = cycle.mdot
-#     else:
-#         mdot = 1.0
-#     for item in s_list:
-#         #print('item.name = ',item.name)
-#         t.add_row([item.name,
-#                    item.p/1000,
-#                    item.T-273,
-#                    item.h/1000 * mdot,
-#                    item.s/1000 * mdot,
-#                    item.ef/1000 * mdot,
-#                    item.x])
-#     print(t)
-#     p_list = cycle.get_procs()
-#     if not p_list:
-#         return  # don't print an empty process table
-#     if in_kW:
-#         headers = ['Process','States','Heat (kW)','Work (kW)'],
-#         ['Ex. In (kW)','Ex. Out (kW)','Delta Ef (kW)','Ex. Dest. (kW)','Ex. Eff.']
-#     else:
-#         headers = ['Process','States','Heat (kJ/kg)','Work (kJ/kg)','Ex. In (kJ/kg)','Ex. Out (kJ/kg)','Delta Ef (kJ/kg)','Ex. Dest. (kJ/kg)','Ex. Eff.']
-#     t = PrettyTable(headers)
-#     for item in headers[2:]:
-#         t.align[item] = 'r'
-#         t.float_format[item] = '5.1'
-#     for p in p_list:
-#         t.add_row([p.name,p.in_.name+' -> '+p.out.name,
-#                    p.heat/1000 * mdot,
-#                    p.work/1000 * mdot,
-#                    p.ex_in/1000 * mdot,
-#                    p.ex_out/1000 * mdot,
-#                    p.delta_ef/1000 * mdot,
-#                    p.ex_d/1000 * mdot,
-#                    '{:.1%}'.format(p.ex_eff)])
-#     # add totals row
-# #     t.add_row(['Net','',
-# #                cycle.qnet/1000 * mdot,
-# #                cycle.wnet/1000 * mdot,
-# #                cycle.ex_in/1000 * mdot,
-# #                cycle.ex_out/1000 * mdot,
-# #                cycle.delta_ef/1000 * mdot,
-# #                cycle.ex_d/1000 * mdot,
-# #                '{:.1%}'.format(cycle.ex_eff)])
-#     print(t)
-#     return
-
 def print_cycle_values(cycle):
     print('\nCycle Values \n------------ ')
     print('thermal efficiency = {:2.1f}%'.format(cycle.en_eff*100))
@@ -543,19 +477,6 @@ def create_plot(cycle, props):
     s_list = cycle.get_states()
     superheat = s_list[3].name
     fluid = cycle.fluid
-
-#     print (s_list)
-#     print (s_list[3].name)
-#     st_1 = s_list[0]
-#     st_2s = s_list[1]
-#     st_2 = s_list[2]
-#     st_2b= s_list[3]
-#     st_3 = s_list[4]
-#     st_4s = s_list[5]
-#     st_4 = s_list[6]
-#     st_4b = s_list[7]
-#     T_pts = [st_1.T, st_2s.T, st_2.T, st_2b.T, st_3.T, st_4s.T, st_4b.T, st_1.T] # solid lines
-#     s_pts = [st_1.s, st_2s.s, st_2.s, st_2b.s, st_3.s, st_4s.s, st_4b.s, st_1.s]
 
     #Check to see if the system is superheated
 
