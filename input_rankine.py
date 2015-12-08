@@ -43,22 +43,6 @@ def try_float(string):
         loop_again = True
     return number,loop_again
 
-
-#     done1 = False
-#     done2 = False
-#     done3 = False
-#     done4 = False
-#     done5 = False
-#     done6 = False
-#     done7 = False
-#     done8 = False
-#     props = {}
-#     while True:
-#          if not done1:
-#                 if not select_fluid(props):
-#                     continue
-#                 else:
-#                     done1 = True
 def define_inputs():
     props = {}
     print("Enter options for the Organic Rankine Cycle." +
