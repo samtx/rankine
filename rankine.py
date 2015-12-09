@@ -548,7 +548,7 @@ def create_plot(cycle, props):
 
     #plt.annotate("4b.", xy = (s_dash_34[1],T_dash_34[1]) , xytext = (s_dash_34[1] + 500, T_dash_34[1] + 2 ), arrowprops=dict(facecolor = 'black', shrink=0.05),)
     title_txt = 'Rankine Cycle T-S Diagram: ' + fluid
-    print (title_txt)
+    #print (title_txt)
     plt.suptitle(title_txt)
     plt.xlabel("Entropy (J/kg.K)")
     plt.ylabel("Temperature (deg K)")
