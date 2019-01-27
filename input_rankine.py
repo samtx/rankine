@@ -1,6 +1,7 @@
 # Rankine cycle program with user input
 
 from __future__ import print_function
+from builtins import input
 import rankine as rk
 import sys
 
@@ -70,7 +71,7 @@ def select_fluid(props):
                       "Ammonia"]
         for i in range(len(fluid_list)):
             print(" {}. {}".format(i+1,fluid_list[i]) )
-        fluid = raw_input(": ")
+        fluid = input(": ")
         should_quit(fluid)
         if fluid == '0':  #example problem
             fluid = 'eg_mode'
@@ -93,7 +94,7 @@ def enter_pressure(which_p):
     if which_p == 'high': machine = 'boiler'
     if which_p == 'low': machine = 'condenser'
     while True:
-        p = raw_input("Enter the desired " + which_p + " pressure (" + machine + " pressure). (MPa)... ")
+        p = input("Enter the desired " + which_p + " pressure (" + machine + " pressure). (MPa)... ")
         should_quit(p)
         if p == "": break   # skip question if left blank
         p,loop_again = try_float(p)
@@ -112,7 +113,7 @@ def enter_temperature(which_t):
     if which_t == 'high': machine = 'boiler'
     if which_t == 'low': machine = 'condenser'
     while True:
-        p = raw_input("Enter the desired " + which_t + " temperature (" + machine + " temp). (deg C)... ")
+        p = input("Enter the desired " + which_t + " temperature (" + machine + " temp). (deg C)... ")
         should_quit(p)
         if p == "": break   # skip question if left blank
         p,loop_again = try_float(p)
@@ -130,7 +131,7 @@ def select_efficiencies(props):
 
 def enter_efficiencies(which_eff):
     while True:
-        eff = raw_input("Enter the " + which_eff + " efficiency in percent, default is 100. (%)... ").strip('%')
+        eff = input("Enter the " + which_eff + " efficiency in percent, default is 100. (%)... ").strip('%')
         should_quit(eff)
         if eff == "":
             eff = 1.0  # default if nothing is entered
@@ -160,7 +161,7 @@ def select_other_options(props):
 
 def enter_tf(string):
     while True:
-        p = raw_input(string)
+        p = input(string)
         should_quit(p)
         if p == "":
             return False  # enter false if question if left blank
@@ -182,7 +183,7 @@ def is_true(string):
 
 def enter_cycle_mdot():
     while True:
-        mdot = raw_input('Enter the mass flow rate of the working fluid in the Rankine cycle. (kg/s)... ')
+        mdot = input('Enter the mass flow rate of the working fluid in the Rankine cycle. (kg/s)... ')
         if mdot == "":
             # default to 1 kg/s if left blank
             mdot = 1.0

@@ -609,5 +609,19 @@ def get_sat_dome(cycle):
         tpts.append(item[1])
     return spts, tpts
 
+def interactive():
+    import input_rankine
+    input_rankine.main()
+
 if __name__ == '__main__':
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description='Calculate the properties of a Rankine power cycle')
+    parser.add_argument('-i', '--interactive', action='store_true',
+                        help='interactively create and evaluate a Rankine power cycle')
+    args = parser.parse_args(sys.argv[1:])
+    print(args)
+    if args.interactive:
+        interactive()
+    else:
+        main()
+    # print(args.accumulate(args.integers))
