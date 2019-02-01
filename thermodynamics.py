@@ -2,6 +2,8 @@
 
 import CoolProp.CoolProp as CP  #must have CoolProp library installed
 
+UNITS = 'si'
+
 class State(object):
     ''' This is a class that can be used to define a thermodynamic state for a given fluid. The user must enter the fluid string to select in CoolProp and then 2 independent named variables for the state to be properly defined. All variables are specific, in that they are valued per unit mass. Optional variables and their default units are:
         T = temperature, (deg C)
@@ -15,7 +17,86 @@ class State(object):
         velocity = velocity (m/s) for kinetic energy
         z = relative height (m) for potential energy
     '''
-    def CP_convert(self,prop,value):
+    def __init__(self, name="", fluid=None, units=UNITS, cycle=None):
+
+        # set property name if specified
+        self.name = name # 1, 2, 2s, 3, 4, 4s, 4b, etc.
+
+        self.fixed = False
+
+        self.cycle = cycle  # should be an object of class cycle
+
+        if self.cycle:
+            self.fluid = cycle.fluid
+            # add state to cycle's state list if not dead state
+            self.cycle.add_state(self)
+            self.units = self.cycle.units
+        elif (not self.cycle) and fluid:
+            self.fluid = fluid
+        else:
+            print("You must enter a fluid when defining the dead state")
+            return
+
+        if not self.cycle:
+            self.units = units
+
+        self._T = {'si':None,'english':None}
+        self._p = {'si':None,'english':None}
+        self._d = {'si':None,'english':None}
+        self._v = {'si':None,'english':None}
+        self._u = {'si':None,'english':None}
+        self._h = {'si':None,'english':None}
+        self._s = {'si':None,'english':None}
+        self._ef = {'si':0.0,'english':0.0}  # default for dead state
+        self._x = {'si':None,'english':None}
+
+    @property
+    def T(self):
+        units = self.units.lower()
+        return self._T[units]
+
+    @property
+    def p(self):
+        units = self.units.lower()
+        return self._p[units]
+
+    @property
+    def d(self):
+        units = self.units.lower()
+        return self._d[units]
+
+    @property
+    def v(self):
+        units = self.units.lower()
+        return self._v[units]
+
+    @property
+    def u(self):
+        units = self.units.lower()
+        return self._u[units]
+
+    @property
+    def h(self):
+        units = self.units.lower()
+        return self._h[units]
+
+    @property
+    def s(self):
+        units = self.units.lower()
+        return self._s[units]
+
+    @property
+    def x(self):
+        units = self.units.lower()
+        return self._x[units]
+
+    @property
+    def ef(self):
+        units = self.units.lower()
+        return self._ef[units]
+
+
+    def CP_convert(self,prop,value=None):
         ''' make necessary conversions for CoolProp functions '''
         #convert to uppercase
         prop = prop.upper()
@@ -25,12 +106,16 @@ class State(object):
         # use denisty for CoolProp
         elif prop == 'V':
             prop = 'D'
-            value = 1/value
+            if value:
+                value = 1/value
         return prop,value
 
     def flow_exergy(self):
-        self.ef = self.h-self.cycle.dead.h - self.cycle.dead.T*(self.s-self.cycle.dead.s)
-        return
+        if self.cycle:
+            self._ef[self.units] = self.h-self.cycle.dead.h - self.cycle.dead.T*(self.s-self.cycle.dead.s)
+        else:
+            self._ef[self.units] = 0.0
+        return self.ef
 
     def __str__():
         return self._name
@@ -38,34 +123,40 @@ class State(object):
     def __repr__(self):
         return self.name
 
-    def __init__(self,cycle,name="",fluid=None):
 
-        # set property name if specified
-        self.name = name # 1, 2, 2s, 3, 4, 4s, 4b, etc.
+    # def __get__(self, prop):
+    #     pass
 
-        self.cycle = cycle  # should be an object of class cycle
+    def calc_prop(self, prop_return, prop1, val1, prop2, val2):
+        """
+        Wrapper for CoolProp or other thermodynamic property calculator
+        """
+        prop1, val1 = self.CP_convert(prop1,val1)
+        prop2, val2 = self.CP_convert(prop2,val2)
+        CP_prop_return,_ = self.CP_convert(prop_return)
+        print('(p1,v1)->({},{})'.format(prop1,val1),'(p2,v2)->({},{})'.format(prop2,val2),'prop_return={}'.format(prop_return))
+        val_return = CP.PropsSI(CP_prop_return, prop1, val1, prop2, val2, self.fluid)
+        if prop_return == 'v':
+            val_return = 1/val_return
+        return val_return
 
-        if self.cycle:
-            self.fluid = cycle.fluid
-            # add state to cycle's state list if not dead state
-            self.cycle.add_state(self)
-        elif (not self.cycle) and fluid:
-            self.fluid = fluid
-        else:
-            print("You must enter a fluid when defining the dead state")
-            return
+    def fix(self, prop1, val1, prop2, val2, units=None):
+        """
+        Fix the state of the fluid from two independent properties
+        """
+        # Put in error check if fluid in two-phase and temp and pressure are
+        # both specified
 
-        # set state properties
-        self.T = None
-        self.p = None
-        self.d = 1
-        self.v = 1 / self.d
-        self.u = None
-        self.h = None
-        self.s = None
-        self.ef = 0  # default for dead state
-        self.x = None
-        return
+        if units:
+            self.units = units
+
+        coolprops = {'T','p','d','v','u','h','s','x'}
+        calc_props = coolprops - {prop1} - {prop2}
+        self.__dict__['_'+prop1][self.units] = val1
+        self.__dict__['_'+prop2][self.units] = val2
+        for prop in calc_props:
+            self.__dict__['_'+prop][self.units] = self.calc_prop(prop, prop1, val1, prop2, val2)
+        self.fixed = True
 
 class Process(object):
     '''A class that defines values for a process based on a
@@ -138,6 +229,7 @@ class Cycle(object):
         dead = kwargs.pop('dead',None)
         name = kwargs.pop('name',"")
         mdot = kwargs.pop('mdot',1)  #default is 1 kg/s
+        units = kwargs.pop('units',UNITS)
 
         # set fluid property
         self.fluid = fluid
@@ -151,6 +243,8 @@ class Cycle(object):
         self.state_list = []
         # set mass flow rate
         self.mdot = mdot # in kg/s
+
+        self.units = units
 
         # initialize cycle results
         self.wnet = 0.0
@@ -207,6 +301,8 @@ class Geotherm(object):
         self.mdot = kwargs.pop('mdot',1)
         # default name is 'Geothermal'
         self.name = kwargs.pop('name','Geothermal')
+
+        self.units = kwargs.pop('units','si')
 
         # initialize process list
         self.proc_list = []

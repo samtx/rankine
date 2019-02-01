@@ -60,13 +60,11 @@ def compute_cycle(props):
     pump_eff = props.get('pump_eff',1.0)
     superheat = props.get('superheat',False)
     mdot = props.get('cycle_mdot',1.0)
+    units = props.get('units','si')
 
     # set dead state
-    dead = thermo.State(None,'Dead State',fluid)
-    dead.T = 15+273  #K
-    dead.p = 101325.0  #Pa
-    dead.h = CP.PropsSI('H','T',dead.T,'P',dead.p,dead.fluid)
-    dead.s = CP.PropsSI('S','T',dead.T,'P',dead.p,dead.fluid)
+    dead = thermo.State(name='Dead State',fluid=fluid)
+    dead.fix('T',15+273.0, 'p', 101325.0)
 
     # initialize cycle
     cyc = thermo.Cycle(fluid,name='Rankine',mdot=mdot,dead=dead)
@@ -100,52 +98,55 @@ def compute_cycle(props):
 
     # Define States
     # State 1, saturated vapor at high temperature
-    st1 = thermo.State(cyc,'1')
+    st1 = thermo.State(cycle=cyc,name='1')
     h_sat = CP.PropsSI('H','P',p_hi,'Q',1,fluid) #enthalpy at sat vapor
-    st1.p = p_hi
     if superheat:
-        st1.s = CP.PropsSI('S','P',p_hi,'T',t_hi,fluid)
-        st1.h = CP.PropsSI('H','P',p_hi,'T',t_hi,fluid)
-        st1.T = t_hi
-        if st1.h > h_sat:
-            st1.x = 'super'
-        else:
-            st1.x = CP.PropsSI('Q','P',p_hi,'T',t_hi,fluid)
+        st1.fix('p',p_hi,'T',t_hi)
     else:
-        st1.x = 1
-        st1.s = CP.PropsSI('S','P',p_hi,'Q',1,fluid)
-        st1.h = h_sat
-        st1.T = CP.PropsSI('T','P',p_hi,'Q',1,fluid)
-        st1.flow_exergy()
+        st1.fix('p',p_hi,'x',1.0)
+    #     st1.s = CP.PropsSI('S','P',p_hi,'T',t_hi,fluid)
+    #     st1.h = CP.PropsSI('H','P',p_hi,'T',t_hi,fluid)
+    #     st1.T = t_hi
+    #     if st1.h > h_sat:
+    #         st1.x = 'super'
+    #     else:
+    #         st1.x = CP.PropsSI('Q','P',p_hi,'T',t_hi,fluid)
+    # else:
+    #     st1.x = 1
+    #     st1.s = CP.PropsSI('S','P',p_hi,'Q',1,fluid)
+    #     st1.h = h_sat
+    #     st1.T = CP.PropsSI('T','P',p_hi,'Q',1,fluid)
+    #     st1.flow_exergy()
 
     # State 2s, two-phase at low temperature with same entropy as state 1
-    st2s = thermo.State(cyc,'2s')
-    st2s.T = CP.PropsSI('T','P',p_lo,'S',st1.s,fluid)
-    st2s.p = p_lo
-    st2s.s = st1.s
-    sf = CP.PropsSI('S','P',p_lo,'Q',0,fluid)
-    sg = CP.PropsSI('S','P',p_lo,'Q',1,fluid)
-    st2s.x = (st2s.s - sf) / (sg - sf)
-    hf = CP.PropsSI('H','P',p_lo,'Q',0,fluid)
-    hg = CP.PropsSI('H','P',p_lo,'Q',1,fluid)
-    st2s.h = st2s.x * (hg - hf) + hf
-    st2s.flow_exergy()
+    st2s = thermo.State(cycle=cyc,name='2s')
+    st2s.fix('p', p_lo, 's', st1.s)
+    # st2s.T = CP.PropsSI('T','P',p_lo,'S',st1.s,fluid)
+    # st2s.p = p_lo
+    # st2s.s = st1.s
+    # sf = CP.PropsSI('S','P',p_lo,'Q',0,fluid)
+    # sg = CP.PropsSI('S','P',p_lo,'Q',1,fluid)
+    # st2s.x = (st2s.s - sf) / (sg - sf)
+    # hf = CP.PropsSI('H','P',p_lo,'Q',0,fluid)
+    # hg = CP.PropsSI('H','P',p_lo,'Q',1,fluid)
+    # st2s.h = st2s.x * (hg - hf) + hf
 
     # State 2, two-phase at low pressure determined by turbine efficiency
-    st2 = thermo.State(cyc,'2')
+    st2 = thermo.State(cycle=cyc,name='2')
     # if turb_eff = 1, then just copy values from state 2s
     if turb_eff == 1:
-        st2.h = st2s.h
-        st2.T = st2s.T
-        st2.s = st2s.s
-        st2.x = st2s.x
+        st2.fix('p',p_lo,'s',st2s.s)
+        # st2.h = st2s.h
+        # st2.T = st2s.T
+        # st2.s = st2s.s
+        # st2.x = st2s.x
     else:
-        st2.h = turb_eff * (st2s.h - st1.h) + st1.h  #with an irreversible turbine
-        st2.x = (st2.h - hf) / (hg - hf)
-        st2.s = st2.x * (sg - sf) + sf
-        st2.T = CP.PropsSI('T','P',p_lo,'S',st2.s,fluid)
-    st2.p = p_lo
-    st2.flow_exergy()
+        h2 = turb_eff * (st2s.h - st1.h) + st1.h  #with an irreversible turbine
+        st2.fix('h',h2,'p',p_lo)
+        # st2.x = (st2.h - hf) / (hg - hf)
+        # st2.s = st2.x * (sg - sf) + sf
+        # st2.T = CP.PropsSI('T','P',p_lo,'S',st2.s,fluid)
+    # st2.p = p_lo
 
 #     #print('state 2 quality: ',st2.x)
 #     if st2.x > 1 and (not superheat):
@@ -157,75 +158,82 @@ def compute_cycle(props):
     h2b = CP.PropsSI('H','P',p_lo,'Q',1.0,fluid)  #sat vapor enthalpy
     if st2.h > h2b:
         # then state 2 is superheated. Find state 2b
-        st2b = thermo.State(cyc,'2b')
-        st2b.T = t_lo
-        st2b.p = p_lo
-        st2b.x = 1.0
-        st2b.s = CP.PropsSI('S','T',t_lo,'Q',st2b.x,fluid)
-        st2b.h = h2b
+        st2b = thermo.State(name='2b',cycle=cyc)
+        st2b.fix('p',p_lo,'x',1.0)
+        # st2b.T = t_lo
+        # st2b.p = p_lo
+        # st2b.x = 1.0
+        # st2b.s = CP.PropsSI('S','T',t_lo,'Q',st2b.x,fluid)
+        # st2b.h = h2b
         st2b.flow_exergy()
 
     # State 3, saturated liquid at low pressure
-    st3 = thermo.State(cyc,'3')
-    st3.T = t_lo
-    st3.p = p_lo
-    st3.x = 0
-    st3.s = CP.PropsSI('S','P',p_lo,'Q',st3.x,fluid)
-    st3.h = CP.PropsSI('H','P',p_lo,'Q',st3.x,fluid)
-    st3.v = CP.PropsSI('V','P',p_lo,'Q',st3.x,fluid)
+    st3 = thermo.State(name='3',cycle=cyc)
+    st3.fix('p',p_lo,'x',0.0)
+    # st3.T = t_lo
+    # st3.p = p_lo
+    # st3.x = 0
+    # st3.s = CP.PropsSI('S','P',p_lo,'Q',st3.x,fluid)
+    # st3.h = CP.PropsSI('H','P',p_lo,'Q',st3.x,fluid)
+    # st3.v = CP.PropsSI('V','P',p_lo,'Q',st3.x,fluid)
     st3.flow_exergy()
 
     # States 4 and 4s, subcooled liquid at high pressure
     # assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
     # find values for irreversible pump operation
+    print('st3.v={:.4e}'.format(st3.v),'st3.d={:.2f}'.format(st3.d))
     wps = -st3.v * (st1.p - st3.p)
     wp = 1/pump_eff * wps
-    st4s = thermo.State(cyc,'4s')
-    st4s.h = st3.h - wps
-    st4s.s = st3.s
-    st4s.p = p_hi
-    st4s.T = CP.PropsSI('T','P',p_hi,'S',st4s.s,fluid)
-    st4s.x = 'sub'
+    st4s = thermo.State(name='4s', cycle=cyc)
+    st4s.fix('s',st3.s,'p',p_hi)
+    # st4s.h = st3.h - wps
+    # st4s.s = st3.s
+    # st4s.p = p_hi
+    # st4s.T = CP.PropsSI('T','P',p_hi,'S',st4s.s,fluid)
+    # st4s.x = 'sub'
     st4s.flow_exergy()
     # State 4
-    st4 = thermo.State(cyc,'4')
+    st4 = thermo.State(name='4', cycle=cyc)
     # if pump_eff = 1, then just copy values from state 4s
     if pump_eff == 1:
-        st4.h = st4s.h
-        st4.T = st4s.T
-        st4.s = st4s.s
+        st4.fix('h',st3.h-wps,'p',p_hi)
+        # st4.h = st4s.h
+        # st4.T = st4s.T
+        # st4.s = st4s.s
     else:
-        st4.h = st3.h - wp
+        st4.fix('h',st3.h-wp,'p',p_hi)
         #   it appears that CoolProp is pulling properties for Temperature and entropy
         #   for state 4 that are slightly lower than state 4s. These values should
         #   be higher than those at state 4s.
         #   Add logic to add a 0.1% increase in both values if they are lower.
-        st4.T = CP.PropsSI('T','H',st4.h,'P',p_hi,fluid)
+        # st4.T = CP.PropsSI('T','H',st4.h,'P',p_hi,fluid)
         if st4.T < st4s.T:
-            st4.T = st4s.T * 1.001  # add 0.1% increase
-        st4.s = CP.PropsSI('S','P',p_hi,'H',st4.h,fluid)
+            st4._T[units] = st4s.T * 1.001  # add 0.1% increase
+        st4._s[units] = CP.PropsSI('S','P',p_hi,'H',st4.h,fluid)
         if st4.s < st4s.s:
-            st4.s = st4s.s * 1.001  # add 0.1% increase
-    st4.p = p_hi
-    st4.x = 'sub'
+            st4._s[units] = st4s.s * 1.001  # add 0.1% increase
+    # st4.p = p_hi
+    # st4.x = 'sub'
     st4.flow_exergy()
     # find State 4b, high pressure saturated liquid
-    st4b = thermo.State(cyc,'4b')
-    st4b.p = p_hi
-    st4b.T = t_hi
-    st4b.x = 0.0
-    st4b.h = CP.PropsSI('H','P',p_hi,'Q',st4b.x,fluid)
-    st4b.s = CP.PropsSI('S','T',t_hi,'Q',st4b.x,fluid)
+    st4b = thermo.State(name='4b', cycle=cyc)
+    st4b.fix('p',p_hi,'x',0.0)
+    # st4b.p = p_hi
+    # st4b.T = t_hi
+    # st4b.x = 0.0
+    # st4b.h = CP.PropsSI('H','P',p_hi,'Q',st4b.x,fluid)
+    # st4b.s = CP.PropsSI('S','T',t_hi,'Q',st4b.x,fluid)
     st4b.flow_exergy()
 
     # State 4c for graphing purposes. Sat vapor at p_hi
     if st1.x == 'super':
-        st4c = thermo.State(cyc,'4c')
-        st4c.T = CP.PropsSI('T','P',p_hi,'Q',1,fluid)
-        st4c.s = CP.PropsSI('S','P',p_hi,'Q',1,fluid)
-        st4c.h = CP.PropsSI('H','P',p_hi,'Q',1,fluid)
-        st4c.p = p_hi
-        st4c.x = 1
+        st4c = thermo.State(name='4c', cycle=cyc)
+        st4c.fix('p',p_hi,'x',1.0)
+        # st4c.T = CP.PropsSI('T','P',p_hi,'Q',1,fluid)
+        # st4c.s = CP.PropsSI('S','P',p_hi,'Q',1,fluid)
+        # st4c.h = CP.PropsSI('H','P',p_hi,'Q',1,fluid)
+        # st4c.p = p_hi
+        # st4c.x = 1
 
     # Define processes
     # Find work and heat for each process
@@ -295,14 +303,16 @@ def compute_cycle(props):
 def compute_plant(rank,props):
     ''' Compute and return plantplo object from rankine cycle and geothermal cycle objects '''
     cool_eff = props.get('cool_eff',1.0) # cooling efficiency
+    units = props.get('units','si')
     # initialize geothermal cycle using defaults defined in object
-    fluid = 'Salt Water, 20% salinity'
+    fluid = u'Salt Water, 20% salinity'
     # set brine dead state
-    dead = thermo.State(None,'Br.Dead',fluid)
-    dead.h = 61.05 * 1000 # J/kg
-    dead.s = 0.2205 * 1000 # J/kg.K
-    dead.T = 15 + 273 # K
-    dead.p = 101325 # Pa
+    dead = thermo.State(cycle=None,name='Br.Dead',fluid=fluid)
+    # dead.fix('T',298.0,'p',101325.0)
+    dead._h[units] = 61.05 * 1000 # J/kg
+    dead._s[units] = 0.2205 * 1000 # J/kg.K
+    dead._T[units] = 15 + 273 # K
+    dead._p[units] = 101325 # Pa
     geo = thermo.Geotherm(fluid=fluid,dead=dead)
 
     #   Find the mass flow rate of the brine based on cooling efficiency and
@@ -313,11 +323,11 @@ def compute_plant(rank,props):
         if 'boil' in p.name.lower():
             heat = p.heat
     # create initial brine state
-    g1 = thermo.State(geo,'Br.In')
-    g1.s = 1.492 * 1000 # J/kg.K
-    g1.h = 491.6 * 1000 # J/kg
-    g1.T = 120 + 273.15 # K
-    g1.p = 5 * 10**5    # bars to Pa
+    g1 = thermo.State(cycle=geo,name='Br.In')
+    g1._s[units] = 1.492 * 1000 # J/kg.K
+    g1._h[units] = 491.6 * 1000 # J/kg
+    g1._T[units] = 120 + 273.15 # K
+    g1._p[units] = 5 * 10**5    # bars to Pa
     g1.flow_exergy()
     geo.in_ = g1
     # set brine mass flow rate
@@ -482,8 +492,8 @@ def create_plot(cycle, props):
     fluid = cycle.fluid
 
     #Check to see if the system is superheated
-
     if superheat == '2b':
+
       st_1 = s_list[0]
       st_2s = s_list[1]
       st_2 = s_list[2]
