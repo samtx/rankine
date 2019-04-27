@@ -17,7 +17,7 @@ class State(object):
         velocity = velocity (m/s) for kinetic energy
         z = relative height (m) for potential energy
     '''
-    def __init__(self, name="", fluid=None, units=UNITS, cycle=None):
+    def __init__(self, name="", fluid=None, units=UNITS, cycle=None, backend='CoolProp', **kwargs):
 
         # set property name if specified
         self.name = name # 1, 2, 2s, 3, 4, 4s, 4b, etc.
@@ -39,6 +39,12 @@ class State(object):
 
         if not self.cycle:
             self.units = units
+
+        # extract given properties
+        props = ['T','p','d','v','u','h','s','x']
+        for key, val in kwargs.items():
+            if key in props:
+                self.__dict__['_'+key][self.units] = val
 
         self._T = {'si':None,'english':None}
         self._p = {'si':None,'english':None}
@@ -95,7 +101,6 @@ class State(object):
         units = self.units.lower()
         return self._ef[units]
 
-
     def CP_convert(self,prop,value=None):
         ''' make necessary conversions for CoolProp functions '''
         #convert to uppercase
@@ -117,15 +122,8 @@ class State(object):
             self._ef[self.units] = 0.0
         return self.ef
 
-    def __str__():
-        return self._name
-
     def __repr__(self):
         return self.name
-
-
-    # def __get__(self, prop):
-    #     pass
 
     def calc_prop(self, prop_return, prop1, val1, prop2, val2):
         """
@@ -134,7 +132,7 @@ class State(object):
         prop1, val1 = self.CP_convert(prop1,val1)
         prop2, val2 = self.CP_convert(prop2,val2)
         CP_prop_return,_ = self.CP_convert(prop_return)
-        print('(p1,v1)->({},{})'.format(prop1,val1),'(p2,v2)->({},{})'.format(prop2,val2),'prop_return={}'.format(prop_return))
+        # print('(p1,v1)->({},{})'.format(prop1,val1),'(p2,v2)->({},{})'.format(prop2,val2),'prop_return={}'.format(prop_return))
         val_return = CP.PropsSI(CP_prop_return, prop1, val1, prop2, val2, self.fluid)
         if prop_return == 'v':
             val_return = 1/val_return
@@ -172,12 +170,14 @@ class Process(object):
         self.cycle = cycle # this should be an object of class Cycle
         self.heat = heat
         self.work = work
-        self.in_ = state_in  # these are objects of class State
-        self.out = state_out
+        # self.in_ = state_in  # these are objects of class State
+        self.inflow = state_in
+        self.outflow = state_out
+        # self.out = state_out
         self.name = name
 
         # change in flow exergy
-        self.delta_ef = (self.out.h - self.in_.h) - self.cycle.dead.T * (self.out.s - self.in_.s)
+        self.delta_ef = (self.outflow.h - self.inflow.h) - self.cycle.dead.T * (self.outflow.s - self.inflow.s)
         # default these exergy process values to zero. Compute them ad-hoc
         # and then add them to the object attributes.
         self.ex_d = 0      # exergy destroyed
@@ -322,8 +322,10 @@ class Geotherm(object):
 
         # state in
         self.in_ = None
+        self.inflow = None
         #state out
         self.out = None  # default
+        self.outflow = None
 
         # initialize cycle results
         self.wnet = 0.0
