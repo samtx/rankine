@@ -2,11 +2,7 @@
 
 from __future__ import print_function
 import thermodynamics as thermo  # custom thermo state class in thermodynamics.py
-import matplotlib   # for pretty pictures
-matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of using X windows
-import matplotlib.pyplot as plt
 import sys
-from prettytable import PrettyTable, MSWORD_FRIENDLY, PLAIN_COLUMNS #for output formatting
 import CoolProp.CoolProp as CP
 from numbers import Number
 from print_rankine import print_output_to_screen

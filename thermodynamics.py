@@ -166,7 +166,7 @@ class Process(object):
     def __repr__(self):
         return self.name
 
-    def __init__(self,cycle,state_in,state_out,heat=0,work=0,name="",intrev=False):
+    def __init__(self,cycle,state_in,state_out,heat=0,work=0,name=""):
         self.cycle = cycle # this should be an object of class Cycle
         self.heat = heat
         self.work = work
@@ -185,9 +185,6 @@ class Process(object):
         self.ex_out = 0    # exergy output
         self.ex_eff = 1.0  # exergetic efficiency
         self.ex_bal = 0    # exergy balance = ex_in - ex_out - delta_ef - ex_d = 0
-
-        # is the process internally reversible?
-        self.intrev = intrev  # True/False
 
         # add process to cycle's process list
         if self.cycle:
