@@ -61,7 +61,9 @@ def compute_cycle(props):
 
     # set dead state
     dead = thermo.State(name='Dead State',fluid=fluid)
+    print('Fluid={}'.format(fluid))
     dead.fix('T',15+273.0, 'p', 101325.0)
+    dead.ef = 0
 
     # initialize cycle
     cyc = thermo.Cycle(fluid,name='Rankine',mdot=mdot,dead=dead)
@@ -106,6 +108,7 @@ def compute_cycle(props):
     # State 2s, two-phase at low temperature with same entropy as state 1
     st2s = thermo.State(cycle=cyc,name='2s')
     st2s.fix('p', p_lo, 's', st1.s)
+    st2s.flow_exergy()
 
     # State 2, two-phase at low pressure determined by turbine efficiency
     st2 = thermo.State(cycle=cyc,name='2')
@@ -115,6 +118,7 @@ def compute_cycle(props):
     else:
         h2 = turb_eff * (st2s.h - st1.h) + st1.h  #with an irreversible turbine
         st2.fix('h',h2,'p',p_lo)
+    st2.flow_exergy()
 
 #     #print('state 2 quality: ',st2.x)
 #     if st2.x > 1 and (not superheat):
@@ -128,8 +132,8 @@ def compute_cycle(props):
         # then state 2 is superheated. Find state 2b
         st2b = thermo.State(name='2b',cycle=cyc)
         st2b.fix('p',p_lo,'x',1.0)
-        st2b.flow_exergy()
-
+        st2b.flow_exergy() 
+    
     # State 3, saturated liquid at low pressure
     st3 = thermo.State(name='3',cycle=cyc)
     st3.fix('p',p_lo,'x',0.0)
@@ -156,10 +160,10 @@ def compute_cycle(props):
         #   be higher than those at state 4s.
         #   Add logic to add a 0.1% increase in both values if they are lower.
         if st4.T < st4s.T:
-            st4._T[units] = st4s.T * 1.001  # add 0.1% increase
-        st4._s[units] = CP.PropsSI('S','P',p_hi,'H',st4.h,fluid)
+            st4.T = st4s.T * 1.001  # add 0.1% increase
+        st4.s = CP.PropsSI('S','P',p_hi,'H',st4.h,fluid)
         if st4.s < st4s.s:
-            st4._s[units] = st4s.s * 1.001  # add 0.1% increase
+            st4.s = st4s.s * 1.001  # add 0.1% increase
     st4.flow_exergy()
     # find State 4b, high pressure saturated liquid
     st4b = thermo.State(name='4b', cycle=cyc)
@@ -170,6 +174,8 @@ def compute_cycle(props):
     if st1.x == 'super':
         st4c = thermo.State(name='4c', cycle=cyc)
         st4c.fix('p',p_hi,'x',1.0)
+        st4c.flow_exergy()
+        print('st4c',st4c.ef)
 
     # Define processes
     # Find work and heat for each process
@@ -245,10 +251,11 @@ def compute_plant(rank,props):
     # set brine dead state
     dead = thermo.State(cycle=None,name='Br.Dead',fluid=fluid)
     # dead.fix('T',298.0,'p',101325.0)
-    dead._h[units] = 61.05 * 1000 # J/kg
-    dead._s[units] = 0.2205 * 1000 # J/kg.K
-    dead._T[units] = 15 + 273 # K
-    dead._p[units] = 101325 # Pa
+    dead.h = 61.05 * 1000 # J/kg
+    dead.s = 0.2205 * 1000 # J/kg.K
+    dead.T = 15 + 273 # K
+    dead.p = 101325 # Pa
+    dead.ef = 0
     geo = thermo.Geotherm(fluid=fluid,dead=dead)
 
     #   Find the mass flow rate of the brine based on cooling efficiency and
@@ -260,10 +267,10 @@ def compute_plant(rank,props):
             heat = p.heat
     # create initial brine state
     g1 = thermo.State(cycle=geo,name='Br.In')
-    g1._s[units] = 1.492 * 1000 # J/kg.K
-    g1._h[units] = 491.6 * 1000 # J/kg
-    g1._T[units] = 120 + 273.15 # K
-    g1._p[units] = 5 * 10**5    # bars to Pa
+    g1.s = 1.492 * 1000 # J/kg.K
+    g1.h = 491.6 * 1000 # J/kg
+    g1.T = 120 + 273.15 # K
+    g1.p = 5 * 10**5    # bars to Pa
     g1.flow_exergy()
     geo.inflow = g1
     # set brine mass flow rate

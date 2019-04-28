@@ -1,6 +1,7 @@
 # Create Python class for a thermodynamic state
 
 import CoolProp.CoolProp as CP  #must have CoolProp library installed
+from pprint import pprint
 
 UNITS = 'si'
 
@@ -18,6 +19,9 @@ class State(object):
         z = relative height (m) for potential energy
     '''
     def __init__(self, name="", fluid=None, units=UNITS, cycle=None, backend='CoolProp', **kwargs):
+
+        # print('kwargs')
+        # pprint(kwargs)
 
         # set property name if specified
         self.name = name # 1, 2, 2s, 3, 4, 4s, 4b, etc.
@@ -40,66 +44,80 @@ class State(object):
         if not self.cycle:
             self.units = units
 
-        # extract given properties
-        props = ['T','p','d','v','u','h','s','x']
-        for key, val in kwargs.items():
-            if key in props:
-                self.__dict__['_'+key][self.units] = val
+        self.T = kwargs.get('T',None)
+        self.p = kwargs.get('p',None)
+        self.d = kwargs.get('d',None)
+        self.v = kwargs.get('v',None)
+        self.u = kwargs.get('u',None)
+        self.h = kwargs.get('h',None)
+        self.s = kwargs.get('s',None)
+        self.x = kwargs.get('x',None)
+        self.ef = kwargs.get('ef',None)
 
-        self._T = {'si':None,'english':None}
-        self._p = {'si':None,'english':None}
-        self._d = {'si':None,'english':None}
-        self._v = {'si':None,'english':None}
-        self._u = {'si':None,'english':None}
-        self._h = {'si':None,'english':None}
-        self._s = {'si':None,'english':None}
-        self._ef = {'si':0.0,'english':0.0}  # default for dead state
-        self._x = {'si':None,'english':None}
+        # # extract given properties
+        # props = ['T','p','d','v','u','h','s','x']
+        # pprint(kwargs)
+        # for key, val in kwargs.items():
+        #     print('k={}, v={}'.format(key,val))
+        #     if key in props:
+        #         self.__dict__['_'+key][self.units] = val
 
-    @property
-    def T(self):
-        units = self.units.lower()
-        return self._T[units]
+        # pprint(self.__dict__)
 
-    @property
-    def p(self):
-        units = self.units.lower()
-        return self._p[units]
+        # self._T = {'si':None,'english':None}
+        # self._p = {'si':None,'english':None}
+        # self._d = {'si':None,'english':None}
+        # self._v = {'si':None,'english':None}
+        # self._u = {'si':None,'english':None}
+        # self._h = {'si':None,'english':None}
+        # self._s = {'si':None,'english':None}
+        # self._ef = {'si':0.0,'english':0.0}  # default for dead state
+        # self._x = {'si':None,'english':None}
 
-    @property
-    def d(self):
-        units = self.units.lower()
-        return self._d[units]
+    # @property
+    # def T(self):
+    #     units = self.units.lower()
+    #     return self._T[units]
 
-    @property
-    def v(self):
-        units = self.units.lower()
-        return self._v[units]
+    # @property
+    # def p(self):
+    #     units = self.units.lower()
+    #     return self._p[units]
 
-    @property
-    def u(self):
-        units = self.units.lower()
-        return self._u[units]
+    # @property
+    # def d(self):
+    #     units = self.units.lower()
+    #     return self._d[units]
 
-    @property
-    def h(self):
-        units = self.units.lower()
-        return self._h[units]
+    # @property
+    # def v(self):
+    #     units = self.units.lower()
+    #     return self._v[units]
 
-    @property
-    def s(self):
-        units = self.units.lower()
-        return self._s[units]
+    # @property
+    # def u(self):
+    #     units = self.units.lower()
+    #     return self._u[units]
 
-    @property
-    def x(self):
-        units = self.units.lower()
-        return self._x[units]
+    # @property
+    # def h(self):
+    #     units = self.units.lower()
+    #     return self._h[units]
 
-    @property
-    def ef(self):
-        units = self.units.lower()
-        return self._ef[units]
+    # @property
+    # def s(self):
+    #     units = self.units.lower()
+    #     return self._s[units]
+
+    # @property
+    # def x(self):
+    #     units = self.units.lower()
+    #     return self._x[units]
+
+    # @property
+    # def ef(self):
+    #     units = self.units.lower()
+    #     return self._ef[units]
 
     def CP_convert(self,prop,value=None):
         ''' make necessary conversions for CoolProp functions '''
@@ -117,9 +135,9 @@ class State(object):
 
     def flow_exergy(self):
         if self.cycle:
-            self._ef[self.units] = self.h-self.cycle.dead.h - self.cycle.dead.T*(self.s-self.cycle.dead.s)
+            self.ef = self.h-self.cycle.dead.h - self.cycle.dead.T*(self.s-self.cycle.dead.s)
         else:
-            self._ef[self.units] = 0.0
+            self.ef = 0.0
         return self.ef
 
     def __repr__(self):
@@ -150,10 +168,11 @@ class State(object):
 
         coolprops = {'T','p','d','v','u','h','s','x'}
         calc_props = coolprops - {prop1} - {prop2}
-        self.__dict__['_'+prop1][self.units] = val1
-        self.__dict__['_'+prop2][self.units] = val2
+        # print('prop1={}  prop2={}'.format(prop1,prop2))
+        self.__dict__[prop1] = val1
+        self.__dict__[prop2] = val2
         for prop in calc_props:
-            self.__dict__['_'+prop][self.units] = self.calc_prop(prop, prop1, val1, prop2, val2)
+            self.__dict__[prop] = self.calc_prop(prop, prop1, val1, prop2, val2)
         self.fixed = True
 
 class Process(object):
@@ -225,7 +244,7 @@ class Cycle(object):
         # unpack keyword arguments
         dead = kwargs.pop('dead',None)
         name = kwargs.pop('name',"")
-        mdot = kwargs.pop('mdot',1)  #default is 1 kg/s
+        mdot = kwargs.pop('mdot',1.0)  #default is 1 kg/s
         units = kwargs.pop('units',UNITS)
 
         # set fluid property
