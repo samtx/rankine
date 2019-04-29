@@ -44,7 +44,6 @@ def test_rankine_superheat_2():
     assert cycle.wnet == approx(820.45e3, rel=1e-3)
 
 def test_rankine_reheat():
-    from ..print_rankine import print_cycle_values, print_state_table, print_process_table
     fluid = 'Water'
     p_hi = 4.0    # MPa
     p_mid = 0.400 # MPa
@@ -56,7 +55,22 @@ def test_rankine_reheat():
         p_mid=p_mid, T_mid=T_mid,
         p_lo=p_lo,  
         fluid=fluid)
-    print_cycle_values(cycle)
-    print_process_table(cycle)
     assert cycle.en_eff == approx(0.359, abs=1e-3)
     # assert cycle.wnet == approx(1293.1e3, rel=1e-3)
+
+def test_rankine_reheat_2():
+    # https://youtu.be/dr4ez5saGmw?t=2169
+    fluid = 'Water'
+    p_hi = 8.0    # MPa
+    p_mid = 1.00 # MPa
+    p_lo = 0.020  # MPa
+    T_hi = 440    # deg C
+    T_mid = 440   # deg C
+    cycle = rankine_reheated(
+        p_hi=p_hi, T_hi=T_hi,
+        p_mid=p_mid, T_mid=T_mid,
+        p_lo=p_lo,  
+        fluid=fluid)
+    assert cycle.en_eff == approx(0.373, abs=1e-3)
+    assert cycle.bwr == approx(0.006, abs=1e-3)
+    assert cycle.wnet == approx(1336.7e3, rel=1e-3)
