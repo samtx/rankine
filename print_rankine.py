@@ -1,7 +1,6 @@
 # Model the Rankine Cycle with Geothermal Brine Heat Source
 
 from __future__ import print_function
-import thermodynamics as thermo  # custom thermo state class in thermodynamics.py
 import matplotlib   # for pretty pictures
 matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of using X windows
 import matplotlib.pyplot as plt

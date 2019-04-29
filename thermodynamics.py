@@ -245,6 +245,11 @@ class Cycle(object):
         for state in state_list:
             state.flow_exergy()
 
+    def compute(self):
+        process_list = self.get_procs()
+        for process in process_list:
+            process.compute()
+
     def __init__(self,fluid,**kwargs):
         # unpack keyword arguments
         dead = kwargs.pop('dead',None)

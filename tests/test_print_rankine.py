@@ -7,8 +7,8 @@ on the command line.
 """
 
 import pytest
-import rankine
-from print_rankine import print_output_to_screen
+from .. import rankine
+from ..print_rankine import print_output_to_screen
 
 def test_print_rankine_butane():
     props = {}

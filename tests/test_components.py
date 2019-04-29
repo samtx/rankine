@@ -7,8 +7,8 @@ on the command line.
 """
 
 import pytest
-from components import Turbine, Condenser, Pump, Boiler
-from thermodynamics import State
+from ..components import Turbine, Condenser, Pump, Boiler
+from ..thermodynamics import State
 
 def test_turbine_butane():
     fluid = 'n-Butane'

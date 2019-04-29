@@ -3,7 +3,7 @@
 # Model the Rankine Cycle with Geothermal Brine Heat Source
 
 from __future__ import print_function
-from thermodynamics import State  # custom thermo state class in thermodynamics.py
+from .thermodynamics import State  # custom thermo state class in thermodynamics.py
 import CoolProp.CoolProp as CP
 
 ######################################
@@ -13,9 +13,9 @@ class Component():
     outflow = State()  # output state
     constant = []         # constant values
 
-class ConnectFlow(Component):
+def connect_flow(comp1, comp2):
     # Set inflow states to outflow states
-    pass
+    comp2.inflow = comp1.outflow
 
 # class Valve(Component):
 #     name = 'Valve'
@@ -236,7 +236,6 @@ class Condenser(HeatExchanger):
         if self.cycle:
             self.delta_ef = (self.outflow.h - self.inflow.h) - self.cycle.dead.T * (self.outflow.s - self.inflow.s)
     
-
 
 class Evaporator(HeatExchanger):
     name = 'Evaporator'

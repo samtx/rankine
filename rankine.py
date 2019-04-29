@@ -1,12 +1,12 @@
 # Model the Rankine Cycle with Geothermal Brine Heat Source
 
 from __future__ import print_function
-import thermodynamics as thermo  # custom thermo state class in thermodynamics.py
+from .thermodynamics import State, Cycle, Geotherm, Plant  # custom thermo state class in thermodynamics.py
 import sys
 import CoolProp.CoolProp as CP
 from numbers import Number
-from print_rankine import print_output_to_screen
-from components import Turbine, Condenser, Pump, Boiler
+from .print_rankine import print_output_to_screen
+from .components import Turbine, Condenser, Pump, Boiler, connect_flow
 
 ######################################
 
@@ -56,13 +56,13 @@ def compute_cycle(props):
     units = props.get('units','si')
 
     # set dead state
-    dead = thermo.State(name='Dead State',fluid=fluid)
+    dead = State(name='Dead State',fluid=fluid)
     print('Fluid={}'.format(fluid))
     dead.fix('T',15+273.0, 'p', 101325.0)
     dead.ef = 0
 
     # initialize cycle
-    cyc = thermo.Cycle(fluid,name='Rankine',mdot=mdot,dead=dead)
+    cyc = Cycle(fluid,name='Rankine',mdot=mdot,dead=dead)
 
     # check to see if enough pressures and temperatures were entered
     if superheat and not(
@@ -93,7 +93,7 @@ def compute_cycle(props):
 
     # Define States
     # State 1, saturated vapor at high temperature
-    st1 = thermo.State(cycle=cyc,name='1')
+    st1 = State(cycle=cyc,name='1')
     h_sat = CP.PropsSI('H','P',p_hi,'Q',1,fluid) #enthalpy at sat vapor
     if superheat:
         st1.fix('p',p_hi,'T',t_hi)
@@ -102,20 +102,21 @@ def compute_cycle(props):
 
     turb = Turbine(inflow=st1, p_lo=p_lo, eff=turb_eff, fluid=fluid, cycle=cyc)
     turb.compute()
-    st2 = turb.outflow
+    # st2 = turb.outflow
 
-    cond = Condenser(inflow=st2, p=p_lo, fluid=fluid, cycle=cyc)
+    cond = Condenser(inflow=turb.outflow, p=p_lo, fluid=fluid, cycle=cyc)
     cond.compute()
-    st3 = cond.outflow
+    # st3 = cond.outflow
 
-    pump = Pump(fluid=fluid, inflow=st3, p_hi=p_hi, eff=pump_eff, cycle=cyc)
+    pump = Pump(fluid=fluid, inflow=cond.outflow, p_hi=p_hi, eff=pump_eff, cycle=cyc)
     pump.compute()  
-    st4 = pump.outflow
+    # st4 = pump.outflow
 
-    boil = Boiler(fluid=fluid, inflow=st4, outflow=st1, cycle=cyc)
+    boil = Boiler(fluid=fluid, inflow=pump.outflow, outflow=turb.inflow, cycle=cyc)
     boil.compute()
 
     # Calculate flow exergy values for each state in cycle
+    # cyc.compute()
     cyc.flow_exergy()
 
     # calculate exergy values for each process
@@ -185,14 +186,14 @@ def compute_plant(rank,props):
     # initialize geothermal cycle using defaults defined in object
     fluid = u'Salt Water, 20% salinity'
     # set brine dead state
-    dead = thermo.State(cycle=None,name='Br.Dead',fluid=fluid)
+    dead = State(cycle=None,name='Br.Dead',fluid=fluid)
     # dead.fix('T',298.0,'p',101325.0)
     dead.h = 61.05 * 1000 # J/kg
     dead.s = 0.2205 * 1000 # J/kg.K
     dead.T = 15 + 273 # K
     dead.p = 101325 # Pa
     dead.ef = 0
-    geo = thermo.Geotherm(fluid=fluid,dead=dead)
+    geo = Geotherm(fluid=fluid,dead=dead)
 
     #   Find the mass flow rate of the brine based on cooling efficiency and
     #   the heat gained by the boiler in the Rankine cycle.
@@ -202,7 +203,7 @@ def compute_plant(rank,props):
         if 'boil' in p.name.lower():
             heat = p.heat
     # create initial brine state
-    g1 = thermo.State(cycle=geo,name='Br.In')
+    g1 = State(cycle=geo,name='Br.In')
     g1.s = 1.492 * 1000 # J/kg.K
     g1.h = 491.6 * 1000 # J/kg
     g1.T = 120 + 273.15 # K
@@ -213,7 +214,7 @@ def compute_plant(rank,props):
     geo.mdot = (rank.mdot * heat) / (cool_eff * (geo.inflow.h - geo.dead.h))
 
     # initialize plant object using rankine and geothermal cycles
-    plant = thermo.Plant(rank,geo)
+    plant = Plant(rank,geo)
     # set cooling efficiency
     plant.cool_eff = cool_eff
     #   Calculate plant energetic efficiency
