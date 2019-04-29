@@ -89,9 +89,9 @@ def print_state_table(cycle,in_kW=False):
 def print_process_table(cycle,in_kW=False):
     p_list = cycle.get_procs()
     if in_kW:
-        headers = ['Proc','State','Q(kW)','W(kW)']
+        headers = ['Process','State','Q(kW)','W(kW)']
     else:
-        headers = ['Proc','State','Q(kJ/kg)','W(kJ/kg)']
+        headers = ['Process','State','Q(kJ/kg)','W(kJ/kg)']
     t = PrettyTable(headers)
     #t.set_style(MSWORD_FRIENDLY)
     for item in headers[2:]:
@@ -102,7 +102,7 @@ def print_process_table(cycle,in_kW=False):
     else:
         mdot = 1.0
     for p in p_list:
-        t.add_row([p.name[:4],p.inflow.name[:5]+' -> '+p.outflow.name[:5],
+        t.add_row([p.name[:7],p.inflow.name[:5]+' -> '+p.outflow.name[:5],
                    p.heat/1000 * mdot,
                    p.work/1000 * mdot])
     # add totals row
