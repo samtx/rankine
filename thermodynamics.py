@@ -240,6 +240,11 @@ class Cycle(object):
     def get_states(self):
         return self.state_list
 
+    def flow_exergy(self):
+        state_list = self.get_states()
+        for state in state_list:
+            state.flow_exergy()
+
     def __init__(self,fluid,**kwargs):
         # unpack keyword arguments
         dead = kwargs.pop('dead',None)

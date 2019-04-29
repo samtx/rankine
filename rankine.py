@@ -14,32 +14,27 @@ def main():
     # The list of pure and pseudo-pure fluids that CoolProp supports can
     # be found here:
     # http://www.coolprop.org/fluid_properties/PurePseudoPure.html#list-of-fluids
+    
+    #create dictionary of properties
+    props = {}
+    props["fluid"] = 'n-Butane'
+    props["p_hi"] = 3.5  #MPa
+    props["p_lo"] = 0.3 #MPa
+    props["turb_eff"] = 0.8
+    props["pump_eff"] = 0.75
+    props['cool_eff'] = .25 #cooling efficiency
+    props['superheat'] =  False # should we allow for superheating?
+    props['in_kW'] = False # print results in kW instead of kJ/kg?
+    props['cycle_mdot'] = 3.14   # mass flow rate of rankine cycle working fluid in kg/s
 
+    # begin computing processess for rankine cycle
+    rankine = compute_cycle(props)
 
-    fluid_list = ['n-Butane']
-    for fluid in fluid_list:
-        #create dictionary of properties
-        props = {}
-        props["fluid"] = fluid
-        props["p_hi"] = 3.5  #MPa
-        props["p_lo"] = 0.3 #MPa
-        # props["t_hi"] =  148# deg C
-        #props["t_lo"] = 10 # deg C
-        props["turb_eff"] = 0.8
-        props["pump_eff"] = 0.75
-        props['cool_eff'] = .25 #cooling efficiency
-        props['superheat'] =  False # should we allow for superheating?
-        props['in_kW'] = False # print results in kW instead of kJ/kg?
-        props['cycle_mdot'] = 3.14   # mass flow rate of rankine cycle working fluid in kg/s
+    # compute plant efficiencies
+    plant = compute_plant(rankine,props)
 
-        # begin computing processess for rankine cycle
-        rankine = compute_cycle(props)
-
-        # compute plant efficiencies
-        plant = compute_plant(rankine,props)
-
-        # print output to screen
-        print_output_to_screen(plant,props)
+    # print output to screen
+    print_output_to_screen(plant,props)
 
     return
 
@@ -103,12 +98,12 @@ def compute_cycle(props):
         st1.fix('p',p_hi,'T',t_hi)
     else:
         st1.fix('p',p_hi,'x',1.0)
-    st1.flow_exergy()
+    # st1.flow_exergy()
 
     # State 2s, two-phase at low temperature with same entropy as state 1
     st2s = thermo.State(cycle=cyc,name='2s')
     st2s.fix('p', p_lo, 's', st1.s)
-    st2s.flow_exergy()
+    # st2s.flow_exergy()
 
     # State 2, two-phase at low pressure determined by turbine efficiency
     st2 = thermo.State(cycle=cyc,name='2')
@@ -118,7 +113,7 @@ def compute_cycle(props):
     else:
         h2 = turb_eff * (st2s.h - st1.h) + st1.h  #with an irreversible turbine
         st2.fix('h',h2,'p',p_lo)
-    st2.flow_exergy()
+    # st2.flow_exergy()
 
 #     #print('state 2 quality: ',st2.x)
 #     if st2.x > 1 and (not superheat):
@@ -132,12 +127,12 @@ def compute_cycle(props):
         # then state 2 is superheated. Find state 2b
         st2b = thermo.State(name='2b',cycle=cyc)
         st2b.fix('p',p_lo,'x',1.0)
-        st2b.flow_exergy() 
+        # st2b.flow_exergy() 
     
     # State 3, saturated liquid at low pressure
     st3 = thermo.State(name='3',cycle=cyc)
     st3.fix('p',p_lo,'x',0.0)
-    st3.flow_exergy()
+    # st3.flow_exergy()
 
     # States 4 and 4s, subcooled liquid at high pressure
     # assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
@@ -147,7 +142,7 @@ def compute_cycle(props):
     wp = 1/pump_eff * wps
     st4s = thermo.State(name='4s', cycle=cyc)
     st4s.fix('s',st3.s,'p',p_hi)
-    st4s.flow_exergy()
+    # st4s.flow_exergy()
     # State 4
     st4 = thermo.State(name='4', cycle=cyc)
     # if pump_eff = 1, then just copy values from state 4s
@@ -164,17 +159,17 @@ def compute_cycle(props):
         st4.s = CP.PropsSI('S','P',p_hi,'H',st4.h,fluid)
         if st4.s < st4s.s:
             st4.s = st4s.s * 1.001  # add 0.1% increase
-    st4.flow_exergy()
+    # st4.flow_exergy()
     # find State 4b, high pressure saturated liquid
     st4b = thermo.State(name='4b', cycle=cyc)
     st4b.fix('p',p_hi,'x',0.0)
-    st4b.flow_exergy()
+    # st4b.flow_exergy()
 
     # State 4c for graphing purposes. Sat vapor at p_hi
     if st1.x == 'super':
         st4c = thermo.State(name='4c', cycle=cyc)
         st4c.fix('p',p_hi,'x',1.0)
-        st4c.flow_exergy()
+        # st4c.flow_exergy()
         print('st4c',st4c.ef)
 
     # Define processes
@@ -183,6 +178,9 @@ def compute_cycle(props):
     cond = thermo.Process(cyc,st2, st3, st3.h-st2.h, 0, "Condenser")
     pump = thermo.Process(cyc,st3, st4, 0, wp, "Pump")
     boil = thermo.Process(cyc,st4, st1, st1.h-st4.h, 0, "Boiler")
+
+    # Calculate flow exergy values for each state in cycle
+    cyc.flow_exergy()
 
     # calculate exergy values for each process
     # Boiler
