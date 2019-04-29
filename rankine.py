@@ -23,7 +23,7 @@ def main():
         props["fluid"] = fluid
         props["p_hi"] = 3.5  #MPa
         props["p_lo"] = 0.3 #MPa
-        props["t_hi"] =  148# deg C
+        # props["t_hi"] =  148# deg C
         #props["t_lo"] = 10 # deg C
         props["turb_eff"] = 0.8
         props["pump_eff"] = 0.75
@@ -239,6 +239,8 @@ def compute_cycle(props):
     cyc.en_eff = cyc.wnet / boil.heat
     cyc.bwr = -pump.work / turb.work
     cyc.ex_eff = cyc.wnet / boil.delta_ef  # cycle exergetic eff
+
+    print('PUMP WORK=',pump.work)
 
     return cyc
 

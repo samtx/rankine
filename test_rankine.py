@@ -14,7 +14,7 @@ def test_rankine_butane():
     props["fluid"] = 'n-Butane'
     props["p_hi"] = 3.5  #MPa
     props["p_lo"] = 0.3 #MPa
-    props["t_hi"] =  148 # deg C
+    # props["t_hi"] =  148 # deg C
     props["turb_eff"] = 0.8
     props["pump_eff"] = 0.75
     props['superheat'] =  False # should we allow for superheating?
