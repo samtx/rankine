@@ -24,7 +24,7 @@ def print_output_to_screen(plant,props):
     print_process_table(plant.rank,in_kW)
     print('\nProcess Exergy:')
     print_exergy_table(plant.rank,in_kW)
-    create_plot(plant.rank, props)
+    # create_plot(plant.rank, props)
     print('\nGeothermal Cycle States and Processes    (Brine: '+plant.geo.fluid+')')
     print_state_table(plant.geo,in_kW)
     if plant.geo.get_procs():

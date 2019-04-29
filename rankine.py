@@ -6,6 +6,7 @@ import sys
 import CoolProp.CoolProp as CP
 from numbers import Number
 from print_rankine import print_output_to_screen
+from components import Turbine, Condenser, Pump, Boiler
 
 ######################################
 
@@ -98,86 +99,21 @@ def compute_cycle(props):
         st1.fix('p',p_hi,'T',t_hi)
     else:
         st1.fix('p',p_hi,'x',1.0)
-    # st1.flow_exergy()
 
-    # State 2s, two-phase at low temperature with same entropy as state 1
-    st2s = thermo.State(cycle=cyc,name='2s')
-    st2s.fix('p', p_lo, 's', st1.s)
-    # st2s.flow_exergy()
+    turb = Turbine(inflow=st1, p_lo=p_lo, eff=turb_eff, fluid=fluid, cycle=cyc)
+    turb.compute()
+    st2 = turb.outflow
 
-    # State 2, two-phase at low pressure determined by turbine efficiency
-    st2 = thermo.State(cycle=cyc,name='2')
-    # if turb_eff = 1, then just copy values from state 2s
-    if turb_eff == 1:
-        st2.fix('p',p_lo,'s',st2s.s)
-    else:
-        h2 = turb_eff * (st2s.h - st1.h) + st1.h  #with an irreversible turbine
-        st2.fix('h',h2,'p',p_lo)
-    # st2.flow_exergy()
+    cond = Condenser(inflow=st2, p=p_lo, fluid=fluid, cycle=cyc)
+    cond.compute()
+    st3 = cond.outflow
 
-#     #print('state 2 quality: ',st2.x)
-#     if st2.x > 1 and (not superheat):
-#         print('Fluid is superheated after leaving turbine. Please enter a higher turbine efficiency \nExiting...')
-#         sys.exit()
+    pump = Pump(fluid=fluid, inflow=st3, p_hi=p_hi, eff=pump_eff, cycle=cyc)
+    pump.compute()  
+    st4 = pump.outflow
 
-    # State 2b, saturated vapor at low pressure
-    # --- if necessary: state 2 is superheated and we need the sat vapor state for graphing purposes
-    h2b = CP.PropsSI('H','P',p_lo,'Q',1.0,fluid)  #sat vapor enthalpy
-    if st2.h > h2b:
-        # then state 2 is superheated. Find state 2b
-        st2b = thermo.State(name='2b',cycle=cyc)
-        st2b.fix('p',p_lo,'x',1.0)
-        # st2b.flow_exergy() 
-    
-    # State 3, saturated liquid at low pressure
-    st3 = thermo.State(name='3',cycle=cyc)
-    st3.fix('p',p_lo,'x',0.0)
-    # st3.flow_exergy()
-
-    # States 4 and 4s, subcooled liquid at high pressure
-    # assuming incompressible isentropic pump operation, let W/m = v*dp with v4 = v3
-    # find values for irreversible pump operation
-    # print('st3.v={:.4e}'.format(st3.v),'st3.d={:.2f}'.format(st3.d))
-    wps = -st3.v * (st1.p - st3.p)
-    wp = 1/pump_eff * wps
-    st4s = thermo.State(name='4s', cycle=cyc)
-    st4s.fix('s',st3.s,'p',p_hi)
-    # st4s.flow_exergy()
-    # State 4
-    st4 = thermo.State(name='4', cycle=cyc)
-    # if pump_eff = 1, then just copy values from state 4s
-    if pump_eff == 1:
-        st4.fix('h',st3.h-wps,'p',p_hi)
-    else:
-        st4.fix('h',st3.h-wp,'p',p_hi)
-        #   it appears that CoolProp is pulling properties for Temperature and entropy
-        #   for state 4 that are slightly lower than state 4s. These values should
-        #   be higher than those at state 4s.
-        #   Add logic to add a 0.1% increase in both values if they are lower.
-        if st4.T < st4s.T:
-            st4.T = st4s.T * 1.001  # add 0.1% increase
-        st4.s = CP.PropsSI('S','P',p_hi,'H',st4.h,fluid)
-        if st4.s < st4s.s:
-            st4.s = st4s.s * 1.001  # add 0.1% increase
-    # st4.flow_exergy()
-    # find State 4b, high pressure saturated liquid
-    st4b = thermo.State(name='4b', cycle=cyc)
-    st4b.fix('p',p_hi,'x',0.0)
-    # st4b.flow_exergy()
-
-    # State 4c for graphing purposes. Sat vapor at p_hi
-    if st1.x == 'super':
-        st4c = thermo.State(name='4c', cycle=cyc)
-        st4c.fix('p',p_hi,'x',1.0)
-        # st4c.flow_exergy()
-        print('st4c',st4c.ef)
-
-    # Define processes
-    # Find work and heat for each process
-    turb = thermo.Process(cyc,st1, st2, 0, st1.h-st2.h, "Turbine")
-    cond = thermo.Process(cyc,st2, st3, st3.h-st2.h, 0, "Condenser")
-    pump = thermo.Process(cyc,st3, st4, 0, wp, "Pump")
-    boil = thermo.Process(cyc,st4, st1, st1.h-st4.h, 0, "Boiler")
+    boil = Boiler(fluid=fluid, inflow=st4, outflow=st1, cycle=cyc)
+    boil.compute()
 
     # Calculate flow exergy values for each state in cycle
     cyc.flow_exergy()
@@ -243,7 +179,7 @@ def compute_cycle(props):
     return cyc
 
 def compute_plant(rank,props):
-    ''' Compute and return plantplo object from rankine cycle and geothermal cycle objects '''
+    ''' Compute and return Plant object from rankine cycle and geothermal cycle objects '''
     cool_eff = props.get('cool_eff',1.0) # cooling efficiency
     units = props.get('units','si')
     # initialize geothermal cycle using defaults defined in object

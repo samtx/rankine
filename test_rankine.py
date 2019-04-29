@@ -47,3 +47,16 @@ def test_rankine_water_superheat():
     cyc = rankine.compute_cycle(props)
     assert cyc.en_eff == pytest.approx(0.353, abs=1e-3)
     assert cyc.wnet == pytest.approx(1065.5e3, rel=0.001)
+
+def test_rankine_water_superheat_2():
+    props = {}
+    props["fluid"] = 'Water'
+    props["p_hi"] = 3.0   # MPa
+    props["p_lo"] = 0.050 # MPa
+    props['t_hi'] = 400   # deg C
+    props["mdot"] = 25.0  # kg/s
+    props['superheat'] =  True # should we allow for superheating?
+    # begin computing processess for rankine cycle
+    cyc = rankine.compute_cycle(props)
+    assert cyc.en_eff == pytest.approx(0.284, abs=1e-3)
+    assert cyc.wnet == pytest.approx(820.45e3, rel=0.001)

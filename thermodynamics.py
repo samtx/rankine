@@ -180,7 +180,7 @@ class Process(object):
     state in and a state out. '''
 
     def exergy_destroyed(self):
-        return self.cycle.dead.T*(self.state_out.s-self.state_in.s) # exergy destroyed
+        return self.cycle.dead.T*(self.outflow.s-self.inflow.s) # exergy destroyed
 
     def __repr__(self):
         return self.name
@@ -339,7 +339,6 @@ class Geotherm(object):
             dead.T = 15 + 273 # K
             dead.p = 101325 # Pa
             self.dead = dead
-
 
         # state in
         self.in_ = None

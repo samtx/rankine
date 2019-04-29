@@ -3,22 +3,14 @@
 # Model the Rankine Cycle with Geothermal Brine Heat Source
 
 from __future__ import print_function
-import thermodynamics as thermo  # custom thermo state class in thermodynamics.py
-import matplotlib   # for pretty pictures
-matplotlib.use('Agg') # to get matplotlib to save figures to a file instead of using X windows
-import matplotlib.pyplot as plt
-import sys
-from prettytable import PrettyTable, MSWORD_FRIENDLY, PLAIN_COLUMNS #for output formatting
+from thermodynamics import State  # custom thermo state class in thermodynamics.py
 import CoolProp.CoolProp as CP
-from numbers import Number
-
-from pprint import pprint
 
 ######################################
 
 class Component():
-    inflow = thermo.State()  # input state
-    outflow = thermo.State()  # output state
+    inflow = State()  # input state
+    outflow = State()  # output state
     constant = []         # constant values
 
 class ConnectFlow(Component):
@@ -60,17 +52,19 @@ class Pump(Component):
     def compute(self):
         if not self.inflow:
             # then assume inflow is sat liquid
-            self.inflow = thermo.State(name='inflow', fluid=self.fluid)
+            self.inflow = State(name='inflow', fluid=self.fluid)
             self.inflow.fix('p',self.p_lo,'x',0.0)
             
         if not self.outflow:
-            self.outflow = thermo.State(name='outflow', fluid=self.fluid)
+            self.outflow = State(name='outflow', fluid=self.fluid)
             self.outflow.p = self.p_hi
-
+            
         # Get intrev work 
         work_intrev = -self.inflow.v * (self.outflow.p - self.inflow.p)
         self.work = 1/self.eff * work_intrev
         
+        self.outflow.fix('p',self.p_hi,'h',self.inflow.h-self.work)
+
         # change in flow exergy
         if self.cycle:
             self.delta_ef = (self.outflow.h - self.inflow.h) - self.cycle.dead.T * (self.outflow.s - self.inflow.s)
@@ -105,7 +99,7 @@ class Turbine(Component):
 
     def compute(self):
         if not self.inflow:
-            self.inflow = thermo.State(name='inflow', fluid=self.fluid)
+            self.inflow = State(name='inflow', fluid=self.fluid)
             if not self.T_hi:
                 # then assume inflow is sat vapor
                 self.inflow.fix('p',self.p_hi,'x',1.0)
@@ -113,10 +107,10 @@ class Turbine(Component):
                 self.inflow.fix('p',self.p_hi,'T',self.T_hi)
         
         if not self.outflow:
-            self.outflow = thermo.State(name='outflow', fluid=self.fluid)
+            self.outflow = State(name='outflow', fluid=self.fluid)
             self.outflow.p = self.p_lo
 
-        isen = thermo.State(name='isen_2s', fluid=self.fluid, s=self.inflow.s)
+        isen = State(name='isen_2s', fluid=self.fluid, s=self.inflow.s)
         h_in = self.inflow.h
         s_in = self.inflow.s
         if self.outflow.p:
@@ -166,7 +160,7 @@ class Boiler(HeatExchanger):
 
     def compute(self):
         if not self.inflow:
-            self.inflow = thermo.State(name='inflow', fluid=self.fluid)
+            self.inflow = State(name='inflow', fluid=self.fluid)
             if not self.T_lo:
                 # then assume inflow is sat liquid
                 self.inflow.fix('p',self.p,'x',0.0)
@@ -174,7 +168,7 @@ class Boiler(HeatExchanger):
                 self.inflow.fix('p',self.p,'T',self.T_lo)
         
         if not self.outflow:
-            self.outflow = thermo.State(name='outflow', fluid=self.fluid)
+            self.outflow = State(name='outflow', fluid=self.fluid)
             if not self.T_hi:
                 # assume outflow is sat vapor
                 self.outflow.fix('x',1.0,'p',self.p)
@@ -182,6 +176,8 @@ class Boiler(HeatExchanger):
                 self.outflow.fix('T',self.T_hi,'p',self.p)
 
         # compute exit enthalpy and state
+        print(self.outflow.h)
+        print(self.inflow.h)
         self.heat = self.outflow.h - self.inflow.h
     
         # change in flow exergy
@@ -219,7 +215,7 @@ class Condenser(HeatExchanger):
         # get isentropic state
         
         if not self.inflow:
-            self.inflow = thermo.State(name='inflow', fluid=self.fluid)
+            self.inflow = State(name='inflow', fluid=self.fluid)
             if not self.T_hi:
                 # then assume inflow is sat vapor
                 self.inflow.fix('p',self.p,'x',1.0)
@@ -227,7 +223,7 @@ class Condenser(HeatExchanger):
                 self.inflow.fix('p',self.p,'T',self.T_hi)
         
         if not self.outflow:
-            self.outflow = thermo.State(name='outflow', fluid=self.fluid)
+            self.outflow = State(name='outflow', fluid=self.fluid)
             # assume outflow is sat liquid
             self.outflow.fix('x',0.0,'p',self.p)
 
